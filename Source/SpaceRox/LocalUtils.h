@@ -73,7 +73,7 @@ struct FPlayObject
 	FVector2D OldPosition;
 	FVector2D UnwrappedNewPosition;
 
-	float LifeRemaining = 0.0f; // Number of seconds before torpedo fades out
+	float LifeRemaining = 0.0f;
 	float RadiusFactor  = 0.5f;
 	int32 Value         = 0;
 
@@ -81,8 +81,10 @@ struct FPlayObject
 
 	bool IsVisible () const { return (Widget != nullptr ? Widget->IsVisible() : false); }
 	bool IsAlive   () const { return (LifeRemaining > 0.0f); }
+	bool IsDead    () const { return !IsAlive(); }
 	void Show      (bool Visible = true) { ::Show(Widget, Visible); }
 	void Hide      () { Show(false); }
+	void Kill      () { LifeRemaining = 0.0f; Hide(); }
 
 	
 	bool IsValid   () const 
@@ -105,6 +107,17 @@ struct FPlayObject
 		}
 
 		return Cast<UCanvasPanelSlot>(Widget->Slot)->GetPosition();
+	}
+
+
+	void SetPosition(const FVector2D& P)
+	{
+		if(Widget->Slot == nullptr)
+		{
+			return;
+		}
+
+		return Cast<UCanvasPanelSlot>(Widget->Slot)->SetPosition(P);
 	}
 
 

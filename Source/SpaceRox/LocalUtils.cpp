@@ -50,131 +50,6 @@ FVector2D Rotate(const FVector2D& P, float Angle)
 }
 
 
-
-#if 0
-static TArray<FVector2D> LineIntersectsCircle(const FVector2D& p1, const FVector2D& p2, const FVector2D& cp, double r, bool segment)
-{
-	// Test if a line intersects a circle.
-	// Return 0, 1, or 2 points.
-	// p1 and p2 are the line endpoints.
-	// cp is the circle center.
-	// r is the circle radius.
-	// segment is true if the line is a finite segment.
-
-	TArray<FVector2D> res;
-
-	auto x0 = cp.X;
-	auto y0 = cp.Y;
-	auto x1 = p1.X;
-	auto y1 = p1.Y;
-	auto x2 = p2.X;
-	auto y2 = p2.Y;
-	auto A = y2 - y1;
-	auto B = x1 - x2;
-	auto C = x2 * y1 - x1 * y2;
-	auto a = sq(A) + sq(B);
-	double b, c;
-	bool bnz = true;
-
-	if (abs(B) >= eps)
-	{
-		b = 2 * (A * C + A * B * y0 - sq(B) * x0);
-		c = sq(C) + 2 * B * C * y0 - sq(B) * (sq(r) - sq(x0) - sq(y0));
-	}
-	else
-	{
-		b = 2 * (B * C + A * B * x0 - sq(A) * y0);
-		c = sq(C) + 2 * A * C * x0 - sq(A) * (sq(r) - sq(x0) - sq(y0));
-		bnz = false;
-	}
-
-	auto d = sq(b) - 4 * a * c; // discriminant
-
-	if (d < 0)
-	{
-		return res;
-	}
-
-	// checks whether a point is within a segment
-	auto within = [x1, y1, x2, y2](double x, double y)
-	{
-		auto d1 = sqrt(sq(x2 - x1) + sq(y2 - y1));  // distance between end-points
-		auto d2 = sqrt(sq(x - x1) + sq(y - y1));    // distance from point to one end
-		auto d3 = sqrt(sq(x2 - x) + sq(y2 - y));    // distance from point to other end
-		auto delta = d1 - d2 - d3;
-		return abs(delta) < eps;                    // true if delta is less than a small tolerance
-	};
-
-	auto fx = [A, B, C](double x)
-	{
-		return -(A * x + C) / B;
-	};
-
-	auto fy = [A, B, C](double y)
-	{
-		return -(B * y + C) / A;
-	};
-
-	auto rxy = [segment, &res, within](double x, double y)
-	{
-		if (!segment || within(x, y))
-		{
-			res.Add(FVector2D(x, y));
-		}
-	};
-
-	double x, y;
-	if (d == 0.0)
-	{
-		// line is tangent to circle, so just one intersect at most
-		if (bnz)
-		{
-			x = -b / (2 * a);
-			y = fx(x);
-			rxy(x, y);
-		}
-		else
-		{
-			y = -b / (2 * a);
-			x = fy(y);
-			rxy(x, y);
-		}
-	}
-	else
-	{
-		// two intersects at most
-		d = sqrt(d);
-		if (bnz)
-		{
-			x = (-b + d) / (2 * a);
-			y = fx(x);
-			rxy(x, y);
-			x = (-b - d) / (2 * a);
-			y = fx(x);
-			rxy(x, y);
-		}
-		else
-		{
-			y = (-b + d) / (2 * a);
-			x = fy(y);
-			rxy(x, y);
-			y = (-b - d) / (2 * a);
-			x = fy(y);
-			rxy(x, y);
-		}
-	}
-
-	return res;
-}
-
-
-static bool DoesLineSegmentIntersectCircle(const FVector2D& p1, const FVector2D& p2, const FVector2D& cp, double r)
-{
-	return (LineIntersectsCircle(p1, p2, cp, r, true).Num() != 0);
-}
-#endif // 0
-
-
 bool DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R)
 {
 	// Test if a line intersects a circle.
@@ -231,15 +106,8 @@ bool DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVector2D& P2, co
 		return abs(delta) < Epsilon;                // true if delta is less than a small tolerance
 	};
 
-	auto fx = [A, B, C](double x)
-	{
-		return -(A * x + C) / B;
-	};
-
-	auto fy = [A, B, C](double y)
-	{
-		return -(B * y + C) / A;
-	};
+	auto fx = [A, B, C](double x) { return -(A * x + C) / B; };
+	auto fy = [A, B, C](double y) { return -(B * y + C) / A; };
 
 	bool res = false;
 
@@ -287,8 +155,6 @@ bool DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVector2D& P2, co
 
 	return res;
 }
-
-
 
 
 FVector2D RandVector2D()

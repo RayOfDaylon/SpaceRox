@@ -85,7 +85,6 @@ enum class EGameState : uint8
 
 
 
-// Everything about a torpedo, which is a bullet that ships can fire
 USTRUCT()
 struct FTorpedo : public FPlayObject
 {
@@ -298,6 +297,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	void      TransitionToState          (EGameState State);
 
+	template<class WidgetT> WidgetT* MakeWidget();
+
 	void      Spawn                      (FPlayObject& PlayObject, const FVector2D& P, const FVector2D& Inertia, float LifeRemaining);
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnExplosion             (const FVector2D& P);
@@ -305,13 +306,13 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      RemoveAsteroid             (int32 Index);
 	void      RemoveAsteroids            ();
 
-	void      Kill                       (FPlayObject& PlayObject);
 	void      KillAsteroid               (int32 AsteroidIndex, bool KilledByPlayer);
 	void      KillEnemyShip              (int32 EnemyIndex);
 	void      KillPlayerShip             ();
+	void      DestroyWidget              (FPlayObject& PlayObject);
+	void      DestroyWidget              (UWidget* Widget);
 
 	int32     GetAvailableTorpedo        () const;
-	void      MovePlayObject             (FPlayObject& PlayObject, float DeltaTime);
 	void      IncreasePlayerScoreBy      (int32 Amount);
 	void      StartWave                  ();
 	void      AddPlayerShips             (int32 Amount);
@@ -331,10 +332,11 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// -- Called every frame -----------------------------------------------------------
 
+	void MovePlayObject            (FPlayObject& PlayObject, float DeltaTime);
 	void ProcessWaveTransition     (float DeltaTime);
 	void ProcessPlayerShipSpawn    (float DeltaTime);
 	void UpdateExplosions          (float DeltaTime);
-	//void AnimateStartMessage       (float DeltaTime);
+	//void AnimateStartMessage     (float DeltaTime);
 
 	void CheckCollisions           ();
 
