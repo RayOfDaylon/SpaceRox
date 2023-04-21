@@ -72,3 +72,12 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Other source art
+Content-src/*
+
+# Other local-only stuff
+Other/*
+
+# Backup files made by Notepad++
+*.bak
