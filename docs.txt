@@ -1,0 +1,230 @@
+Documentation for SpaceRox game project
+
+Author(s): Ray Gardener (support@daylongraphics.com)
+Repository: https://github.com/RayOfDaylon/SpaceRox
+April 22/2023
+
+
+
+Introduction
+-------------------------------------------------------------------------------------
+SpaceRox is a remake of the classic Atari Asteroids 1979 arcade game which tries 
+to match its look and feel, but coded using Unreal Engine (UE 5.1, specifically).
+
+Its goals are a) to provide an educational reference for people interested in how 
+this type of game works and how it can be made in UE, and b) to see if such a game 
+using only UMG widgets would be performant enough (it is -- on my nVidia GTX 1050 TI
+it gets between 60 and 120 fps).
+
+While I've endeavoured to make the source code readable, the rest of this document 
+may provide more clarification.
+
+
+Project Structure
+-------------------------------------------------------------------------------------
+The repository should contain these items:
+
+SpaceRox.uproject              UE project file
+
+Config                         Various standard UE project .ini files
+
+Content
+    Audio                      Sounds
+    Fonts                      The Hyperspace "vector" font
+    Textures                   Asteroid, ship, etc. textures 
+    Main                       The main (and only) level map
+    PlayView                   The main (and only) UUserWidget for the viewport
+
+Source
+    SpaceRox
+        LocalUtils.*           Reusable helper code not specific to the game
+        PlayViewBase.*         The specific game logic
+        *ParticlesWidget.*     A UWidget used to efficiently draw explosions
+
+
+Setting Up
+-------------------------------------------------------------------------------------
+You should already have UE installed (of course). As of this writing, the project 
+uses UE 5.1. While higher versions should work, any changes made to assets may not 
+be openable in earlier versions.
+
+On Windows, right-click the .uproject file and choose "Generate Visual Studio project files".
+The project should work with Visual Studio Community Edition 2019, and likely with others.
+
+If you are getting launch errors, you may need to also right-click the .uproject file 
+and choose "Switch Unreal Engine version" to associate it with the version of UE 
+you have installed.
+
+Once you have the project's .sln file, you can open it in Visual Studio and 
+browse/modify/debug the code, build it, launch the development editor, etc.
+
+
+How the Game is Played
+-------------------------------------------------------------------------------------
+If you've never played Atari Asteroids, I recommend finding an original arcade cabinet 
+or an emulation, or at least watch one of the many YouTube videos available showing its 
+gameplay (my own such video is at https://www.youtube.com/watch?v=mXKK6ThleVQ).
+
+There are many variants, and Atari itself published a sequel called Asteroids Deluxe.
+For our purposes, however, we'll concentrate on the original 1979 game.
+
+Gameplay is straightforward: you pilot a ship on a 2D top-down playfield populated 
+with several asteroids, your goal being to destroy them with torpedos. Once in a while 
+enemy ships will also appear and you can destroy them as well (if not, they will 
+eventually leave). With every 10,000 points you score, you earn an extra ship.
+
+When hit, asteroids will break apart into two smaller rocks, until they are small 
+enough that when hit, they simply explode and vanish. While asteroids can pass 
+through each other, all other collisions are detrimental.
+
+The playfield uses a wraparound facility to instantly teleport objects leaving one 
+side to the opposite side. Torpedos are handled this way too, so you can shoot 
+seemingly distant targets by aiming away from them.
+
+Once all the asteroids are destroyed, a new wave of large asteroids will appear, 
+with two more than before, up to 24 (assuming you survive that long).
+
+The enemy ships come in two flavors: a large one that aims its torpedos randomly, 
+and a small one that not only shoots precisely, but alternates targeting your 
+ship and a randomly-chosen asteroid. The latter behavior was added to prevent 
+the popular "hunt enemies when one rock is left" strategy -- eventually the 
+playfield will be clear of asteroids. 
+    When a small enemy ship appears, do not sit still or drift, or you will 
+be shot.
+
+
+How the Game Works
+-------------------------------------------------------------------------------------
+The main data type (class) of interest is FPlayObject, defined in LocalUtils.h.
+Every object in the playfield is either an FPlayObject or a subclass. This class 
+associates a UImage widget with an inertia (direction + speed) vector, the 
+amount of life remaining in seconds, and a previous/current position. There are 
+also methods to manage these values, show/hide the widget, etc.
+
+A play object's position is at the widget's center, which simplifies 
+rotation and collision detection. This is achieved by using a canvas 
+slot alignment of (0.5, 0.5) and a RenderTransform pivot of (0.5, 0.5).
+
+The player ship is its own UPlayViewBase member variable, while asteroids, 
+enemies, and torpedos have their own TArray containers. Torpedos are 
+preallocated in a fixed quantity since they are frequently getting 
+created/destroyed.
+
+The UPlayViewBase class is a UUserWidget holding the game logic. A blueprint 
+subclass "PlayView" is used to hold design-time objects like menus, info displays, etc.
+the "BindWidget" meta tag is used on several class UWidget members so that 
+the C++ code can manipulate these design-time objects. There are also audio 
+and texture (brush) members, and some properties for testing.
+
+There's barely any Blueprint script (I started off using it, but it soon 
+became unwieldy). Instead, BP script is used to simply forward input events to 
+the C++ code. Speaking of which, the input actions are mapped only to keyboard 
+keys for now.
+
+The UPlayerController, UGameInstance, UGameMode, APawn, etc. classes aren't used 
+(or are hardly used at all), and neither are actors. While a game is normally 
+structured along those lines, for better or worse I just found it easier to
+skip all that, and it's a testament to UE that one can implement things in 
+many different ways.
+
+Everything pretty much happens inside the main UUserWidget.
+UPlayViewBase::NativeOnInitialized sets up the game, and from there, 
+UPlayViewBase::NativeTick drives the gameplay.
+
+What happens during NativeTick depends on the current game state, 
+which is enumerated in the EGameState type. From its comment, the 
+state transition graph is:
+
+	Startup --> Intro
+
+	Intro ---> Menu
+
+	Menu -- (start chosen)       --> Active
+	     -- (help chosen)        --> Help           --> Menu
+	     -- (credits chosen)     --> Credits        --> Menu
+	     -- (high scores chosen) --> High scores    --> Menu
+
+	Active -- (player dies)      --> Over
+	       -- (Esc pressed)      --> Menu
+								     
+	Over -- (high score?)        --> HighScoreEntry --> Menu
+	     -- (no high score)      --> Menu
+
+
+The UPlayViewBase::TransitionToState method lets one leave the current 
+state and enter a different state. Each state takes care of hiding 
+and showing the various widgets it needs.
+
+For speed, widgets are hidden using the Collapsed option, so that 
+their geometry isn't considered at all. When visible, the 
+HitTestInvisible option skips processing of any inputs, since 
+the game is directly listening for button presses (keystrokes).
+
+To make torpedos appear bright, all other widgets are tinted 
+to half brightness.
+
+Constant values are normally declared with friendly names 
+at the top of the PlayViewBase.cpp file.
+
+UPlayViewBase::NativeTick dispatches to other per-frame methods 
+depending on the current game state. It also calls UpdateTasks, 
+which processes any active tasks in the ScheduledTasks and 
+DurationTasks arrays. Scheduled tasks are handy to fire off 
+events that need to occur some time in the future, e.g. the 
+secondary player ship explosion. Duration tasks are not 
+currently used.
+
+Various other UPlayViewBase members handle timing related 
+to starting waves, spawning the player, etc.
+
+For the Active game state, NativeTick will process the 
+various inputs (thrust, rotate, fire), move all the 
+visible objects, and process any collisions. When the 
+player has no more ships, it transitions to the Over 
+state which flashes the "GAME OVER" message, which itself 
+then transitions to HighScoreEntry or back to MainMenu.
+
+To be accurate, collision detection uses the OldPosition 
+and UnwrappedNewPosition members of the FPlayObject 
+to test intersections between line segments and circles/triangles. 
+Otherwise, fast-moving objects could be on either side 
+of another object from one frame to the next, resulting 
+in a false negative.
+
+To avoid unwanted self-intersections when firing torpedos, 
+the FTorpedo class includes a FiredByPlayer member 
+which lets shooters avoid friendly fire.
+
+Typical keyboards lack the responsiveness of the original 
+arcade cabinet pushbuttons, causing a suboptimal firing rate.
+Although I can get small rapid-fire bursts, I find it 
+only possible in brief moments. Your mileage may vary 
+since there are many keyboard designs out there. One can 
+also configure inputs from arcade-like controllers 
+which may offer faster action.
+
+Although only one enemy ship appears at a time, the 
+EnemyShips array and associated logic was designed 
+with the potential for having multiple ships onscreen.
+
+Enemy ship movement is fairly simple: a random Y-position 
+along a screen edge is chosen, a left/right direction 
+is randomly chosen, and during flight at certain 
+intervals, a random heading is chosen which can be 
+straight, or upwards/downwards at 45 degrees.
+
+Sounds have to be preloaded to avoid playing noticeably 
+later than they should. Preloading is hacked by simply 
+playing all the sound assets at startup at a very low volume.
+
+Looped sounds are necessary for enemy ships and the 
+thrust of the player ship. This is also hacked by just 
+keeping track of time during NativeTick and when a 
+sound has been fully played, it gets replayed. The 
+FLoopedSound class simplifies this.
+
+High scores are kept in a highscores.txt file.
+In development mode, this will be in the project's 
+Saved folder. In packaged Shipping builds, the 
+file should be in /Users/.../AppData/Local/SpaceRox/Saved.
+
