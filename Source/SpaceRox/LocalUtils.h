@@ -75,6 +75,7 @@ struct FPlayObject
 
 	float LifeRemaining = 0.0f;
 	float RadiusFactor  = 0.5f;
+	float SpinSpeed     = 0.0f; // degrees/second
 	int32 Value         = 0;
 
 	UImage* Widget = nullptr; // Associated image widget
@@ -99,6 +100,10 @@ struct FPlayObject
 	}
 
 
+	UCanvasPanelSlot*       GetWidgetSlot () { return Cast<UCanvasPanelSlot>(Widget->Slot); }
+	const UCanvasPanelSlot* GetWidgetSlot () const { return Cast<UCanvasPanelSlot>(Widget->Slot); }
+
+
 	FVector2D GetPosition() const
 	{
 		if(Widget->Slot == nullptr)
@@ -106,7 +111,7 @@ struct FPlayObject
 			return FVector2D(0);
 		}
 
-		return Cast<UCanvasPanelSlot>(Widget->Slot)->GetPosition();
+		return GetWidgetSlot()->GetPosition();
 	}
 
 
@@ -117,7 +122,7 @@ struct FPlayObject
 			return;
 		}
 
-		return Cast<UCanvasPanelSlot>(Widget->Slot)->SetPosition(P);
+		return GetWidgetSlot()->SetPosition(P);
 	}
 
 
@@ -134,13 +139,30 @@ struct FPlayObject
 			return FVector2D(0);
 		}
 
-		return Cast<UCanvasPanelSlot>(Widget->Slot)->GetSize();
+		return GetWidgetSlot()->GetSize();
 	}
 
 
 	float GetSpeed() const
 	{
 		return Inertia.Length();
+	}
+
+
+	float GetAngle() const
+	{
+		return (Widget == nullptr ? 0.0f : Widget->GetRenderTransformAngle());
+	}
+
+
+	void SetAngle(float Angle)
+	{
+		if(Widget == nullptr)
+		{
+			return;
+		}
+
+		Widget->SetRenderTransformAngle(Angle);
 	}
 };
 

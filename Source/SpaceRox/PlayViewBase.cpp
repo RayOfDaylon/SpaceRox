@@ -28,15 +28,17 @@ DECLARE_LOG_CATEGORY_EXTERN(LogGame, Log, All);
 
 DEFINE_LOG_CATEGORY(LogGame)
 
-//#define DEBUG_MODULE
+#define DEBUG_MODULE      0
 
-#ifdef DEBUG_MODULE
+// Make wave start with three rocks (big/medium/small) at rest.
+#define TEST_ASTEROIDS    0
+
+#define ROTATE_ASTEROIDS  1
+
+
+#if(DEBUG_MODULE == 1)
 #pragma optimize("", off)
 #endif
-
-// Uncomment to make wave start with three rocks (big/medium/small) at rest.
-//#define TEST_ASTEROIDS
-
 
 // Constants.
 // todo: put them where they can be easily modded at design time.
@@ -47,6 +49,13 @@ const bool  CreditPlayerForKill            = true;
 const bool  DontCreditPlayerForKill        = !CreditPlayerForKill;
 const bool  ReasonIsFatal                  = true;
 
+const int32 MaxPlayerScore                 = 9'999'990;
+const int32 InitialPlayerShipCount         =  3;
+const int32 PlayerShipBonusAt              = 10000;
+const int32 MaxPlayerShipsDisplayable      = 10;     // We don't want the player ships readout to be impractically wide.
+const float MaxTimeUntilNextPlayerShip     =  4.0f;  // Actual time may be longer because of asteroid intersection avoidance.
+							           
+const float MaxPlayerShipSpeed             = 2000.0f; // px/sec
 const float PlayerThrustForce              = 650.0f;
 const float PlayerRotationSpeed            = 300.0f;  // degrees per second
 								           
@@ -57,31 +66,24 @@ const int32 TorpedoCount                   =  15;     // make room for player an
 const int32 MaxInitialAsteroids            =  24;
 const float MinAsteroidSpeed               =  50.0f;  // px per second
 const float MaxAsteroidSpeed               = 100.0f;  // px per second
+const float MinAsteroidSpinSpeed           = -20.0f;  // degrees per second
+const float MaxAsteroidSpinSpeed           =  20.0f;  // degrees per second
+const float AsteroidSpinScale              =   2.0f;  // Child asteroids spin this much faster than their parent
+const float MinAsteroidSplitAngle          =  5.0f;	 // Children of rock death move away deviating from parent inertia at least this much.
+const float MaxAsteroidSplitAngle          = 35.0f;  // Ditto, but this is the max angular deviation, in degrees.
+const float MinAsteroidSplitInertia        =  0.1f;	 // Child rock could have as little as this much of parent's inertia.
+const float MaxAsteroidSplitInertia        =  3.0f;	 // Ditto, max as much as this.
 								           
 const int32 ValueBigAsteroid               =    20;
 const int32 ValueMediumAsteroid            =    50;
 const int32 ValueSmallAsteroid             =   100;
 const int32 ValueBigEnemy                  =   200;
 const int32 ValueSmallEnemy                =  1000;
-const int32 ShipBonusAt                    = 10000;
-								           
-const int32 MaxPlayerScore                 = 9'999'990;
-								           
-const float MaxPlayerShipSpeed             = 2000.0f; // px/sec
-								           
-const float MinSplitAngle                  =  5.0f;	 // Children of rock death move away deviating from parent inertia at least this much.
-const float MaxSplitAngle                  = 35.0f;  // Ditto, but this is the max angular deviation, in degrees.
-const float MinSplitInertia                =  0.1f;	 // Child rock could have as little as this much of parent's inertia.
-const float MaxSplitInertia                =  3.0f;	 // Ditto, max as much as this.
-
-const float MaxIntroAge                    =  5.0f;
+							           
+const float MaxIntroAge                    =  5.0f;  // How long the initial intro screen is visible before the main menu appears.
 const float TimeBetweenWaves               =  3.0f;  // Number of seconds between each wave.
 const float MaxTimeUntilGameOverStateEnds  =  5.0f;  // Time to wait between game over screen and idle screen.
-const float MaxIdleStateToggleTime         =  5.0f;  // Toggle between "press enter" and "high scores".
 
-const int32 InitialPlayerShipCount         =  3;
-const int32 MaxPlayerShipsDisplayable      = 10;     // We don't want the player ships readout to be impractically wide.
-const float MaxTimeUntilNextPlayerShip     =  4.0f;  // Actual time may be longer because of asteroid intersection avoidance.
 const float MaxTimeUntilNextEnemyShip      = 20.0f;  // Let each wave start with a breather.
 
 const float BigEnemyTorpedoSpeed           = MaxTorpedoSpeed;
@@ -94,7 +96,7 @@ const float SmallEnemySpeed                = 300.0f;
 
 
 
-static void SetWidgetSize(UImage* Image)
+static void UpdateWidgetSize(UImage* Image)
 {
 	const auto BrushSize = Image->Brush.GetImageSize();
 
@@ -107,9 +109,9 @@ static void SetWidgetSize(UImage* Image)
 }
 
 
-static void SetWidgetSize(FPlayObject& PlayObject)
+static void UpdateWidgetSize(FPlayObject& PlayObject)
 {
-	SetWidgetSize(PlayObject.Widget);
+	UpdateWidgetSize(PlayObject.Widget);
 }
 
 
@@ -170,7 +172,7 @@ void UPlayViewBase::CreatePlayerShip()
 	CanvasSlot->SetAnchors(FAnchors());
 	CanvasSlot->SetAutoSize(true);
 	CanvasSlot->SetAlignment(FVector2D(0.5));
-	SetWidgetSize(PlayerShipObj);
+	UpdateWidgetSize(PlayerShipObj);
 
 	PlayerShipObj.RadiusFactor = 0.4f;
 
@@ -202,7 +204,7 @@ void UPlayViewBase::CreateTorpedos()
 		CanvasSlot->SetAnchors(FAnchors());
 		CanvasSlot->SetAutoSize(true);
 		CanvasSlot->SetAlignment(FVector2D(0.5));
-		SetWidgetSize(Torpedo);
+		UpdateWidgetSize(Torpedo);
 	}
 }
 
@@ -932,7 +934,7 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 	for(int32 Index = 0; Index < NumAsteroids; Index++)
 	{
 		// 0=big, 1=med, 2=small
-#ifdef TEST_ASTEROIDS
+#if(TEST_ASTEROIDS==1)
 		const int32 AsteroidSize = Index;
 #else
 		const int32 AsteroidSize = 0; 
@@ -942,13 +944,14 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 
 		const auto V = FMath::VRand();
 
-#ifdef TEST_ASTEROIDS
+#if(TEST_ASTEROIDS==1)
 		Asteroid.Inertia = FVector2D(0);
 #else
 		Asteroid.Inertia = RandVector2D() * FMath::Lerp(MinAsteroidSpeed, MaxAsteroidSpeed, FMath::FRand());
 #endif
 		Asteroid.LifeRemaining = 1.0f;
-		Asteroid.Widget = MakeWidget<UImage>();
+		Asteroid.SpinSpeed     = FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
+		Asteroid.Widget        = MakeWidget<UImage>();
 
 		Asteroid.Widget->SetVisibility(ESlateVisibility::HitTestInvisible);
 		Asteroid.Widget->SetRenderTransformPivot(FVector2D(0.5f));
@@ -977,13 +980,13 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 		CanvasSlot->SetAutoSize(true);
 
 		// autosize true doesn't automatically set the slot offsets to the image size, so do it here.
-		SetWidgetSize(Asteroid);
+		UpdateWidgetSize(Asteroid);
 
 		CanvasSlot->SetAlignment(FVector2D(0.5));
 
 		// Place the asteroids.
 
-#ifdef TEST_ASTEROIDS
+#if(TEST_ASTEROIDS==1)
 		CanvasSlot->SetPosition(FVector2D(500, Index * 300 + 200));
 #else
 		// Place randomly along edges of screen.
@@ -1014,8 +1017,8 @@ void UPlayViewBase::StartWave()
 
 	// Fill with asteroids.
 
-#ifdef TEST_ASTEROIDS
-	const int32 NumAsteroids = 24;
+#if(TEST_ASTEROIDS == 1)
+	const int32 NumAsteroids = 3;
 #else
 	const int32 NumAsteroids = NumAsteroidsOverride > 0 ? NumAsteroidsOverride : FMath::Min(MaxInitialAsteroids, 2 + (WaveNumber * 2));
 #endif
@@ -1051,13 +1054,13 @@ void UPlayViewBase::UpdatePlayerRotation(float DeltaTime, ERotationDirection Dir
 
 	const float Amt = PlayerRotationSpeed * DeltaTime;
 
-	float Angle = PlayerShipObj.Widget->GetRenderTransformAngle();
+	float Angle = PlayerShipObj.GetAngle();
 
 	Angle += Amt * (int32)Direction;
 
 	Angle = WrapAngle(Angle);
 
-	PlayerShipObj.Widget->SetRenderTransformAngle(Angle);
+	PlayerShipObj.SetAngle(Angle);
 }
 
 
@@ -1143,6 +1146,9 @@ void UPlayViewBase::UpdateAsteroids(float DeltaTime)
 		if (Asteroid.LifeRemaining > 0.0f)
 		{
 			MovePlayObject(Asteroid, DeltaTime);
+#if(ROTATE_ASTEROIDS == 1)
+			Asteroid.SetAngle(WrapAngle(Asteroid.GetAngle() + Asteroid.SpinSpeed * DeltaTime));
+#endif
 		}
 	}
 }
@@ -1353,16 +1359,18 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 
 	const bool BothKidsFast = FMath::RandRange(0, 10) < 9;
 
-	NewAsteroid.Inertia = MakeInertia(Asteroid.Inertia, MinSplitAngle, MaxSplitAngle);
+	NewAsteroid.Inertia = MakeInertia(Asteroid.Inertia, MinAsteroidSplitAngle, MaxAsteroidSplitAngle);
 	NewAsteroid.Inertia *= FMath::RandRange(1.2f, 3.0f);
 
 	NewAsteroid.LifeRemaining = 1.0f;
+	NewAsteroid.SpinSpeed     = Asteroid.SpinSpeed * AsteroidSpinScale;// FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
+
 	NewAsteroid.Widget = MakeWidget<UImage>();
 	NewAsteroid.Widget->SetVisibility(ESlateVisibility::HitTestInvisible);
 	NewAsteroid.Widget->SetRenderTransformPivot(FVector2D(0.5f));
 
 	Asteroid.LifeRemaining = 1.0f;
-	Asteroid.Inertia = MakeInertia(Asteroid.Inertia, -MinSplitAngle, -MaxSplitAngle);
+	Asteroid.Inertia = MakeInertia(Asteroid.Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
 
 	if(BothKidsFast)
 	{
@@ -1391,9 +1399,11 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	}
 
 	// Update size of existing rock.
-	SetWidgetSize(Asteroid);
+	UpdateWidgetSize(Asteroid);
 
-	auto CanvasSlot = Cast<UCanvasPanelSlot>(RootCanvas->AddChild(NewAsteroid.Widget));
+	Asteroid.SpinSpeed *= AsteroidSpinScale;
+
+	auto CanvasSlot = RootCanvas->AddChildToCanvas(NewAsteroid.Widget);
 
 	CanvasSlot->SetAnchors(FAnchors());
 	CanvasSlot->SetAutoSize(true);
@@ -1402,7 +1412,7 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	NewAsteroid.OldPosition = 
 	NewAsteroid.UnwrappedNewPosition = Asteroid.UnwrappedNewPosition;
 	CanvasSlot->SetPosition(NewAsteroid.UnwrappedNewPosition);
-	SetWidgetSize(NewAsteroid);
+	UpdateWidgetSize(NewAsteroid);
 
 	// Do this last since the play object is copied.
 	Asteroids.Add(NewAsteroid);
@@ -1432,7 +1442,7 @@ void UPlayViewBase::IncreasePlayerScoreBy(int32 Amount)
 		return;
 	}
 
-	const int32 PrevLevel = PlayerScore / ShipBonusAt;
+	const int32 PrevLevel = PlayerScore / PlayerShipBonusAt;
 
 	PlayerScore += Amount;
 
@@ -1441,7 +1451,7 @@ void UPlayViewBase::IncreasePlayerScoreBy(int32 Amount)
 		PlayerScore = MaxPlayerScore;
 	}
 
-	if(PrevLevel != PlayerScore / ShipBonusAt)
+	if(PrevLevel != PlayerScore / PlayerShipBonusAt)
 	{
 		AddPlayerShips(1);
 
@@ -1459,7 +1469,6 @@ void UPlayViewBase::UpdatePlayerScoreReadout()
 }
 
 
-
 void UPlayViewBase::CheckCollisions()
 {
 	// Build a triangle representing the player ship.
@@ -1475,16 +1484,16 @@ void UPlayViewBase::CheckCollisions()
 
 	// Triangle is pointing up, vertices relative to its center. We need to rotate it for its current angle.
 			 
-	auto ShipAngle = PlayerShipObj.Widget->GetRenderTransformAngle();
+	auto ShipAngle = PlayerShipObj.GetAngle();
 
 	// Rotate and translate the triangle to match its current display space.
 
-	for(int32 Index = 0; Index < 3; Index++)
+	for(auto& Triangle : PlayerShipTriangle)
 	{
-		PlayerShipTriangle[Index] = Rotate(PlayerShipTriangle[Index], ShipAngle);
+		Triangle = Rotate(Triangle, ShipAngle);
 
 		// Use the ship's old position because the current position can cause unwanted self-intersections.
-		PlayerShipTriangle[Index] += PlayerShipObj.OldPosition;
+		Triangle += PlayerShipObj.OldPosition;
 	}
 
 	// Get the line segment for the player ship.
@@ -2182,6 +2191,6 @@ void UPlayViewBase::AnimateStartMessage(float DeltaTime)
 }
 */
 
-#ifdef DEBUG_MODULE
+#if(DEBUG_MODULE == 1)
 #pragma optimize("", on)
 #endif
