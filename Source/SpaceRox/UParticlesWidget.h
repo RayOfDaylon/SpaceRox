@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Runtime/UMG/Public/Components/Widget.h"
+
 #include "SParticlesWidget.h"
 #include "UParticlesWidget.generated.h"
 

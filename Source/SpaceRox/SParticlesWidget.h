@@ -1,5 +1,7 @@
 // Copyright 2023 Daylon Graphics Ltd. All Rights Reserved.
 
+#pragma once
+
 #include "SlateCore/Public/Widgets/SLeafWidget.h"
 
 

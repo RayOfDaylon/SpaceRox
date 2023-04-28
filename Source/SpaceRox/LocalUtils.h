@@ -80,10 +80,10 @@ struct FPlayObject
 
 	UImage* Widget = nullptr; // Associated image widget
 
-	bool IsVisible () const { return (Widget != nullptr ? Widget->IsVisible() : false); }
 	bool IsAlive   () const { return (LifeRemaining > 0.0f); }
 	bool IsDead    () const { return !IsAlive(); }
-	void Show      (bool Visible = true) { ::Show(Widget, Visible); }
+	virtual bool IsVisible () const { return (Widget != nullptr ? Widget->IsVisible() : false); }
+	virtual void Show      (bool Visible = true) { ::Show(Widget, Visible); }
 	void Hide      () { Show(false); }
 	void Kill      () { LifeRemaining = 0.0f; Hide(); }
 
@@ -100,13 +100,13 @@ struct FPlayObject
 	}
 
 
-	UCanvasPanelSlot*       GetWidgetSlot () { return Cast<UCanvasPanelSlot>(Widget->Slot); }
-	const UCanvasPanelSlot* GetWidgetSlot () const { return Cast<UCanvasPanelSlot>(Widget->Slot); }
+	virtual UCanvasPanelSlot*       GetWidgetSlot () { return Cast<UCanvasPanelSlot>(Widget->Slot); }
+	virtual const UCanvasPanelSlot* GetWidgetSlot () const { return Cast<UCanvasPanelSlot>(Widget->Slot); }
 
 
-	FVector2D GetPosition() const
+	virtual FVector2D GetPosition() const
 	{
-		if(Widget->Slot == nullptr)
+		if(Widget == nullptr || Widget->Slot == nullptr)
 		{
 			return FVector2D(0);
 		}
@@ -115,9 +115,9 @@ struct FPlayObject
 	}
 
 
-	void SetPosition(const FVector2D& P)
+	virtual void SetPosition(const FVector2D& P)
 	{
-		if(Widget->Slot == nullptr)
+		if(Widget == nullptr || Widget->Slot == nullptr)
 		{
 			return;
 		}
@@ -132,9 +132,9 @@ struct FPlayObject
 	}
 
 
-	FVector2D GetSize() const
+	virtual FVector2D GetSize() const
 	{
-		if(Widget->Slot == nullptr)
+		if(Widget == nullptr || Widget->Slot == nullptr)
 		{
 			return FVector2D(0);
 		}
@@ -149,13 +149,13 @@ struct FPlayObject
 	}
 
 
-	float GetAngle() const
+	virtual float GetAngle() const
 	{
 		return (Widget == nullptr ? 0.0f : Widget->GetRenderTransformAngle());
 	}
 
 
-	void SetAngle(float Angle)
+	virtual void SetAngle(float Angle)
 	{
 		if(Widget == nullptr)
 		{

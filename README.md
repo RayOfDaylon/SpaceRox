@@ -13,12 +13,10 @@ Game sounds may be loud. Until a volume setting is added, it's recommended to ma
 
 All graphics are done in UMG/Slate. This project was partly done to see how performant a pure UMG game could be.
 
-My personal best score is 56,650. :)
-
 If you prefer to just download a Windows binary to play the game, one is available at https://www.daylongraphics.com/download/spacerox/SpaceRox.zip
 
-Size: 190,391,408 bytes (181 MiB)  
-CRC32: 77E6172E  
-CRC64: EDD12879B2E9D95B  
-SHA256: 5777C2B4493A75665136F37C8C56A1B09B63B8C3784E6C708A22578854058A3B  
-SHA1: 623F81F364A0100B0840165CAA17234DD003B853
+Size: 146,411,536 bytes (139 MiB)  
+CRC32: E39882D7  
+CRC64: D62667721012DF9D  
+SHA256: 3D97FEDBE011BECD8B7A9FDB427E827C5374D68E14A60F68A25F417B12FB4FB7  
+SHA1: 3ADDE210450841529619BE51036208F21CC84916

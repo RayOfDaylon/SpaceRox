@@ -2,7 +2,7 @@ Documentation for SpaceRox game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-April 22/2023
+April 27, 2023
 
 
 
@@ -91,6 +91,33 @@ the popular "hunt enemies when one rock is left" strategy -- eventually the
 playfield will be clear of asteroids. 
     When a small enemy ship appears, do not sit still or drift, or you will 
 be shot.
+
+Powerups were added in version 1.4. One in four large asteroids will spawn 
+containing a double-gun or shield powerup. The powerup will be transferred 
+to one of the child rocks when the asteroid is split, until the asteroid 
+is the smallest size. If hit, the powerup will float freely and the player 
+ship can acquire it by colliding with it. Initially "floating" meant moving 
+with the asteroid's inertia, but when lots of powerups were on the screen 
+all moving around it became difficult to tell them apart from rocks, so 
+I made them just hold their position. The powerup value readouts are in 
+the upper right corner of the screen.
+
+The shield powerup grants 20 seconds of shield time. Hold down the space bar 
+to raise the shield.
+
+The double-gun (or power) powerup grants 100 double-shot rounds. The player ship 
+will automatically switch to double guns if any such rounds have been acquired.
+
+If you're having trouble getting key presses to register, your keyboard may 
+have limited n-key rollover. Standard keyboards use the same circuitry for 
+all the same keys in a row (to lower costs) but can make the keyboard unable 
+to tell exactly which keys are being held down simultaneously. A gaming 
+keyboard may be a better choice (they may indicate better rollover handling 
+by calling it "anti-ghosting").
+
+If you want to change the default key assignments, open the project in the 
+UE Editor, access Project Settings, Input and change the key assignments 
+for the various input events, then repackage or play from the editor.
 
 
 How the Game Works
@@ -227,4 +254,23 @@ High scores are kept in a highscores.txt file.
 In development mode, this will be in the project's 
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
+
+
+Future Work
+-------------------------------------------------------------------------------------
+Adding powerups introduced some technical debt in the 
+way the FPlayObject is subclassed, so that needs to be cleaned up.
+It would also be good to add component members to FPlayObject to avoid 
+doing the subclasses' features entirely by inheritance, to have 
+class dtors automatically remove widgets from the canvas, and have 
+"subscribable variables" so that things like player score and the 
+powerup readouts automatically update their widgets when the 
+related value variable changes.
+
+There's also a fair bit of duplicate code e.g. widget spawning, 
+so we want patterns or function consolidation.
+
+The player-rock collision detection seems to be a bit too generous 
+in some cases.
+
 

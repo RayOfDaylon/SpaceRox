@@ -14,6 +14,7 @@
 #include "UMG/Public/Components/EditableTextBox.h"
 #include "Runtime/Engine/Classes/Sound/SoundBase.h"
 #include "UParticlesWidget.h"
+#include "USpriteWidget.h"
 #include "LocalUtils.h"
 #include "PlayViewBase.generated.h"
 
@@ -49,19 +50,29 @@ enum class EMenuItem : uint8
 };
 
 
+
+UENUM()
+enum class EPowerup : uint8
+{
+	Nothing     = 0,
+	DoubleGuns,
+	Shields
+};
+
+
 UENUM()
 enum class EGameState : uint8
 {
 	Startup = 0,
 	Intro,              // Startup graphics, appears only once
-	Active,				// Game is being played
-	Over,				// Game is over
+	Active,             // Game is being played
+	Over,               // Game is over
 	MainMenu,
 	Credits,
 	HighScores,
 	Settings,           // reserved for future use
 	Help,
-	HighScoreEntry		// Player is entering a high score
+	HighScoreEntry      // Player is entering a high score
 
 	/*
 		State transition graph:
@@ -77,7 +88,7 @@ enum class EGameState : uint8
 
 		Active -- (player dies)      --> Over
 		       -- (Esc pressed)      --> Menu
-								     
+
 		Over -- (high score?)        --> HighScoreEntry --> Menu
 		     -- (no high score)      --> Menu
 	*/
@@ -92,6 +103,97 @@ struct FTorpedo : public FPlayObject
 
 	bool FiredByPlayer;
 };
+
+
+USTRUCT()
+struct FPlayerShip : public FPlayObject
+{
+	GENERATED_BODY()
+
+	bool  IsUnderThrust;
+	bool  IsSpawning;
+	int32 DoubleShotsLeft;
+	float ShieldsLeft;
+};
+
+
+USTRUCT()
+struct FPowerup : public FPlayObject
+{
+	GENERATED_BODY()
+
+	EPowerup Kind = EPowerup::Nothing;
+
+	USpriteWidget* SpriteWidget = nullptr;
+
+
+	virtual UCanvasPanelSlot*       GetWidgetSlot () override { return Cast<UCanvasPanelSlot>(SpriteWidget->Slot); }
+	virtual const UCanvasPanelSlot* GetWidgetSlot () const override { return Cast<UCanvasPanelSlot>(SpriteWidget->Slot); }
+
+	virtual bool IsVisible () const { return (SpriteWidget != nullptr ? SpriteWidget->IsVisible() : false); }
+	virtual void Show      (bool Visible = true) { ::Show(SpriteWidget, Visible); }
+
+	virtual FVector2D GetPosition() const override
+	{
+		if(SpriteWidget == nullptr || SpriteWidget->Slot == nullptr)
+		{
+			return FVector2D(0);
+		}
+
+		return GetWidgetSlot()->GetPosition();
+	}
+
+
+	virtual void SetPosition(const FVector2D& P) override
+	{
+		if(SpriteWidget == nullptr || SpriteWidget->Slot == nullptr)
+		{
+			return;
+		}
+
+		return GetWidgetSlot()->SetPosition(P);
+	}
+
+
+	virtual FVector2D GetSize() const override
+	{
+		if(SpriteWidget == nullptr || SpriteWidget->Slot == nullptr)
+		{
+			return FVector2D(0);
+		}
+
+		return GetWidgetSlot()->GetSize();
+	}
+
+
+	virtual float GetAngle() const override
+	{
+		return (SpriteWidget == nullptr ? 0.0f : SpriteWidget->GetRenderTransformAngle());
+	}
+
+
+
+	void Tick(float DeltaTime)
+	{
+		if(SpriteWidget != nullptr)
+		{
+			SpriteWidget->Tick(DeltaTime);
+		}
+	}
+
+};
+
+
+USTRUCT()
+struct FAsteroid : public FPlayObject
+{
+	GENERATED_BODY()
+
+	FPowerup Powerup;
+
+	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
+};
+
 
 
 USTRUCT()
@@ -158,6 +260,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	TObjectPtr<USoundBase> TorpedoSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
+	TObjectPtr<USoundBase> DoubleTorpedoSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> PlayerShipDestroyedSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
@@ -165,6 +270,15 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> EnemyShipBigSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
+	TObjectPtr<USoundBase> GainDoubleGunPowerupSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
+	TObjectPtr<USoundBase> GainShieldPowerupSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
+	TObjectPtr<USoundBase> ShieldBonkSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> MenuItemSound;
@@ -190,6 +304,18 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	FSlateBrush TorpedoBrush;
 
+	// The way the player ship looks when shielded
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	FSlateBrush ShieldBrush;
+
+	// The double gun powerup icon next to its readout
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	//FSlateBrush DoubleGunsStatusIconBrush;
+
+	// The shield powerup icon next to its readout
+	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	//FSlateBrush ShieldStatusIconBrush;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	TArray<FSlateBrush> BigRockBrushes;
 
@@ -198,6 +324,17 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	TArray<FSlateBrush> SmallRockBrushes;
+
+
+	// -- USpriteWidgetAtlas animated textures -------------------------------------
+
+	// The animation flipbook for the asteroids' double guns powerup badge 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	USpriteWidgetAtlas* DoubleGunsPowerupAtlas;
+
+	// The animation flipbook for the asteroids' shield powerup badge 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	USpriteWidgetAtlas* ShieldPowerupAtlas;
 
 
 	// -- Fonts -------------------------------------------------
@@ -247,6 +384,18 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UHorizontalBox* PlayerShipsReadout;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* PlayerShieldReadout;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UImage* ShieldLabel;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* DoubleGunReadout;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UImage* DoubleGunLabel;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UVerticalBox* HighScoresContent;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
@@ -267,6 +416,12 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	UWidgetAnimation* MenuOutro;
 
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* ShieldReadoutFlash;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* DoubleGunReadoutFlash;
+
 
 	// -- Blueprint accessible properties --------------------------------------------------
 
@@ -279,6 +434,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(Transient, BlueprintReadWrite)
 	bool bThrustActive = false;
 
+	UPROPERTY(Transient, BlueprintReadWrite)
+	bool bShieldActive = false;
+
 
 	// -- Class methods --------------------------------------------------
 
@@ -290,7 +448,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      InitializeScore            ();
 	void      InitializePlayerShipCount  ();
 	void      InitializeVariables        ();
-	void      CreatePlayerShip           ();
+	void      InitializePlayerShip       ();
+	void      InitializePlayerShield     ();
 	void      CreateTorpedos             ();
 	void      LaunchTorpedoFromEnemy     (const FEnemyShip& Shooter, bool IsBigEnemy);
 	FVector2D WrapPositionToViewport     (const FVector2D& P) const;
@@ -301,14 +460,23 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	void      Spawn                      (FPlayObject& PlayObject, const FVector2D& P, const FVector2D& Inertia, float LifeRemaining);
 	void      SpawnAsteroids             (int32 NumAsteroids);
+	void      SpawnPowerup               (FPowerup& Powerup, const FVector2D& P);
 	void      SpawnExplosion             (const FVector2D& P);
 	void      SpawnPlayerShipExplosion   (const FVector2D& P);
 	void      RemoveAsteroid             (int32 Index);
 	void      RemoveAsteroids            ();
+	void      RemoveEnemyShip            (int32 EnemyIndex);
+	void      RemoveEnemyShips           ();
+	void      RemoveExplosions           ();
+	void      RemovePowerup              (int32 PowerupIndex);
+	void      RemovePowerups             ();
+	void      RemoveTorpedos             ();
 
 	void      KillAsteroid               (int32 AsteroidIndex, bool KilledByPlayer);
 	void      KillEnemyShip              (int32 EnemyIndex);
+	void      KillPowerup                (int32 PowerupIndex);
 	void      KillPlayerShip             ();
+	void      DestroyWidget              (FPowerup& Powerup);
 	void      DestroyWidget              (FPlayObject& PlayObject);
 	void      DestroyWidget              (UWidget* Widget);
 
@@ -317,10 +485,12 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      StartWave                  ();
 	void      AddPlayerShips             (int32 Amount);
 	void      UpdatePlayerScoreReadout   ();
+	void      UpdatePowerupReadout       (EPowerup PowerupKind);
+	void      AdjustDoubleShotsLeft      (int32 Amount);
+	void      AdjustShieldsLeft          (float Amount);
+
 	bool      IsWaitingToSpawnPlayer     () const;
 	bool      IsSafeToSpawnPlayer        () const;
-	void      RemoveEnemyShip            (int32 EnemyIndex);
-	void      RemoveEnemyShips           ();
 
 	void      LoadHighScores             ();
 	void      SaveHighScores             ();
@@ -335,18 +505,20 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void MovePlayObject            (FPlayObject& PlayObject, float DeltaTime);
 	void ProcessWaveTransition     (float DeltaTime);
 	void ProcessPlayerShipSpawn    (float DeltaTime);
-	void UpdateExplosions          (float DeltaTime);
 	//void AnimateStartMessage     (float DeltaTime);
 
 	void CheckCollisions           ();
+	void ProcessPlayerCollision    ();
 
 	void UpdatePlayerRotation      (float DeltaTime, ERotationDirection Direction);
 	void UpdatePlayerRightRotation (float DeltaTime);
 	void UpdatePlayerLeftRotation  (float DeltaTime);
-	void UpdatePlayerPosition      (float DeltaTime);
+	void UpdatePlayerShip          (float DeltaTime);
 	void UpdateEnemyShips          (float DeltaTime);
 	void UpdateAsteroids           (float DeltaTime);
 	void UpdateTorpedos            (float DeltaTime);
+	void UpdatePowerups            (float DeltaTime);
+	void UpdateExplosions          (float DeltaTime);
 	void UpdateTasks               (float DeltaTime);
 
 
@@ -356,16 +528,19 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	FLoopedSound              BigEnemyShipSoundLoop;
 	FLoopedSound              SmallEnemyShipSoundLoop;
 
-	FPlayObject               PlayerShipObj;
-	TArray<FPlayObject>       Asteroids;
+	FPlayerShip               PlayerShip;
+	FPlayObject               PlayerShield;
+	TArray<FAsteroid>         Asteroids;
 	TArray<FEnemyShip>        EnemyShips;
 	TArray<FTorpedo>          Torpedos;
+	TArray<FPowerup>          Powerups;
 	TArray<UParticlesWidget*> Explosions;
 	FHighScoreTable           HighScores;
 
 	TArray<FScheduledTask>    ScheduledTasks;
 	TArray<FDurationTask>     DurationTasks;
 
+	EGameState                GameState;
 	EMenuItem                 SelectedMenuItem;
 	int32                     NumPlayerShips;
 	int32                     PlayerScore;
@@ -373,14 +548,11 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	float                     TimeUntilNextWave;
 	float                     ThrustSoundTimeRemaining;
 	float                     StartMsgAnimationAge;
-	float                     IntroAge;
+	float                     TimeUntilIntroStateEnds;
 	float                     TimeUntilNextPlayerShip;
 	float                     TimeUntilNextEnemyShip;
 	float                     TimeUntilGameOverStateEnds;
 	bool                      IsInitialized;
-	bool                      bPlayerShipUnderThrust;
-	bool                      bSpawningPlayer;
 	bool                      bEnemyShootsAtPlayer;
 	bool                      bHighScoreWasEntered;
-	EGameState                GameState;
 };

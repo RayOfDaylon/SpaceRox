@@ -31,10 +31,9 @@ DEFINE_LOG_CATEGORY(LogGame)
 #define DEBUG_MODULE      0
 
 // Make wave start with three rocks (big/medium/small) at rest.
-#define TEST_ASTEROIDS    0
+#define TEST_ASTEROIDS              0
 
-#define ROTATE_ASTEROIDS  1
-
+#define FEATURE_SPINNING_ASTEROIDS  1
 
 #if(DEBUG_MODULE == 1)
 #pragma optimize("", off)
@@ -50,6 +49,7 @@ const bool  DontCreditPlayerForKill        = !CreditPlayerForKill;
 const bool  ReasonIsFatal                  = true;
 
 const int32 MaxPlayerScore                 = 9'999'990;
+const int32 ExpertPlayerScore              = 100'000;  // The score at which e.g. enemy ships will respawn fastest.
 const int32 InitialPlayerShipCount         =  3;
 const int32 PlayerShipBonusAt              = 10000;
 const int32 MaxPlayerShipsDisplayable      = 10;     // We don't want the player ships readout to be impractically wide.
@@ -60,8 +60,8 @@ const float PlayerThrustForce              = 650.0f;
 const float PlayerRotationSpeed            = 300.0f;  // degrees per second
 								           
 const float MaxTorpedoSpeed                = 600.0f;  // px per second
-const float MaxTorpedoLifeTime             =   1.75f; // seconds
-const int32 TorpedoCount                   =  15;     // make room for player and enemy torpedos which are in the same array
+const float MaxTorpedoLifeTime             =   1.5f;  // seconds
+const int32 TorpedoCount                   =  20;     // make room for player and enemy torpedos which are in the same array
 								           
 const int32 MaxInitialAsteroids            =  24;
 const float MinAsteroidSpeed               =  50.0f;  // px per second
@@ -69,10 +69,10 @@ const float MaxAsteroidSpeed               = 100.0f;  // px per second
 const float MinAsteroidSpinSpeed           = -20.0f;  // degrees per second
 const float MaxAsteroidSpinSpeed           =  20.0f;  // degrees per second
 const float AsteroidSpinScale              =   2.0f;  // Child asteroids spin this much faster than their parent
-const float MinAsteroidSplitAngle          =  5.0f;	 // Children of rock death move away deviating from parent inertia at least this much.
-const float MaxAsteroidSplitAngle          = 35.0f;  // Ditto, but this is the max angular deviation, in degrees.
-const float MinAsteroidSplitInertia        =  0.1f;	 // Child rock could have as little as this much of parent's inertia.
-const float MaxAsteroidSplitInertia        =  3.0f;	 // Ditto, max as much as this.
+const float MinAsteroidSplitAngle          =  5.0f;   // Children of rock death move away deviating from parent inertia at least this much.
+const float MaxAsteroidSplitAngle          = 35.0f;   // Ditto, but this is the max angular deviation, in degrees.
+const float MinAsteroidSplitInertia        =  0.1f;   // Child rock could have as little as this much of parent's inertia.
+const float MaxAsteroidSplitInertia        =  3.0f;   // Ditto, max as much as this.
 								           
 const int32 ValueBigAsteroid               =    20;
 const int32 ValueMediumAsteroid            =    50;
@@ -80,11 +80,13 @@ const int32 ValueSmallAsteroid             =   100;
 const int32 ValueBigEnemy                  =   200;
 const int32 ValueSmallEnemy                =  1000;
 							           
-const float MaxIntroAge                    =  5.0f;  // How long the initial intro screen is visible before the main menu appears.
+const float MaxIntroStateLifetime          =  5.0f;  // How long the initial intro screen is visible before the main menu appears.
 const float TimeBetweenWaves               =  3.0f;  // Number of seconds between each wave.
 const float MaxTimeUntilGameOverStateEnds  =  5.0f;  // Time to wait between game over screen and idle screen.
 
 const float MaxTimeUntilNextEnemyShip      = 20.0f;  // Let each wave start with a breather.
+const float MaxTimeUntilEnemyRespawn       = 10.0f;  // Longest delay between successive enemy ship spawns. Favored when player score is low.
+const float MinTimeUntilEnemyRespawn       =  2.0f;  // Shortest delay between successive enemy ship spawns. Favored more as player score increases.
 
 const float BigEnemyTorpedoSpeed           = MaxTorpedoSpeed;
 const float BigEnemyReloadTime             =   1.25f;
@@ -93,6 +95,12 @@ const float BigEnemySpeed                  = 200.0f;
 const float SmallEnemyTorpedoSpeed         = BigEnemyTorpedoSpeed * 1.1f;
 const float SmallEnemyReloadTime           = 1.0f;
 const float SmallEnemySpeed                = 300.0f;
+
+const float ShieldPowerupIncrease          = 20.0f; // Number of seconds of shield life given when shield powerup gained.
+const int32 DoubleGunsPowerupIncrease      = 100;   // Number of double shots given when double guns powerup gained.
+
+const float PowerupOpacity                 = 0.5f;
+const bool  PowerupsCanMove                = false;
 
 
 
@@ -125,15 +133,19 @@ void UPlayViewBase::PreloadSound(USoundBase* Sound)
 
 void UPlayViewBase::PreloadSounds()
 {
-	PreloadSound(ErrorSound              );
-	PreloadSound(PlayerShipDestroyedSound);
-	PreloadSound(PlayerShipBonusSound    );
-	PreloadSound(ThrustSound             );
-	PreloadSound(TorpedoSound            );
-	PreloadSound(EnemyShipSmallSound     );
-	PreloadSound(EnemyShipBigSound       );
-	PreloadSound(MenuItemSound           );
-	PreloadSound(ForwardSound            );
+	PreloadSound(ErrorSound               );
+	PreloadSound(PlayerShipDestroyedSound );
+	PreloadSound(PlayerShipBonusSound     );
+	PreloadSound(ThrustSound              );
+	PreloadSound(TorpedoSound             );
+	PreloadSound(DoubleTorpedoSound       );
+	PreloadSound(GainDoubleGunPowerupSound);
+	PreloadSound(GainShieldPowerupSound   );
+	PreloadSound(ShieldBonkSound          );
+	PreloadSound(EnemyShipSmallSound      );
+	PreloadSound(EnemyShipBigSound        );
+	PreloadSound(MenuItemSound            );
+	PreloadSound(ForwardSound             );
 
 	for(auto Sound : ExplosionSounds)
 	{
@@ -161,26 +173,50 @@ void UPlayViewBase::InitializePlayerShipCount()
 }
 
 
-void UPlayViewBase::CreatePlayerShip()
+void UPlayViewBase::InitializePlayerShip()
 {
-	PlayerShipObj.Widget = MakeWidget<UImage>();
+	PlayerShip.IsUnderThrust   = false;
+	PlayerShip.IsSpawning      = false;
+	PlayerShip.DoubleShotsLeft = 0;
+	PlayerShip.ShieldsLeft     = 0.0f;
 
-	PlayerShipObj.Widget->Brush = PlayerShipBrush;
-	PlayerShipObj.Widget->SetRenderTransformPivot(FVector2D(0.5f));
+	PlayerShip.Widget = MakeWidget<UImage>();
 
-	auto CanvasSlot = RootCanvas->AddChildToCanvas(PlayerShipObj.Widget);
+	PlayerShip.Widget->Brush = PlayerShipBrush;
+	PlayerShip.Widget->SetRenderTransformPivot(FVector2D(0.5f));
+
+	auto CanvasSlot = RootCanvas->AddChildToCanvas(PlayerShip.Widget);
 	CanvasSlot->SetAnchors(FAnchors());
 	CanvasSlot->SetAutoSize(true);
 	CanvasSlot->SetAlignment(FVector2D(0.5));
-	UpdateWidgetSize(PlayerShipObj);
+	UpdateWidgetSize(PlayerShip);
 
-	PlayerShipObj.RadiusFactor = 0.4f;
+	PlayerShip.RadiusFactor = 0.4f;
 
-	Spawn(PlayerShipObj, ViewportSize / 2, FVector2D(0), 1.0f);
+	Spawn(PlayerShip, ViewportSize / 2, FVector2D(0), 1.0f);
 
-	PlayerShipObj.Hide();
+	PlayerShip.Hide();
+}
 
-	bPlayerShipUnderThrust = false;
+
+void UPlayViewBase::InitializePlayerShield()
+{
+	PlayerShield.Widget = MakeWidget<UImage>();
+
+	PlayerShield.Widget->Brush = ShieldBrush;
+	PlayerShield.Widget->SetRenderTransformPivot(FVector2D(0.5f));
+
+	auto CanvasSlot = RootCanvas->AddChildToCanvas(PlayerShield.Widget);
+	CanvasSlot->SetAnchors(FAnchors());
+	CanvasSlot->SetAutoSize(true);
+	CanvasSlot->SetAlignment(FVector2D(0.5));
+	UpdateWidgetSize(PlayerShield);
+
+	//PlayerShield.RadiusFactor = 0.5f;
+
+	Spawn(PlayerShield, ViewportSize / 2, FVector2D(0), 1.0f);
+
+	PlayerShield.Hide();
 }
 
 
@@ -211,17 +247,14 @@ void UPlayViewBase::CreateTorpedos()
 
 void UPlayViewBase::InitializeVariables()
 {
-	bSpawningPlayer               = false;
 	bEnemyShootsAtPlayer          = false;
 	bHighScoreWasEntered          = false;
-	bPlayerShipUnderThrust        = false;
 
 	PlayerScore                   = 0;
 	WaveNumber                    = 0;
 
 	ThrustSoundTimeRemaining      = 0.0f;
 	StartMsgAnimationAge          = 0.0f;
-	IntroAge                      = 0.0f;
 	TimeUntilNextWave             = 0.0f;
 	TimeUntilNextPlayerShip       = 0.0f;
 	TimeUntilNextEnemyShip        = 0.0f;
@@ -244,10 +277,11 @@ void UPlayViewBase::NativeOnInitialized()
 		return;
 	}
 
-	InitializeVariables ();
-	PreloadSounds       ();
-	CreateTorpedos      ();
-	CreatePlayerShip    ();
+	InitializeVariables    ();
+	PreloadSounds          ();
+	CreateTorpedos         ();
+	InitializePlayerShip   ();
+	InitializePlayerShield ();
 
 	PlayerShipThrustSoundLoop.Set (this, ThrustSound);
 	BigEnemyShipSoundLoop.Set     (this, EnemyShipBigSound);
@@ -479,13 +513,17 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering intro state"), (int32)PreviousState);
 			}
 
-			IntroAge = 0.0f;
+			TimeUntilIntroStateEnds = MaxIntroStateLifetime;
 			RemoveAsteroids();
-			PlayerShipObj.Hide();
+			PlayerShip.Hide();
 
 			Hide (MenuContent);
 			Hide (PlayerScoreReadout);
 			Hide (PlayerShipsReadout);
+			Hide (PlayerShieldReadout);
+			Hide (ShieldLabel);
+			Hide (DoubleGunReadout);
+			Hide (DoubleGunLabel);
 			Hide (GameOverMessage);
 			Show (IntroContent);
 
@@ -500,10 +538,19 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			Hide (HighScoresContent);
 			Hide (PlayerScoreReadout);
 			Hide (PlayerShipsReadout);
+			Hide (PlayerShieldReadout);
+			Hide (ShieldLabel);
+			Hide (DoubleGunReadout);
+			Hide (DoubleGunLabel);
 			Hide (GameOverMessage);
 			Hide (HighScoreEntryContent);
+			
+			RemoveExplosions();
+			RemoveTorpedos();
 
-			PlayerShipObj.Hide(); // to be safe
+			PlayerShip.Hide(); // to be safe
+			PlayerShield.Hide();
+
 			RemoveEnemyShips();
 
 			StartMsgAnimationAge = 0.0f;
@@ -527,7 +574,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			}
 
 			TimeUntilNextEnemyShip = 20.0f;
-			TimeUntilNextWave = 2.0f;
+			TimeUntilNextWave      =  2.0f;
 
 			InitializeScore           ();
 			InitializePlayerShipCount ();
@@ -538,7 +585,15 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			Show  (PlayerScoreReadout);
 			Show  (PlayerShipsReadout);
-			Spawn (PlayerShipObj, ViewportSize / 2, FVector2D(0), 1.0f);
+			Show  (PlayerShieldReadout);
+			Show  (ShieldLabel);
+			Show  (DoubleGunReadout);
+			Show  (DoubleGunLabel);
+
+			UpdatePowerupReadout(EPowerup::DoubleGuns);
+			UpdatePowerupReadout(EPowerup::Shields);
+
+			Spawn (PlayerShip, ViewportSize / 2, FVector2D(0), 1.0f);
 
 			break;
 
@@ -550,6 +605,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering game over state"), (int32)PreviousState);
 			}
 
+			PlayerShield.Hide();
 			Show(GameOverMessage);
 
 			TimeUntilGameOverStateEnds = MaxTimeUntilGameOverStateEnds;
@@ -590,6 +646,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			Show(PlayerScoreReadout);
 			Hide(GameOverMessage);
+			PlayerShield.Hide();
 			
 			HighScoreEntryContent->SetVisibility(ESlateVisibility::Visible);
 			HighScoreNameEntry->SetFocus();
@@ -647,12 +704,12 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	{
 		case EGameState::Intro:
 
-			if(IntroAge > MaxIntroAge)
+			if(TimeUntilIntroStateEnds <= 0.0f)
 			{
 				TransitionToState(EGameState::MainMenu);
 			}
 
-			IntroAge += InDeltaTime;
+			TimeUntilIntroStateEnds -= InDeltaTime;
 
 			break;
 
@@ -660,21 +717,23 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		case EGameState::MainMenu:
 
 			UpdateAsteroids           (InDeltaTime);
+			UpdatePowerups            (InDeltaTime);
 
 			break;
 
 
 		case EGameState::Active:
 
-			if(PlayerShipObj.IsVisible())
+			if(PlayerShip.IsVisible())
 			{
 				UpdatePlayerLeftRotation  (InDeltaTime);
 				UpdatePlayerRightRotation (InDeltaTime);
-				UpdatePlayerPosition      (InDeltaTime);
+				UpdatePlayerShip      (InDeltaTime);
 			}
 
 			UpdateEnemyShips          (InDeltaTime);
 			UpdateAsteroids           (InDeltaTime);
+			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
 			UpdateExplosions          (InDeltaTime);
 
@@ -682,7 +741,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			ProcessWaveTransition     (InDeltaTime);
 
-			if(bSpawningPlayer)
+			if(PlayerShip.IsSpawning)
 			{
 				ProcessPlayerShipSpawn    (InDeltaTime);
 			}
@@ -694,6 +753,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			UpdateEnemyShips          (InDeltaTime);
 			UpdateAsteroids           (InDeltaTime);
+			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
 			UpdateExplosions          (InDeltaTime);
 			CheckCollisions(); // In case any late torpedos or enemies hit something
@@ -726,6 +786,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			//UpdateEnemyShips        (InDeltaTime);
 			UpdateAsteroids           (InDeltaTime);
+			UpdatePowerups            (InDeltaTime);
 			break;
 
 
@@ -768,7 +829,7 @@ void UPlayViewBase::ProcessPlayerShipSpawn(float DeltaTime)
 {
 	// The player ship got destroyed and we're waiting to spawn a new one.
 
-	if(!bSpawningPlayer)
+	if(!PlayerShip.IsSpawning)
 	{
 		return;
 	}
@@ -792,9 +853,9 @@ void UPlayViewBase::ProcessPlayerShipSpawn(float DeltaTime)
 		return;
 	}
 
-	Spawn(PlayerShipObj, ViewportSize / 2, FVector2D(0), 1.0f);
+	Spawn(PlayerShip, ViewportSize / 2, FVector2D(0), 1.0f);
 
-	bSpawningPlayer = false;
+	PlayerShip.IsSpawning = false;
 }
 
 
@@ -822,7 +883,7 @@ bool ObjectsIntersectBox(const TArray<T>& PlayObjects, const UE::Geometry::FAxis
 
 bool UPlayViewBase::IsSafeToSpawnPlayer() const
 {
-	if(!bSpawningPlayer)
+	if(!PlayerShip.IsSpawning)
 	{
 		UE_LOG(LogGame, Error, TEXT("Checking if safe to spawn player when player is not waiting to spawn"));
 		return false;
@@ -830,8 +891,14 @@ bool UPlayViewBase::IsSafeToSpawnPlayer() const
 
 	// If any asteroid or enemy ship intersects a box in the center of the screen, return false.
 
+	// Make the safezone smaller if the player has enough shields. 
+	// This makes it easier to respawn when there are lots of things around
+	// without having to potentially wait a really long time.
+
+	const auto SafeZoneDivisor = (PlayerShip.ShieldsLeft > 3.0f) ? 8 : 4;
+
 	const auto ScreenCenter = ViewportSize / 2;
-	const auto SafeZoneSize = ViewportSize / 4;
+	const auto SafeZoneSize = ViewportSize / SafeZoneDivisor;
 
 	UE::Geometry::FAxisAlignedBox2d SafeZone(
 		ScreenCenter - SafeZoneSize / 2,
@@ -893,7 +960,7 @@ void UPlayViewBase::DestroyWidget(UWidget* Widget)
 		return;
 	}
 
-	RootCanvas->RemoveChild  (Widget);
+	//RootCanvas->RemoveChild  (Widget);
 	WidgetTree->RemoveWidget (Widget);
 }
 
@@ -901,6 +968,13 @@ void UPlayViewBase::DestroyWidget(UWidget* Widget)
 void UPlayViewBase::DestroyWidget(FPlayObject& PlayObject)
 {
 	DestroyWidget(PlayObject.Widget);
+}
+
+
+void UPlayViewBase::DestroyWidget(FPowerup& Powerup)
+{
+	DestroyWidget(Powerup.Widget);
+	DestroyWidget(Powerup.SpriteWidget);
 }
 
 
@@ -913,6 +987,11 @@ void UPlayViewBase::RemoveAsteroid(int32 Index)
 	}
 
 	auto& Asteroid = Asteroids[Index];
+
+	if(Asteroid.HasPowerup())
+	{
+		DestroyWidget(Asteroid.Powerup);
+	}
 
 	DestroyWidget(Asteroid);
 
@@ -929,6 +1008,42 @@ void UPlayViewBase::RemoveAsteroids()
 }
 
 
+void UPlayViewBase::SpawnPowerup(FPowerup& Powerup, const FVector2D& P)
+{
+	Powerup.Kind = FMath::RandBool() ? EPowerup::DoubleGuns : EPowerup::Shields;
+
+	Powerup.SpriteWidget = MakeWidget<USpriteWidget>();
+
+	switch(Powerup.Kind)
+	{
+		case EPowerup::DoubleGuns: Powerup.SpriteWidget->TextureAtlas = DoubleGunsPowerupAtlas; break;
+		case EPowerup::Shields:    Powerup.SpriteWidget->TextureAtlas = ShieldPowerupAtlas;     break;
+	}
+
+	// Make the powerups dark so they don't get confused with asteroids.
+	Powerup.SpriteWidget->TextureAtlas->Atlas.AtlasBrush.TintColor = FLinearColor(1.0f, 1.0f, 1.0f, PowerupOpacity);
+
+	Powerup.SpriteWidget->Size = FVector2D(32);
+
+	auto CanvasSlot = RootCanvas->AddChildToCanvas(Powerup.SpriteWidget);
+
+	Powerup.SpriteWidget->SynchronizeProperties();
+
+	CanvasSlot->SetAlignment(FVector2D(0.5));
+	CanvasSlot->SetAnchors(FAnchors());
+	CanvasSlot->SetAutoSize(true);
+
+	auto Margin   = CanvasSlot->GetOffsets();
+	Margin.Right  = Powerup.SpriteWidget->Size.X;
+	Margin.Bottom = Powerup.SpriteWidget->Size.Y;
+	CanvasSlot->SetOffsets(Margin);
+
+	Show(Powerup.SpriteWidget);
+	Powerup.SetPosition(P);
+	Powerup.Inertia.Set(0, 0);
+}
+
+
 void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 {
 	for(int32 Index = 0; Index < NumAsteroids; Index++)
@@ -940,20 +1055,35 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 		const int32 AsteroidSize = 0; 
 #endif
 
-		FPlayObject Asteroid;
+		FAsteroid Asteroid;
+
+#if(TEST_ASTEROIDS==1)
+		FVector2D P(500, Index * 300 + 200);
+#else
+		// Place randomly along edges of screen.
+		FVector2D P(0);
+
+		if(FMath::RandBool())
+		{
+			P.X = FMath::RandRange(0.0, ViewportSize.X);
+		}
+		else
+		{
+			P.Y = FMath::RandRange(0.0, ViewportSize.Y);
+		}
+#endif
 
 		const auto V = FMath::VRand();
 
 #if(TEST_ASTEROIDS==1)
-		Asteroid.Inertia = FVector2D(0);
+		const auto Inertia = FVector2D(0);
 #else
-		Asteroid.Inertia = RandVector2D() * FMath::Lerp(MinAsteroidSpeed, MaxAsteroidSpeed, FMath::FRand());
+		const auto Inertia = RandVector2D() * FMath::Lerp(MinAsteroidSpeed, MaxAsteroidSpeed, FMath::FRand());
 #endif
 		Asteroid.LifeRemaining = 1.0f;
 		Asteroid.SpinSpeed     = FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
 		Asteroid.Widget        = MakeWidget<UImage>();
 
-		Asteroid.Widget->SetVisibility(ESlateVisibility::HitTestInvisible);
 		Asteroid.Widget->SetRenderTransformPivot(FVector2D(0.5f));
 
 		switch(AsteroidSize)
@@ -961,6 +1091,11 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 			case 0:
 				Asteroid.Widget->Brush = BigRockBrushes[FMath::RandRange(0, 3)]; 
 				Asteroid.Value = ValueBigAsteroid;
+
+				if(Index % 4 == 0)
+				{
+					SpawnPowerup(Asteroid.Powerup, P);
+				}
 				break;
 
 			case 1: 
@@ -978,30 +1113,12 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 
 		CanvasSlot->SetAnchors(FAnchors());
 		CanvasSlot->SetAutoSize(true);
+		CanvasSlot->SetAlignment(FVector2D(0.5));
 
 		// autosize true doesn't automatically set the slot offsets to the image size, so do it here.
 		UpdateWidgetSize(Asteroid);
 
-		CanvasSlot->SetAlignment(FVector2D(0.5));
-
-		// Place the asteroids.
-
-#if(TEST_ASTEROIDS==1)
-		CanvasSlot->SetPosition(FVector2D(500, Index * 300 + 200));
-#else
-		// Place randomly along edges of screen.
-		FVector2D P(0);
-
-		if(FMath::RandBool())
-		{
-			P.X = FMath::RandRange(0.0, ViewportSize.X);
-		}
-		else
-		{
-			P.Y = FMath::RandRange(0.0, ViewportSize.Y);
-		}
-		CanvasSlot->SetPosition(P);
-#endif
+		Spawn(Asteroid, P, Inertia, 1.0f);
 
 		// Do this last since the play object is copied.
 		Asteroids.Add(Asteroid);
@@ -1045,7 +1162,7 @@ void UPlayViewBase::UpdatePlayerRotation(float DeltaTime, ERotationDirection Dir
 		return;
 	}
 
-	if(!PlayerShipObj.IsValid())
+	if(!PlayerShip.IsValid())
 	{
 		UE_LOG(LogGame, Error, TEXT("Invalid player ship"));
 		return;
@@ -1054,13 +1171,13 @@ void UPlayViewBase::UpdatePlayerRotation(float DeltaTime, ERotationDirection Dir
 
 	const float Amt = PlayerRotationSpeed * DeltaTime;
 
-	float Angle = PlayerShipObj.GetAngle();
+	float Angle = PlayerShip.GetAngle();
 
 	Angle += Amt * (int32)Direction;
 
 	Angle = WrapAngle(Angle);
 
-	PlayerShipObj.SetAngle(Angle);
+	PlayerShip.SetAngle(Angle);
 }
 
 
@@ -1076,24 +1193,24 @@ void UPlayViewBase::UpdatePlayerLeftRotation(float DeltaTime)
 }
 
 
-void UPlayViewBase::UpdatePlayerPosition(float DeltaTime)
+void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 {
-	if(!PlayerShipObj.IsValid())
+	if(!PlayerShip.IsValid())
 	{
 		UE_LOG(LogGame, Error, TEXT("Invalid player ship"));
 		return;
 	}
 
 	// Change widget brush only if the thrust state actually changed.
-	const bool bThrustStateChanged = (bPlayerShipUnderThrust != bThrustActive);
+	const bool bThrustStateChanged = (PlayerShip.IsUnderThrust != bThrustActive);
 
-	bPlayerShipUnderThrust = bThrustActive;
+	PlayerShip.IsUnderThrust = bThrustActive;
 
 	if (bThrustActive)
 	{
 		if(bThrustStateChanged)
 		{
-			PlayerShipObj.Widget->SetBrush(PlayerShipThrustingBrush);
+			PlayerShip.Widget->SetBrush(PlayerShipThrustingBrush);
 			PlayerShipThrustSoundLoop.Start();
 		}
 		else
@@ -1104,27 +1221,37 @@ void UPlayViewBase::UpdatePlayerPosition(float DeltaTime)
 
 		const float Thrust = PlayerThrustForce * DeltaTime;
 
-		const FVector2D Force = GetWidgetDirectionVector(PlayerShipObj.Widget) * Thrust;
+		const FVector2D Force = GetWidgetDirectionVector(PlayerShip.Widget) * Thrust;
 
-		PlayerShipObj.Inertia += Force;
+		PlayerShip.Inertia += Force;
 
 		// Limit speed to avoid breaking collision detector.
 
-		if(PlayerShipObj.Inertia.Length() > MaxPlayerShipSpeed)
+		if(PlayerShip.Inertia.Length() > MaxPlayerShipSpeed)
 		{
-			PlayerShipObj.Inertia.Normalize();
-			PlayerShipObj.Inertia *= MaxPlayerShipSpeed;
+			PlayerShip.Inertia.Normalize();
+			PlayerShip.Inertia *= MaxPlayerShipSpeed;
 		}
 	}
 	else
 	{
 		if(bThrustStateChanged)
 		{
-			PlayerShipObj.Widget->SetBrush(PlayerShipBrush);
+			PlayerShip.Widget->SetBrush(PlayerShipBrush);
 		}
 	}
 
-	MovePlayObject(PlayerShipObj, DeltaTime);
+	MovePlayObject(PlayerShip, DeltaTime);
+
+
+	PlayerShield.Show(bShieldActive && PlayerShip.ShieldsLeft > 0.0f);
+
+	if(PlayerShield.IsVisible())
+	{
+		// We have to budge the shield texture by two px to look nicely centered around the player ship.
+		PlayerShield.SetPosition(PlayerShip.GetPosition() + Rotate(FVector2D(0, 2), PlayerShip.GetAngle()));
+		AdjustShieldsLeft(-DeltaTime);
+	}
 }
 
 
@@ -1146,10 +1273,27 @@ void UPlayViewBase::UpdateAsteroids(float DeltaTime)
 		if (Asteroid.LifeRemaining > 0.0f)
 		{
 			MovePlayObject(Asteroid, DeltaTime);
-#if(ROTATE_ASTEROIDS == 1)
+			if(Asteroid.HasPowerup())
+			{
+				Asteroid.Powerup.SetPosition(Asteroid.GetPosition());
+				Asteroid.Powerup.Tick(DeltaTime);
+			}
+#if(FEATURE_SPINNING_ASTEROIDS == 1)
 			Asteroid.SetAngle(WrapAngle(Asteroid.GetAngle() + Asteroid.SpinSpeed * DeltaTime));
 #endif
 		}
+	}
+}
+
+
+void UPlayViewBase::UpdatePowerups(float DeltaTime)
+{
+	// This will move any free-floating powerups.
+
+	for(auto& Powerup : Powerups)
+	{
+		MovePlayObject(Powerup, DeltaTime);
+		Powerup.Tick(DeltaTime);
 	}
 }
 
@@ -1193,6 +1337,11 @@ void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 			return;
 		}
 
+		if(This->GameState != EGameState::Active)
+		{
+			return;
+		}
+
 		auto Explosion = This->MakeWidget<UParticlesWidget>();
 
 		Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
@@ -1219,8 +1368,6 @@ void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 		CanvasSlot->SetPosition(P);
 
 		This->Explosions.Add(Explosion);
-
-		//This->SecondPlayerExplosionTask.What.Reset();
 	};
 
 	ScheduledTasks.Add(Task);
@@ -1292,15 +1439,15 @@ void UPlayViewBase::PlaySound(USoundBase* Sound, float VolumeScale)
 
 void UPlayViewBase::KillPlayerShip()
 {
-	SpawnPlayerShipExplosion(PlayerShipObj.UnwrappedNewPosition);
+	SpawnPlayerShipExplosion(PlayerShip.UnwrappedNewPosition);
 
 	PlaySound(PlayerShipDestroyedSound);
 
-	PlayerShipObj.Hide();
+	PlayerShip.Hide();
 
 	AddPlayerShips(-1);
 
-	bSpawningPlayer = true;
+	PlayerShip.IsSpawning = true;
 	TimeUntilNextPlayerShip = MaxTimeUntilNextPlayerShip;
 
 	// ProcessPlayerShipSpawn() will handle the wait til next spawn and transition to game over, if needed. 
@@ -1345,7 +1492,20 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	// If asteroid was small, just delete it.
 	if(Asteroid.Value == ValueSmallAsteroid)
 	{
+		// Release any powerup the asteroid was holding.
+
+		if(Asteroid.HasPowerup())
+		{
+			auto PowerupIndex = Powerups.Add(Asteroid.Powerup);
+			Asteroid.Powerup.Kind = EPowerup::Nothing;
+			if(PowerupsCanMove)
+			{
+				Powerups[PowerupIndex].Inertia = Asteroid.Inertia;
+			}
+		}
+
 		RemoveAsteroid(AsteroidIndex);
+
 		return;
 	}
 
@@ -1355,7 +1515,7 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	// For the new inertias, we want the kids to generally be faster but 
 	// once in a while, one of the kids can be slower.
 
-	FPlayObject NewAsteroid;
+	FAsteroid NewAsteroid;
 
 	const bool BothKidsFast = FMath::RandRange(0, 10) < 9;
 
@@ -1435,6 +1595,22 @@ void UPlayViewBase::KillEnemyShip(int32 EnemyIndex)
 }
 
 
+void UPlayViewBase::KillPowerup(int32 PowerupIndex)
+{
+	if(!Powerups.IsValidIndex(PowerupIndex))
+	{
+		UE_LOG(LogGame, Error, TEXT("Invalid powerup index %d"), PowerupIndex);
+		return;
+	}
+
+	auto& Powerup = Powerups[PowerupIndex];
+
+	//SpawnExplosion(EnemyShip.GetPosition());
+	// todo: PlaySound(ExplosionSounds[EnemyShip.Value == ValueBigEnemy ? 0 : 1]);
+	RemovePowerup(PowerupIndex);
+}
+
+
 void UPlayViewBase::IncreasePlayerScoreBy(int32 Amount)
 {
 	if(PlayerScore >= MaxPlayerScore)
@@ -1469,13 +1645,59 @@ void UPlayViewBase::UpdatePlayerScoreReadout()
 }
 
 
+void UPlayViewBase::UpdatePowerupReadout(EPowerup PowerupKind)
+{
+	FString Str;
+
+	switch(PowerupKind)
+	{
+		case EPowerup::DoubleGuns:
+			Str = FString::Printf(TEXT("%d"), PlayerShip.DoubleShotsLeft);
+			DoubleGunReadout->SetText(FText::FromString(Str));
+			break;
+
+		case EPowerup::Shields:
+			Str = FString::Printf(TEXT("%d"), FMath::RoundToInt(PlayerShip.ShieldsLeft));
+			PlayerShieldReadout->SetText(FText::FromString(Str));
+			break;
+	}
+}
+
+
+void UPlayViewBase::AdjustDoubleShotsLeft(int32 Amount)
+{
+	PlayerShip.DoubleShotsLeft += Amount;
+	UpdatePowerupReadout(EPowerup::DoubleGuns);
+}
+
+
+void UPlayViewBase::AdjustShieldsLeft(float Amount)
+{
+	PlayerShip.ShieldsLeft = FMath::Max(0.0f, PlayerShip.ShieldsLeft + Amount);
+	UpdatePowerupReadout(EPowerup::Shields);
+}
+
+
+void UPlayViewBase::ProcessPlayerCollision()
+{
+	if(PlayerShield.IsVisible())
+	{
+		PlaySound(ShieldBonkSound);
+	}
+	else 
+	{
+		KillPlayerShip();
+	}
+}
+
+
 void UPlayViewBase::CheckCollisions()
 {
 	// Build a triangle representing the player ship.
 
 	FVector2D PlayerShipTriangle[3]; // tip, LR corner, LL corner.
 
-	float PlayerShipH = PlayerShipObj.GetSize().Y;
+	float PlayerShipH = PlayerShip.GetSize().Y;
 	float PlayerShipW = PlayerShipH * (73.0f / 95.0f);
 
 	PlayerShipTriangle[0].Set(0.0f,            -PlayerShipH / 2);
@@ -1484,7 +1706,7 @@ void UPlayViewBase::CheckCollisions()
 
 	// Triangle is pointing up, vertices relative to its center. We need to rotate it for its current angle.
 			 
-	auto ShipAngle = PlayerShipObj.GetAngle();
+	auto ShipAngle = PlayerShip.GetAngle();
 
 	// Rotate and translate the triangle to match its current display space.
 
@@ -1493,14 +1715,14 @@ void UPlayViewBase::CheckCollisions()
 		Triangle = Rotate(Triangle, ShipAngle);
 
 		// Use the ship's old position because the current position can cause unwanted self-intersections.
-		Triangle += PlayerShipObj.OldPosition;
+		Triangle += PlayerShip.OldPosition;
 	}
 
 	// Get the line segment for the player ship.
 	// Line segments are used to better detect collisions involving fast-moving objects.
 
-	const FVector2D PlayerShipLineStart = PlayerShipObj.OldPosition;
-	const FVector2D PlayerShipLineEnd   = PlayerShipObj.UnwrappedNewPosition;
+	const FVector2D PlayerShipLineStart = PlayerShip.OldPosition;
+	const FVector2D PlayerShipLineEnd   = PlayerShip.UnwrappedNewPosition;
 
 
 	// See what the active torpedos have collided with.
@@ -1541,7 +1763,7 @@ void UPlayViewBase::CheckCollisions()
 			}
 		}
 		
-		if(Torpedo.IsAlive() && !Torpedo.FiredByPlayer && PlayerShipObj.IsVisible())
+		if(Torpedo.IsAlive() && !Torpedo.FiredByPlayer && PlayerShip.IsVisible())
 		{
 			// Torpedo didn't hit a rock and the player didn't fire it, so see if it hit the player ship.
 
@@ -1549,7 +1771,7 @@ void UPlayViewBase::CheckCollisions()
 			{
 				Torpedo.Kill();
 				SpawnExplosion(OldP);
-				KillPlayerShip();
+				ProcessPlayerCollision();
 			}
 		}
 
@@ -1576,7 +1798,7 @@ void UPlayViewBase::CheckCollisions()
 
 	// Check if player ship collided with a rock
 
-	if(PlayerShipObj.IsVisible())
+	if(PlayerShip.IsVisible())
 	{
 		int32 AsteroidIndex = -1;
 
@@ -1584,12 +1806,13 @@ void UPlayViewBase::CheckCollisions()
 		{
 			AsteroidIndex++;
 
-			if(DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Asteroid.GetPosition(), Asteroid.GetRadius() + PlayerShipObj.GetRadius())
+			if(DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Asteroid.GetPosition(), Asteroid.GetRadius() + PlayerShip.GetRadius())
 				|| DoesLineSegmentIntersectTriangle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, PlayerShipTriangle))
 			{
 				// Player collided with a rock.
 
-				KillPlayerShip();
+				ProcessPlayerCollision();
+				// todo: should we credit player if he used his shields?
 				KillAsteroid(AsteroidIndex, CreditPlayerForKill);
 
 				break;
@@ -1600,26 +1823,65 @@ void UPlayViewBase::CheckCollisions()
 
 	// Check if enemy ship collided with the player
 
-	if(PlayerShipObj.IsVisible())
+	if(PlayerShip.IsVisible())
 	{
 		for(int32 EnemyIndex = EnemyShips.Num() - 1; EnemyIndex >= 0; EnemyIndex--)
 		{
 			auto& EnemyShip = EnemyShips[EnemyIndex];
 
 			if (DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, EnemyShip.OldPosition, EnemyShip.GetRadius())
-				|| FVector2D::Distance(PlayerShipObj.UnwrappedNewPosition, EnemyShip.UnwrappedNewPosition) < EnemyShip.GetRadius() + PlayerShipObj.GetRadius())
+				|| FVector2D::Distance(PlayerShip.UnwrappedNewPosition, EnemyShip.UnwrappedNewPosition) < EnemyShip.GetRadius() + PlayerShip.GetRadius())
 			{
 				// Enemy ship collided with player ship.
 
 				IncreasePlayerScoreBy(EnemyShip.Value);
 				KillEnemyShip(EnemyIndex);
-				KillPlayerShip();
+
+				ProcessPlayerCollision();
 
 				break;
 			}
 		}
 	}
 
+
+	// Check if player ship collided with a powerup
+
+	if(PlayerShip.IsVisible())
+	{
+		for(int32 PowerupIndex = Powerups.Num() - 1; PowerupIndex >= 0; PowerupIndex--)
+		{
+			auto& Powerup = Powerups[PowerupIndex];
+
+			if (DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Powerup.OldPosition, Powerup.GetRadius())
+				|| FVector2D::Distance(PlayerShip.UnwrappedNewPosition, Powerup.UnwrappedNewPosition) < Powerup.GetRadius() + PlayerShip.GetRadius())
+			{
+				// Powerup collided with player ship.
+
+				switch(Powerup.Kind)
+				{
+					case EPowerup::DoubleGuns:
+
+						AdjustDoubleShotsLeft(DoubleGunsPowerupIncrease);
+						PlaySound(GainDoubleGunPowerupSound);
+						PlayAnimation(DoubleGunReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
+						break;
+
+
+					case EPowerup::Shields:
+
+						AdjustShieldsLeft(ShieldPowerupIncrease);
+						PlaySound(GainShieldPowerupSound);
+						PlayAnimation(ShieldReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
+						break;
+				}
+				
+				KillPowerup(PowerupIndex);
+
+				break;
+			}
+		}
+	}
 
 
 	// Check if enemy ship collided with an asteroid
@@ -1730,6 +1992,22 @@ void UPlayViewBase::Spawn(FPlayObject& PlayObject, const FVector2D& P, const FVe
 }
 
 
+void UPlayViewBase::RemovePowerup(int32 PowerupIndex)
+{
+	if(!Powerups.IsValidIndex(PowerupIndex))
+	{
+		UE_LOG(LogGame, Error, TEXT("Invalid powerup index %d"), PowerupIndex);
+		return;
+	}
+
+	auto& Powerup = Powerups[PowerupIndex];
+
+	DestroyWidget(Powerup);
+
+	Powerups.RemoveAt(PowerupIndex);
+}
+
+
 void UPlayViewBase::RemoveEnemyShip(int32 EnemyIndex)
 {
 	if(!EnemyShips.IsValidIndex(EnemyIndex))
@@ -1751,6 +2029,36 @@ void UPlayViewBase::RemoveEnemyShips()
 	while(!EnemyShips.IsEmpty())
 	{
 		RemoveEnemyShip(0);
+	}
+}
+
+
+void UPlayViewBase::RemoveExplosions()
+{
+	while(!Explosions.IsEmpty())
+	{
+		DestroyWidget(Explosions.Last(0));
+		Explosions.Pop();
+	}
+}
+
+
+void UPlayViewBase::RemovePowerups()
+{
+	while(!Powerups.IsEmpty())
+	{
+		DestroyWidget(Powerups.Last(0));
+		Powerups.Pop();
+	}
+}
+
+
+void UPlayViewBase::RemoveTorpedos()
+{
+	for(auto Torpedo : Torpedos)
+	{
+		Torpedo.LifeRemaining = 0.0f;
+		Torpedo.Hide();
 	}
 }
 
@@ -1861,8 +2169,7 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 			Spawn(EnemyShip, WrapPositionToViewport(P), Inertia, 0.0f);
 
 			// Reset the timer.
-			const int32 ExpertPlayerScore = 100'000;
-			TimeUntilNextEnemyShip = FMath::Lerp(10.0f, 1.0f, (float)FMath::Min(PlayerScore, ExpertPlayerScore) / ExpertPlayerScore);
+			TimeUntilNextEnemyShip = FMath::Lerp(MaxTimeUntilEnemyRespawn, MinTimeUntilEnemyRespawn, (float)FMath::Min(PlayerScore, ExpertPlayerScore) / ExpertPlayerScore);
 			// score = 10'000 --> 9 seconds
 			//         20'000 --> 8 seconds
 			//         50'000 --> 5 seconds
@@ -1901,25 +2208,23 @@ static FVector2D ComputeFiringSolution(const FVector2D& LaunchP, float TorpedoSp
 	// Given launch and target positions, torpedo speed, and target inertia, 
 	// return a firing direction.
 
-	auto DeltaPos = TargetP - LaunchP;
-	auto DeltaVee = TargetInertia;// - ShooterInertia
+	const auto DeltaPos = TargetP - LaunchP;
+	const auto DeltaVee = TargetInertia;// - ShooterInertia
 
-	auto A = DeltaVee.Dot(DeltaVee) - TorpedoSpeed * TorpedoSpeed;
-	auto B = 2 * DeltaVee.Dot(DeltaPos);
-	auto C = DeltaPos.Dot(DeltaPos);
+	const auto A = DeltaVee.Dot(DeltaVee) - Square(TorpedoSpeed);
+	const auto B = 2 * DeltaVee.Dot(DeltaPos);
+	const auto C = DeltaPos.Dot(DeltaPos);
 
-	auto Desc = B * B - 4 * A * C;
-
-	float TimeToTarget;
+	const auto Desc = B * B - 4 * A * C;
 
 	if(Desc <= 0)
 	{
 		return RandVector2D();
 	}
 
-	TimeToTarget = 2 * C / (FMath::Sqrt(Desc) - B);
+	const auto TimeToTarget = 2 * C / (FMath::Sqrt(Desc) - B);
 
-	auto TrueAimPoint = TargetP + TargetInertia * TimeToTarget;
+	const auto TrueAimPoint = TargetP + TargetInertia * TimeToTarget;
 	auto RelativeAimPoint = TrueAimPoint - LaunchP;
 
 	RelativeAimPoint.Normalize();
@@ -1935,7 +2240,7 @@ void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBig
 	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
 	// For now, just use wild and leaded.
 
-	if(!PlayerShipObj.IsVisible())
+	if(!PlayerShip.IsVisible())
 	{
 		return;
 	}
@@ -1981,7 +2286,7 @@ void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBig
 
 		if(bEnemyShootsAtPlayer || Asteroids.IsEmpty())
 		{
-			Direction = ComputeFiringSolution(LaunchP, Speed, PlayerShipObj.GetPosition(), PlayerShipObj.Inertia);
+			Direction = ComputeFiringSolution(LaunchP, Speed, PlayerShip.GetPosition(), PlayerShip.Inertia);
 		}
 		else
 		{
@@ -2001,38 +2306,75 @@ void UPlayViewBase::OnFireTorpedo()
 {
 	// Called when the 'fire torpedo' button is pressed.
 
-	if(!PlayerShipObj.IsVisible())
+	if(!PlayerShip.IsVisible())
 	{
 		return;
 	}
 
-	// Find an available torpedo, spawn it at the nose of the player ship,
-	// and give it an inertia which is player ship intertia + player ship fwd * MaxTorpedoSpeed
+	const FVector2D PlayerFwd = GetWidgetDirectionVector(PlayerShip.Widget);
 
-	const int32 TorpedoIdx = GetAvailableTorpedo();
-
-	if(TorpedoIdx == INDEX_NONE)
-	{
-		return;
-	}
-
-	auto& Torpedo = Torpedos[TorpedoIdx];
-
-	Torpedo.FiredByPlayer = true;
-
-	const FVector2D PlayerFwd = GetWidgetDirectionVector(PlayerShipObj.Widget);
-
-	const auto Inertia = (PlayerFwd * MaxTorpedoSpeed) + PlayerShipObj.Inertia;
+	const auto Inertia = (PlayerFwd * MaxTorpedoSpeed) + PlayerShip.Inertia;
 
 	// Position torpedo at nose of player ship.
 
-	auto P = PlayerShipObj.GetPosition();
-	P += PlayerFwd * (PlayerShipObj.GetSize().Y / 2 + /*PlayerShipObj.Inertia.Length()*/ 2.0); // The last offset is so that the bullet doesn't start off accidentally overlapping the player ship
-	P = WrapPositionToViewport(P);
 
-	Spawn(Torpedo, P, Inertia, MaxTorpedoLifeTime);
+	int32 TorpedoIndex = GetAvailableTorpedo();
+
+	if(TorpedoIndex == INDEX_NONE)
+	{
+		return;
+	}
 
 	PlaySound(TorpedoSound);
+
+    if(PlayerShip.DoubleShotsLeft == 0)
+	{
+		// Find an available torpedo, spawn it at the nose of the player ship,
+		// and give it an inertia which is player ship intertia + player ship fwd * MaxTorpedoSpeed
+
+		auto& Torpedo = Torpedos[TorpedoIndex];
+
+		Torpedo.FiredByPlayer = true;
+
+		auto P = PlayerShip.GetPosition();
+		P += PlayerFwd * (PlayerShip.GetSize().Y / 2 + /*PlayerShip.Inertia.Length()*/ 2.0); // The last offset is so that the bullet doesn't start off accidentally overlapping the player ship
+		P = WrapPositionToViewport(P);
+
+		Spawn(Torpedo, P, Inertia, MaxTorpedoLifeTime);
+	}
+	else
+	{
+		AdjustDoubleShotsLeft(-1);
+
+		auto& Torpedo1 = Torpedos[TorpedoIndex];
+		Torpedo1.FiredByPlayer = true;
+
+		auto P = PlayerFwd * (PlayerShip.GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
+		P = Rotate(P, 90.0f);
+		P += PlayerShip.GetPosition();
+		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
+		P = WrapPositionToViewport(P);
+
+		Spawn(Torpedo1, P, Inertia, MaxTorpedoLifeTime);
+
+		TorpedoIndex = GetAvailableTorpedo();
+
+		if(TorpedoIndex == INDEX_NONE)
+		{
+			return;
+		}
+
+		auto& Torpedo2 = Torpedos[TorpedoIndex];
+		Torpedo2.FiredByPlayer = true;
+
+		P = PlayerFwd * (PlayerShip.GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
+		P = Rotate(P, -90.0f);
+		P += PlayerShip.GetPosition();
+		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
+		P = WrapPositionToViewport(P);
+
+		Spawn(Torpedo2, P, Inertia, MaxTorpedoLifeTime);
+	}
 }
 
 
@@ -2194,3 +2536,5 @@ void UPlayViewBase::AnimateStartMessage(float DeltaTime)
 #if(DEBUG_MODULE == 1)
 #pragma optimize("", on)
 #endif
+
+#undef DEBUG_MODULE
