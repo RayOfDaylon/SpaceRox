@@ -8,6 +8,9 @@
 #include "CoreMinimal.h"
 #include "UMG/Public/Components/Image.h"
 #include "UMG/Public/Components/CanvasPanelSlot.h"
+
+#include "USpriteWidget.h"
+
 #include "LocalUtils.generated.h"
 
 
@@ -24,6 +27,7 @@ FVector2D   Rotate                               (const FVector2D& P, float Angl
 bool        DoesLineSegmentIntersectCircle       (const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R);
 bool        DoesLineSegmentIntersectTriangle     (const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3]);
 bool        DoesTriangleIntersectTriangle        (const FVector2D TriA[3], const FVector2D TriB[3]);
+FVector2D   ComputeFiringSolution                (const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia);
 
 FVector2D   GetWidgetDirectionVector             (const UWidget* Widget);
 void        Show                                 (UWidget*, bool Visible = true);
@@ -62,12 +66,79 @@ struct FLoopedSound
 };
 
 
-USTRUCT()
-struct FPlayObject
+struct IPlayObject
+{
+	virtual UCanvasPanelSlot*       GetWidgetSlot () = 0;
+	virtual const UCanvasPanelSlot* GetWidgetSlot () const = 0;
+
+	virtual void      UpdateWidgetSize () = 0;
+	virtual void      DestroyWidget    () = 0;
+									   
+	virtual bool      IsValid          () const = 0;
+	virtual bool      IsAlive          () const = 0;
+	virtual bool      IsDead           () const = 0;
+	virtual bool      IsVisible        () const = 0;
+	virtual void      Show             (bool Visible = true) = 0;
+	virtual void      Hide             () = 0;
+	virtual void      Kill             () = 0;
+	virtual float     GetRadius        () const = 0;
+	virtual FVector2D GetPosition      () const = 0;
+	virtual void      SetPosition      (const FVector2D& P) = 0;
+	virtual FVector2D GetNextPosition  (float DeltaTime) const = 0;
+	virtual FVector2D GetSize          () const = 0;
+	virtual float     GetSpeed         () const = 0;
+	virtual float     GetAngle         () const = 0;
+	virtual void      SetAngle         (float Angle) = 0;
+	virtual void      Tick             (float DeltaTime) = 0;
+};
+
+
+
+struct ImageWidgetSizeGetter
+{
+	FVector2D GetSize(UImage* Image) const { return Image->Brush.GetImageSize(); }
+};
+
+
+struct SpriteWidgetSizeGetter
+{
+	FVector2D GetSize(USpriteWidget* Sprite) const { return Sprite->Size; }
+};
+
+
+template <class WidgetT, class SizeGetterT>
+struct FPlayObject : public IPlayObject
 {
 	// Stuff common to visible game entities like ships, player, bullets, etc.
 
-	GENERATED_BODY()
+	WidgetT* Widget = nullptr; // Associated widget
+
+	SizeGetterT SizeGetter;
+
+	void UpdateWidgetSize() 
+	{
+		auto Size = SizeGetter.GetSize(Widget); 
+		
+		auto Margin = GetWidgetSlot()->GetOffsets();
+
+		Margin.Right  = Size.X;
+		Margin.Bottom = Size.Y;
+
+		GetWidgetSlot()->SetOffsets(Margin);
+	}
+
+
+	void DestroyWidget()
+	{
+		if(Widget == nullptr)
+		{
+			return;
+		}
+
+		Widget->GetParent()->RemoveChild(Widget);
+		//WidgetTree->RemoveWidget (Widget);
+	}
+
 
 	FVector2D Inertia; // Direction and velocity, px/sec
 	FVector2D OldPosition;
@@ -78,12 +149,11 @@ struct FPlayObject
 	float SpinSpeed     = 0.0f; // degrees/second
 	int32 Value         = 0;
 
-	UImage* Widget = nullptr; // Associated image widget
 
 	bool IsAlive   () const { return (LifeRemaining > 0.0f); }
 	bool IsDead    () const { return !IsAlive(); }
-	virtual bool IsVisible () const { return (Widget != nullptr ? Widget->IsVisible() : false); }
-	virtual void Show      (bool Visible = true) { ::Show(Widget, Visible); }
+	bool IsVisible () const { return (Widget != nullptr ? Widget->IsVisible() : false); }
+	void Show      (bool Visible = true) { ::Show(Widget, Visible); }
 	void Hide      () { Show(false); }
 	void Kill      () { LifeRemaining = 0.0f; Hide(); }
 
@@ -100,11 +170,11 @@ struct FPlayObject
 	}
 
 
-	virtual UCanvasPanelSlot*       GetWidgetSlot () { return Cast<UCanvasPanelSlot>(Widget->Slot); }
-	virtual const UCanvasPanelSlot* GetWidgetSlot () const { return Cast<UCanvasPanelSlot>(Widget->Slot); }
+	UCanvasPanelSlot*       GetWidgetSlot () { return Cast<UCanvasPanelSlot>(Widget->Slot); }
+	const UCanvasPanelSlot* GetWidgetSlot () const { return Cast<UCanvasPanelSlot>(Widget->Slot); }
 
 
-	virtual FVector2D GetPosition() const
+	FVector2D GetPosition() const
 	{
 		if(Widget == nullptr || Widget->Slot == nullptr)
 		{
@@ -115,7 +185,7 @@ struct FPlayObject
 	}
 
 
-	virtual void SetPosition(const FVector2D& P)
+	void SetPosition(const FVector2D& P)
 	{
 		if(Widget == nullptr || Widget->Slot == nullptr)
 		{
@@ -132,7 +202,7 @@ struct FPlayObject
 	}
 
 
-	virtual FVector2D GetSize() const
+	FVector2D GetSize() const
 	{
 		if(Widget == nullptr || Widget->Slot == nullptr)
 		{
@@ -149,13 +219,13 @@ struct FPlayObject
 	}
 
 
-	virtual float GetAngle() const
+	float GetAngle() const
 	{
 		return (Widget == nullptr ? 0.0f : Widget->GetRenderTransformAngle());
 	}
 
 
-	virtual void SetAngle(float Angle)
+	void SetAngle(float Angle)
 	{
 		if(Widget == nullptr)
 		{
@@ -164,17 +234,48 @@ struct FPlayObject
 
 		Widget->SetRenderTransformAngle(Angle);
 	}
+
+
+	virtual void Tick(float DeltaTime) {}
+
+
+	void Move(float DeltaTime, const TFunction<FVector2D(const FVector2D&)>& WrapFunction)
+	{
+		const auto P = GetPosition();
+
+		OldPosition          = P;
+		UnwrappedNewPosition = P + Inertia * DeltaTime;
+
+		SetPosition(WrapFunction(UnwrappedNewPosition));
+	}
+
+
+	void Spawn(const FVector2D& P, const FVector2D& InInertia, float InLifeRemaining)
+	{
+		if(Widget == nullptr)
+		{
+			UE_LOG(LogGame, Error, TEXT("UPlayViewBase::Spawn: PlayObject has no widget."));
+			return;
+		}
+
+		OldPosition          =
+		UnwrappedNewPosition = P;
+		Inertia              = InInertia;
+		LifeRemaining        = InLifeRemaining;
+
+		SetPosition(P);
+		Show();
+	}
+
 };
 
 
-USTRUCT()
 struct FScheduledTask
 {
 	// A TFunction that runs a specified number of seconds after the task is created.
 	// You'll normally want to specify What as a lambda that captures a TWeakObjPtr<UObject-derived class>
 	// e.g. This=this, so that you can test the weak pointer before running the lambda.
 
-	GENERATED_BODY()
 
 	float  When = 0.0f;   // Number of seconds into the future.
 
@@ -203,14 +304,12 @@ struct FScheduledTask
 };
 
 
-USTRUCT()
 struct FDurationTask
 {
 	// A TFunction that runs every time Tick() is called until the task duration reaches zero, 
 	// at which point its completion TFunction will be called.
 	// See FScheduledTask for more comments.
 
-	GENERATED_BODY()
 
 	float  Duration = 0.0f;   // number of seconds to run the task for.
 
@@ -247,10 +346,8 @@ struct FDurationTask
 };
 
 
-USTRUCT()
 struct FHighScore
 {
-	GENERATED_BODY()
 	
 	FString Name;
 	int32   Score = 0;
@@ -270,11 +367,8 @@ struct FHighScore
 };
 
 
-USTRUCT()
 struct FHighScoreTable
 {
-	GENERATED_BODY()
-
 	int32 MaxEntries    = 10;
 	int32 MaxNameLength = 30; // Max. number of characters a name can have. Original Asteroids game used 3 chars.
 

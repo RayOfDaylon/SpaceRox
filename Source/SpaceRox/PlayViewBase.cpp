@@ -103,24 +103,21 @@ const float PowerupOpacity                 = 0.5f;
 const bool  PowerupsCanMove                = false;
 
 
-
-static void UpdateWidgetSize(UImage* Image)
+static FVector2D WrapPositionToViewport(const FVector2D& P)
 {
-	const auto BrushSize = Image->Brush.GetImageSize();
-
-	auto Margin = Cast<UCanvasPanelSlot>(Image->Slot)->GetOffsets();
-
-	Margin.Right  = BrushSize.X;
-	Margin.Bottom = BrushSize.Y;
-
-	Cast<UCanvasPanelSlot>(Image->Slot)->SetOffsets(Margin);
+	return FVector2D(UKismetMathLibrary::FWrap(P.X, 0.0, ViewportSize.X), UKismetMathLibrary::FWrap(P.Y, 0.0, ViewportSize.Y));
 }
 
 
-static void UpdateWidgetSize(FPlayObject& PlayObject)
+static FVector2D MakeInertia(const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation)
 {
-	UpdateWidgetSize(PlayObject.Widget);
+	FVector2D NewInertia = Rotate(InertiaOld, FMath::RandRange(MinDeviation, MaxDeviation));
+
+	return NewInertia;
 }
+
+
+
 
 
 void UPlayViewBase::PreloadSound(USoundBase* Sound)
@@ -189,11 +186,11 @@ void UPlayViewBase::InitializePlayerShip()
 	CanvasSlot->SetAnchors(FAnchors());
 	CanvasSlot->SetAutoSize(true);
 	CanvasSlot->SetAlignment(FVector2D(0.5));
-	UpdateWidgetSize(PlayerShip);
+	PlayerShip.UpdateWidgetSize();
 
 	PlayerShip.RadiusFactor = 0.4f;
 
-	Spawn(PlayerShip, ViewportSize / 2, FVector2D(0), 1.0f);
+	PlayerShip.Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
 
 	PlayerShip.Hide();
 }
@@ -210,11 +207,11 @@ void UPlayViewBase::InitializePlayerShield()
 	CanvasSlot->SetAnchors(FAnchors());
 	CanvasSlot->SetAutoSize(true);
 	CanvasSlot->SetAlignment(FVector2D(0.5));
-	UpdateWidgetSize(PlayerShield);
+	PlayerShield.UpdateWidgetSize();
 
 	//PlayerShield.RadiusFactor = 0.5f;
 
-	Spawn(PlayerShield, ViewportSize / 2, FVector2D(0), 1.0f);
+	PlayerShield.Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
 
 	PlayerShield.Hide();
 }
@@ -240,7 +237,7 @@ void UPlayViewBase::CreateTorpedos()
 		CanvasSlot->SetAnchors(FAnchors());
 		CanvasSlot->SetAutoSize(true);
 		CanvasSlot->SetAlignment(FVector2D(0.5));
-		UpdateWidgetSize(Torpedo);
+		Torpedo.UpdateWidgetSize();
 	}
 }
 
@@ -593,7 +590,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UpdatePowerupReadout(EPowerup::DoubleGuns);
 			UpdatePowerupReadout(EPowerup::Shields);
 
-			Spawn (PlayerShip, ViewportSize / 2, FVector2D(0), 1.0f);
+			PlayerShip.Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
 
 			break;
 
@@ -853,7 +850,7 @@ void UPlayViewBase::ProcessPlayerShipSpawn(float DeltaTime)
 		return;
 	}
 
-	Spawn(PlayerShip, ViewportSize / 2, FVector2D(0), 1.0f);
+	PlayerShip.Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
 
 	PlayerShip.IsSpawning = false;
 }
@@ -953,31 +950,6 @@ template<class WidgetT> WidgetT* UPlayViewBase::MakeWidget()
 }
 
 
-void UPlayViewBase::DestroyWidget(UWidget* Widget)
-{
-	if(Widget == nullptr)
-	{
-		return;
-	}
-
-	//RootCanvas->RemoveChild  (Widget);
-	WidgetTree->RemoveWidget (Widget);
-}
-
-
-void UPlayViewBase::DestroyWidget(FPlayObject& PlayObject)
-{
-	DestroyWidget(PlayObject.Widget);
-}
-
-
-void UPlayViewBase::DestroyWidget(FPowerup& Powerup)
-{
-	DestroyWidget(Powerup.Widget);
-	DestroyWidget(Powerup.SpriteWidget);
-}
-
-
 void UPlayViewBase::RemoveAsteroid(int32 Index)
 {
 	if(!Asteroids.IsValidIndex(Index))
@@ -990,10 +962,10 @@ void UPlayViewBase::RemoveAsteroid(int32 Index)
 
 	if(Asteroid.HasPowerup())
 	{
-		DestroyWidget(Asteroid.Powerup);
+		Asteroid.Powerup.DestroyWidget();
 	}
 
-	DestroyWidget(Asteroid);
+	Asteroid.DestroyWidget();
 
 	Asteroids.RemoveAt(Index);
 }
@@ -1012,33 +984,29 @@ void UPlayViewBase::SpawnPowerup(FPowerup& Powerup, const FVector2D& P)
 {
 	Powerup.Kind = FMath::RandBool() ? EPowerup::DoubleGuns : EPowerup::Shields;
 
-	Powerup.SpriteWidget = MakeWidget<USpriteWidget>();
+	Powerup.Widget = MakeWidget<USpriteWidget>();
 
 	switch(Powerup.Kind)
 	{
-		case EPowerup::DoubleGuns: Powerup.SpriteWidget->TextureAtlas = DoubleGunsPowerupAtlas; break;
-		case EPowerup::Shields:    Powerup.SpriteWidget->TextureAtlas = ShieldPowerupAtlas;     break;
+		case EPowerup::DoubleGuns: Powerup.Widget->TextureAtlas = DoubleGunsPowerupAtlas; break;
+		case EPowerup::Shields:    Powerup.Widget->TextureAtlas = ShieldPowerupAtlas;     break;
 	}
 
 	// Make the powerups dark so they don't get confused with asteroids.
-	Powerup.SpriteWidget->TextureAtlas->Atlas.AtlasBrush.TintColor = FLinearColor(1.0f, 1.0f, 1.0f, PowerupOpacity);
+	Powerup.Widget->TextureAtlas->Atlas.AtlasBrush.TintColor = FLinearColor(1.0f, 1.0f, 1.0f, PowerupOpacity);
+	Powerup.Widget->Size = FVector2D(32);
 
-	Powerup.SpriteWidget->Size = FVector2D(32);
+	auto CanvasSlot = RootCanvas->AddChildToCanvas(Powerup.Widget);
 
-	auto CanvasSlot = RootCanvas->AddChildToCanvas(Powerup.SpriteWidget);
-
-	Powerup.SpriteWidget->SynchronizeProperties();
+	Powerup.Widget->SynchronizeProperties();
 
 	CanvasSlot->SetAlignment(FVector2D(0.5));
 	CanvasSlot->SetAnchors(FAnchors());
 	CanvasSlot->SetAutoSize(true);
 
-	auto Margin   = CanvasSlot->GetOffsets();
-	Margin.Right  = Powerup.SpriteWidget->Size.X;
-	Margin.Bottom = Powerup.SpriteWidget->Size.Y;
-	CanvasSlot->SetOffsets(Margin);
+	Powerup.UpdateWidgetSize();
 
-	Show(Powerup.SpriteWidget);
+	Powerup.Show();
 	Powerup.SetPosition(P);
 	Powerup.Inertia.Set(0, 0);
 }
@@ -1116,9 +1084,9 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 		CanvasSlot->SetAlignment(FVector2D(0.5));
 
 		// autosize true doesn't automatically set the slot offsets to the image size, so do it here.
-		UpdateWidgetSize(Asteroid);
+		Asteroid.UpdateWidgetSize();
 
-		Spawn(Asteroid, P, Inertia, 1.0f);
+		Asteroid.Spawn(P, Inertia, 1.0f);
 
 		// Do this last since the play object is copied.
 		Asteroids.Add(Asteroid);
@@ -1144,12 +1112,6 @@ void UPlayViewBase::StartWave()
 	SpawnAsteroids(NumAsteroids);
 
 	TimeUntilNextEnemyShip = MaxTimeUntilNextEnemyShip; 
-}
-
-
-FVector2D UPlayViewBase::WrapPositionToViewport(const FVector2D& P) const
-{
-	return FVector2D(UKismetMathLibrary::FWrap(P.X, 0.0, ViewportSize.X), UKismetMathLibrary::FWrap(P.Y, 0.0, ViewportSize.Y));
 }
 
 
@@ -1241,7 +1203,7 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 		}
 	}
 
-	MovePlayObject(PlayerShip, DeltaTime);
+	PlayerShip.Move(DeltaTime, WrapPositionToViewport);
 
 
 	PlayerShield.Show(bShieldActive && PlayerShip.ShieldsLeft > 0.0f);
@@ -1255,24 +1217,13 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 }
 
 
-void UPlayViewBase::MovePlayObject(FPlayObject& PlayObject, float DeltaTime)
-{
-	auto P = PlayObject.GetPosition();
-
-	PlayObject.OldPosition          = P;
-	PlayObject.UnwrappedNewPosition = P + PlayObject.Inertia * DeltaTime;
-
-	PlayObject.SetPosition(WrapPositionToViewport(PlayObject.UnwrappedNewPosition));
-}
-
-
 void UPlayViewBase::UpdateAsteroids(float DeltaTime)
 {
 	for (auto& Asteroid : Asteroids)
 	{
 		if (Asteroid.LifeRemaining > 0.0f)
 		{
-			MovePlayObject(Asteroid, DeltaTime);
+			Asteroid.Move(DeltaTime, WrapPositionToViewport);
 			if(Asteroid.HasPowerup())
 			{
 				Asteroid.Powerup.SetPosition(Asteroid.GetPosition());
@@ -1292,17 +1243,9 @@ void UPlayViewBase::UpdatePowerups(float DeltaTime)
 
 	for(auto& Powerup : Powerups)
 	{
-		MovePlayObject(Powerup, DeltaTime);
+		Powerup.Move(DeltaTime, WrapPositionToViewport);
 		Powerup.Tick(DeltaTime);
 	}
-}
-
-
-static FVector2D MakeInertia(const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation)
-{
-	FVector2D NewInertia = Rotate(InertiaOld, FMath::RandRange(MinDeviation, MaxDeviation));
-
-	return NewInertia;
 }
 
 
@@ -1423,7 +1366,7 @@ void UPlayViewBase::UpdateExplosions(float DeltaTime)
 		}
 		else
 		{
-			DestroyWidget(Explosion);
+			RootCanvas->RemoveChild(Explosion);
 		}
 	}
 
@@ -1559,7 +1502,7 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	}
 
 	// Update size of existing rock.
-	UpdateWidgetSize(Asteroid);
+	Asteroid.UpdateWidgetSize();
 
 	Asteroid.SpinSpeed *= AsteroidSpinScale;
 
@@ -1572,7 +1515,7 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	NewAsteroid.OldPosition = 
 	NewAsteroid.UnwrappedNewPosition = Asteroid.UnwrappedNewPosition;
 	CanvasSlot->SetPosition(NewAsteroid.UnwrappedNewPosition);
-	UpdateWidgetSize(NewAsteroid);
+	NewAsteroid.UpdateWidgetSize();
 
 	// Do this last since the play object is copied.
 	Asteroids.Add(NewAsteroid);
@@ -1951,7 +1894,7 @@ void UPlayViewBase::UpdateTorpedos(float DeltaTime)
 			continue;
 		}
 
-		MovePlayObject(Torpedo, DeltaTime);
+		Torpedo.Move(DeltaTime, WrapPositionToViewport);
 	}
 }
 
@@ -1974,24 +1917,6 @@ int32 UPlayViewBase::GetAvailableTorpedo() const
 }
 
 
-void UPlayViewBase::Spawn(FPlayObject& PlayObject, const FVector2D& P, const FVector2D& Inertia, float LifeRemaining)
-{
-	if(PlayObject.Widget == nullptr)
-	{
-		UE_LOG(LogGame, Error, TEXT("UPlayViewBase::Spawn: PlayObject has no widget."));
-		return;
-	}
-
-	PlayObject.OldPosition          =
-	PlayObject.UnwrappedNewPosition = P;
-	PlayObject.Inertia              = Inertia;
-	PlayObject.LifeRemaining        = LifeRemaining;
-
-	PlayObject.SetPosition(P);
-	PlayObject.Show();
-}
-
-
 void UPlayViewBase::RemovePowerup(int32 PowerupIndex)
 {
 	if(!Powerups.IsValidIndex(PowerupIndex))
@@ -2002,7 +1927,7 @@ void UPlayViewBase::RemovePowerup(int32 PowerupIndex)
 
 	auto& Powerup = Powerups[PowerupIndex];
 
-	DestroyWidget(Powerup);
+	Powerup.DestroyWidget();
 
 	Powerups.RemoveAt(PowerupIndex);
 }
@@ -2018,7 +1943,7 @@ void UPlayViewBase::RemoveEnemyShip(int32 EnemyIndex)
 
 	auto& EnemyShip = EnemyShips[EnemyIndex];
 
-	DestroyWidget(EnemyShip);
+	EnemyShip.DestroyWidget();
 
 	EnemyShips.RemoveAt(EnemyIndex);
 }
@@ -2037,7 +1962,7 @@ void UPlayViewBase::RemoveExplosions()
 {
 	while(!Explosions.IsEmpty())
 	{
-		DestroyWidget(Explosions.Last(0));
+		RootCanvas->RemoveChild(Explosions.Last(0));
 		Explosions.Pop();
 	}
 }
@@ -2047,7 +1972,7 @@ void UPlayViewBase::RemovePowerups()
 {
 	while(!Powerups.IsEmpty())
 	{
-		DestroyWidget(Powerups.Last(0));
+		Powerups.Last(0).DestroyWidget();
 		Powerups.Pop();
 	}
 }
@@ -2071,7 +1996,7 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 
 		const bool IsBigEnemy = (EnemyShip.Value == ValueBigEnemy);
 
-		MovePlayObject(EnemyShip, DeltaTime);
+		EnemyShip.Move(DeltaTime, WrapPositionToViewport);
 
 		// If we've reached the opposite side of the viewport, remove us.
 		const auto P2 = WrapPositionToViewport(EnemyShip.UnwrappedNewPosition);
@@ -2166,7 +2091,7 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 			CanvasSlot->SetAutoSize(true);
 			CanvasSlot->SetAlignment(FVector2D(0.5));
 			
-			Spawn(EnemyShip, WrapPositionToViewport(P), Inertia, 0.0f);
+			EnemyShip.Spawn(WrapPositionToViewport(P), Inertia, 0.0f);
 
 			// Reset the timer.
 			TimeUntilNextEnemyShip = FMath::Lerp(MaxTimeUntilEnemyRespawn, MinTimeUntilEnemyRespawn, (float)FMath::Min(PlayerScore, ExpertPlayerScore) / ExpertPlayerScore);
@@ -2200,38 +2125,6 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 			SmallEnemyShipSoundLoop.Tick(DeltaTime);
 		}
 	}
-}
-
-
-static FVector2D ComputeFiringSolution(const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia)
-{
-	// Given launch and target positions, torpedo speed, and target inertia, 
-	// return a firing direction.
-
-	const auto DeltaPos = TargetP - LaunchP;
-	const auto DeltaVee = TargetInertia;// - ShooterInertia
-
-	const auto A = DeltaVee.Dot(DeltaVee) - Square(TorpedoSpeed);
-	const auto B = 2 * DeltaVee.Dot(DeltaPos);
-	const auto C = DeltaPos.Dot(DeltaPos);
-
-	const auto Desc = B * B - 4 * A * C;
-
-	if(Desc <= 0)
-	{
-		return RandVector2D();
-	}
-
-	const auto TimeToTarget = 2 * C / (FMath::Sqrt(Desc) - B);
-
-	const auto TrueAimPoint = TargetP + TargetInertia * TimeToTarget;
-	auto RelativeAimPoint = TrueAimPoint - LaunchP;
-
-	RelativeAimPoint.Normalize();
-	return RelativeAimPoint;
-
-	//auto OffsetAimPoint = RelativeAimPoint - TimeToTarget * ShooterInertia;
-	//return OffsetAimPoint.Normalize();
 }
 
 
@@ -2296,7 +2189,7 @@ void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBig
 		}
 	}
 
-	Spawn(Torpedo, LaunchP, Direction * Speed, MaxTorpedoLifeTime);
+	Torpedo.Spawn(LaunchP, Direction * Speed, MaxTorpedoLifeTime);
 
 	PlaySound(TorpedoSound);
 }
@@ -2340,7 +2233,7 @@ void UPlayViewBase::OnFireTorpedo()
 		P += PlayerFwd * (PlayerShip.GetSize().Y / 2 + /*PlayerShip.Inertia.Length()*/ 2.0); // The last offset is so that the bullet doesn't start off accidentally overlapping the player ship
 		P = WrapPositionToViewport(P);
 
-		Spawn(Torpedo, P, Inertia, MaxTorpedoLifeTime);
+		Torpedo.Spawn(P, Inertia, MaxTorpedoLifeTime);
 	}
 	else
 	{
@@ -2355,7 +2248,7 @@ void UPlayViewBase::OnFireTorpedo()
 		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
 		P = WrapPositionToViewport(P);
 
-		Spawn(Torpedo1, P, Inertia, MaxTorpedoLifeTime);
+		Torpedo1.Spawn(P, Inertia, MaxTorpedoLifeTime);
 
 		TorpedoIndex = GetAvailableTorpedo();
 
@@ -2373,7 +2266,7 @@ void UPlayViewBase::OnFireTorpedo()
 		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
 		P = WrapPositionToViewport(P);
 
-		Spawn(Torpedo2, P, Inertia, MaxTorpedoLifeTime);
+		Torpedo2.Spawn(P, Inertia, MaxTorpedoLifeTime);
 	}
 }
 

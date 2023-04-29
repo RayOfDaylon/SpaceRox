@@ -96,20 +96,14 @@ enum class EGameState : uint8
 
 
 
-USTRUCT()
-struct FTorpedo : public FPlayObject
+struct FTorpedo : public FPlayObject<UImage, ImageWidgetSizeGetter>
 {
-	GENERATED_BODY()
-
 	bool FiredByPlayer;
 };
 
 
-USTRUCT()
-struct FPlayerShip : public FPlayObject
+struct FPlayerShip : public FPlayObject<UImage, ImageWidgetSizeGetter>
 {
-	GENERATED_BODY()
-
 	bool  IsUnderThrust;
 	bool  IsSpawning;
 	int32 DoubleShotsLeft;
@@ -117,78 +111,23 @@ struct FPlayerShip : public FPlayObject
 };
 
 
-USTRUCT()
-struct FPowerup : public FPlayObject
+struct FPowerup : public FPlayObject<USpriteWidget, SpriteWidgetSizeGetter>
 {
-	GENERATED_BODY()
-
 	EPowerup Kind = EPowerup::Nothing;
 
-	USpriteWidget* SpriteWidget = nullptr;
 
-
-	virtual UCanvasPanelSlot*       GetWidgetSlot () override { return Cast<UCanvasPanelSlot>(SpriteWidget->Slot); }
-	virtual const UCanvasPanelSlot* GetWidgetSlot () const override { return Cast<UCanvasPanelSlot>(SpriteWidget->Slot); }
-
-	virtual bool IsVisible () const { return (SpriteWidget != nullptr ? SpriteWidget->IsVisible() : false); }
-	virtual void Show      (bool Visible = true) { ::Show(SpriteWidget, Visible); }
-
-	virtual FVector2D GetPosition() const override
+	virtual void Tick(float DeltaTime) override
 	{
-		if(SpriteWidget == nullptr || SpriteWidget->Slot == nullptr)
+		if(Widget != nullptr)
 		{
-			return FVector2D(0);
-		}
-
-		return GetWidgetSlot()->GetPosition();
-	}
-
-
-	virtual void SetPosition(const FVector2D& P) override
-	{
-		if(SpriteWidget == nullptr || SpriteWidget->Slot == nullptr)
-		{
-			return;
-		}
-
-		return GetWidgetSlot()->SetPosition(P);
-	}
-
-
-	virtual FVector2D GetSize() const override
-	{
-		if(SpriteWidget == nullptr || SpriteWidget->Slot == nullptr)
-		{
-			return FVector2D(0);
-		}
-
-		return GetWidgetSlot()->GetSize();
-	}
-
-
-	virtual float GetAngle() const override
-	{
-		return (SpriteWidget == nullptr ? 0.0f : SpriteWidget->GetRenderTransformAngle());
-	}
-
-
-
-	void Tick(float DeltaTime)
-	{
-		if(SpriteWidget != nullptr)
-		{
-			SpriteWidget->Tick(DeltaTime);
+			Widget->Tick(DeltaTime);
 		}
 	}
-
 };
 
 
-USTRUCT()
-struct FAsteroid : public FPlayObject
+struct FAsteroid : public FPlayObject<UImage, ImageWidgetSizeGetter>
 {
-	GENERATED_BODY()
-
 	FPowerup Powerup;
 
 	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
@@ -196,14 +135,12 @@ struct FAsteroid : public FPlayObject
 
 
 
-USTRUCT()
-struct FEnemyShip : public FPlayObject
+struct FEnemyShip : public FPlayObject<UImage, ImageWidgetSizeGetter>
 {
-	GENERATED_BODY()
-
 	float TimeRemainingToNextShot = 0.0f;
 	float TimeRemainingToNextMove = 0.0f;
 };
+
 
 
 // Base view class of the SpaceRox game arena.
@@ -307,14 +244,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	// The way the player ship looks when shielded
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	FSlateBrush ShieldBrush;
-
-	// The double gun powerup icon next to its readout
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	//FSlateBrush DoubleGunsStatusIconBrush;
-
-	// The shield powerup icon next to its readout
-	//UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	//FSlateBrush ShieldStatusIconBrush;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	TArray<FSlateBrush> BigRockBrushes;
@@ -452,13 +381,11 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      InitializePlayerShield     ();
 	void      CreateTorpedos             ();
 	void      LaunchTorpedoFromEnemy     (const FEnemyShip& Shooter, bool IsBigEnemy);
-	FVector2D WrapPositionToViewport     (const FVector2D& P) const;
 
 	void      TransitionToState          (EGameState State);
 
 	template<class WidgetT> WidgetT* MakeWidget();
 
-	void      Spawn                      (FPlayObject& PlayObject, const FVector2D& P, const FVector2D& Inertia, float LifeRemaining);
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnPowerup               (FPowerup& Powerup, const FVector2D& P);
 	void      SpawnExplosion             (const FVector2D& P);
@@ -476,9 +403,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      KillEnemyShip              (int32 EnemyIndex);
 	void      KillPowerup                (int32 PowerupIndex);
 	void      KillPlayerShip             ();
-	void      DestroyWidget              (FPowerup& Powerup);
-	void      DestroyWidget              (FPlayObject& PlayObject);
-	void      DestroyWidget              (UWidget* Widget);
 
 	int32     GetAvailableTorpedo        () const;
 	void      IncreasePlayerScoreBy      (int32 Amount);
@@ -502,7 +426,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// -- Called every frame -----------------------------------------------------------
 
-	void MovePlayObject            (FPlayObject& PlayObject, float DeltaTime);
+	//void MovePlayObject            (IPlayObject& PlayObject, float DeltaTime);
 	void ProcessWaveTransition     (float DeltaTime);
 	void ProcessPlayerShipSpawn    (float DeltaTime);
 	//void AnimateStartMessage     (float DeltaTime);
@@ -528,8 +452,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	FLoopedSound              BigEnemyShipSoundLoop;
 	FLoopedSound              SmallEnemyShipSoundLoop;
 
-	FPlayerShip               PlayerShip;
-	FPlayObject               PlayerShield;
+	FPlayerShip                                  PlayerShip;
+	FPlayObject<UImage, ImageWidgetSizeGetter>   PlayerShield;
+
 	TArray<FAsteroid>         Asteroids;
 	TArray<FEnemyShip>        EnemyShips;
 	TArray<FTorpedo>          Torpedos;

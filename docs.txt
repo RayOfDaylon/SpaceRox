@@ -2,7 +2,7 @@ Documentation for SpaceRox game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-April 27, 2023
+April 28, 2023
 
 
 
@@ -255,12 +255,21 @@ In development mode, this will be in the project's
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
+Version 1.41
+-------------------------------------------------------------------------------------
+Refactored the FPlayObject struct to be a template so that 
+only one UWidget-based member existed and be typesafe.
+It also inherits from a pure abstract IPlayObject struct.
+FPowerup became much simpler as a result.
+
+Several PlayViewBase methods became FPlayObject methods.
+
+Moved the ComputeTargetingSolution function to LocalUtils.
+
 
 Future Work
 -------------------------------------------------------------------------------------
-Adding powerups introduced some technical debt in the 
-way the FPlayObject is subclassed, so that needs to be cleaned up.
-It would also be good to add component members to FPlayObject to avoid 
+It would be good to add component members to FPlayObject to avoid 
 doing the subclasses' features entirely by inheritance, to have 
 class dtors automatically remove widgets from the canvas, and have 
 "subscribable variables" so that things like player score and the 
@@ -272,5 +281,3 @@ so we want patterns or function consolidation.
 
 The player-rock collision detection seems to be a bit too generous 
 in some cases.
-
-

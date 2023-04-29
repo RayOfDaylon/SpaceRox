@@ -202,6 +202,38 @@ float WrapAngle(float Angle)
 }
 
 
+FVector2D ComputeFiringSolution(const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia)
+{
+	// Given launch and target positions, torpedo speed, and target inertia, 
+	// return a firing direction.
+
+	const auto DeltaPos = TargetP - LaunchP;
+	const auto DeltaVee = TargetInertia;// - ShooterInertia
+
+	const auto A = DeltaVee.Dot(DeltaVee) - Square(TorpedoSpeed);
+	const auto B = 2 * DeltaVee.Dot(DeltaPos);
+	const auto C = DeltaPos.Dot(DeltaPos);
+
+	const auto Desc = B * B - 4 * A * C;
+
+	if(Desc <= 0)
+	{
+		return RandVector2D();
+	}
+
+	const auto TimeToTarget = 2 * C / (FMath::Sqrt(Desc) - B);
+
+	const auto TrueAimPoint = TargetP + TargetInertia * TimeToTarget;
+	auto RelativeAimPoint = TrueAimPoint - LaunchP;
+
+	RelativeAimPoint.Normalize();
+	return RelativeAimPoint;
+
+	//auto OffsetAimPoint = RelativeAimPoint - TimeToTarget * ShooterInertia;
+	//return OffsetAimPoint.Normalize();
+}
+
+
 FVector2D GetWidgetDirectionVector(const UWidget* Widget)
 {
 	if (Widget == nullptr)
