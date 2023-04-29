@@ -2,7 +2,7 @@ Documentation for SpaceRox game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-April 28, 2023
+April 29, 2023
 
 
 
@@ -108,12 +108,19 @@ to raise the shield.
 The double-gun (or power) powerup grants 100 double-shot rounds. The player ship 
 will automatically switch to double guns if any such rounds have been acquired.
 
+
+Keyboard Issues
+-----------------------------------------------------------------------------------
 If you're having trouble getting key presses to register, your keyboard may 
 have limited n-key rollover. Standard keyboards use the same circuitry for 
 all the same keys in a row (to lower costs) but can make the keyboard unable 
 to tell exactly which keys are being held down simultaneously. A gaming 
 keyboard may be a better choice (they may indicate better rollover handling 
-by calling it "anti-ghosting").
+by calling it "anti-ghosting"). Some of them (like the MSI GK20) support 
+more simultaneous keys in the QWE-ASD-ZXC area.
+
+You can test how many simultaneous keys are recognized with a rollover tester.
+There's one online at https://www.mechanical-keyboard.org/key-rollover-test/
 
 If you want to change the default key assignments, open the project in the 
 UE Editor, access Project Settings, Input and change the key assignments 
@@ -269,6 +276,9 @@ Moved the ComputeTargetingSolution function to LocalUtils.
 
 Future Work
 -------------------------------------------------------------------------------------
+For more performance we could bypass UMG and just use Slate, 
+since UMG is basically just a Slate wrapper.
+
 It would be good to add component members to FPlayObject to avoid 
 doing the subclasses' features entirely by inheritance, to have 
 class dtors automatically remove widgets from the canvas, and have 
