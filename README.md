@@ -3,6 +3,8 @@ Remake of Atari Asteroids 1979 arcade game using Unreal Engine
 
 An example gameplay video is available at https://www.youtube.com/watch?v=mXKK6ThleVQ
 
+Another video is available at https://www.youtube.com/watch?v=i2CBQ7l-PXI
+
 Unreal Engine 5.1 or higher required.
 
 Only keyboard input supported at present.
