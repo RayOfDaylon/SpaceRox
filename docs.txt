@@ -276,6 +276,10 @@ Moved the ComputeTargetingSolution function to LocalUtils.
 
 Future Work
 -------------------------------------------------------------------------------------
+Since the Project Settings/Input stuff is deprecated, I need to 
+switch input handling over to Enhanced Input. It's a more complex 
+system, but I can see how it's more useful.
+
 For more performance we could bypass UMG and just use Slate, 
 since UMG is basically just a Slate wrapper.
 
