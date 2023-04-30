@@ -2,7 +2,7 @@ Documentation for SpaceRox game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-April 29, 2023
+April 30, 2023
 
 
 
@@ -131,18 +131,33 @@ How the Game Works
 -------------------------------------------------------------------------------------
 The main data type (class) of interest is FPlayObject, defined in LocalUtils.h.
 Every object in the playfield is either an FPlayObject or a subclass. This class 
-associates a UImage widget with an inertia (direction + speed) vector, the 
+associates a UMG widget with an inertia (direction + speed) vector, the 
 amount of life remaining in seconds, and a previous/current position. There are 
 also methods to manage these values, show/hide the widget, etc.
 
+Play object subclasses need two template arguments: a UWidget-derived type 
+and a class that implements a GetSize(WidgetT*) method. Currently the widget 
+types in use are UImage and USpriteWidget.
+
 A play object's position is at the widget's center, which simplifies 
 rotation and collision detection. This is achieved by using a canvas 
-slot alignment of (0.5, 0.5) and a RenderTransform pivot of (0.5, 0.5).
+slot alignment of (0.5, 0.5). For rotations we also use a RenderTransform 
+pivot of (0.5, 0.5).
 
 The player ship is its own UPlayViewBase member variable, while asteroids, 
 enemies, and torpedos have their own TArray containers. Torpedos are 
 preallocated in a fixed quantity since they are frequently getting 
-created/destroyed.
+created/destroyed. Explosions are a TArray of UParticleWidget* instead 
+of being play objects because they don't need any logic besides appearing
+on the screen.
+
+UPlayViewBase::MakeWidget handles widget creation, while 
+FPlayObject::DestroyWidget handles destruction. Since widgets 
+are UObjects, we just remove them from the scenegraph and 
+let the engine's garbage collector actually delete them.
+We don't tag any widget pointers as UPROPERTY or otherwise 
+assign owners. Raw pointers are okay as long as a widget 
+is inside the scenegraph/widget tree.
 
 The UPlayViewBase class is a UUserWidget holding the game logic. A blueprint 
 subclass "PlayView" is used to hold design-time objects like menus, info displays, etc.
@@ -265,7 +280,7 @@ file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 Version 1.41
 -------------------------------------------------------------------------------------
 Refactored the FPlayObject struct to be a template so that 
-only one UWidget-based member existed and be typesafe.
+only one UWidget-based member existed and is typesafe.
 It also inherits from a pure abstract IPlayObject struct.
 FPowerup became much simpler as a result.
 
