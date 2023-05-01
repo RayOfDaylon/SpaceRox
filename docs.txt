@@ -2,7 +2,7 @@ Documentation for SpaceRox game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-April 30, 2023
+May 1, 2023
 
 
 
@@ -307,9 +307,6 @@ Moved the ComputeTargetingSolution function to LocalUtils.
 
 Future Work
 -------------------------------------------------------------------------------------
-Need to clean away all the unused old Project Settings/Input stuff
-from the settings and from the PlayView blueprint.
-
 For more performance we could bypass UMG and just use Slate, 
 since UMG is basically just a Slate wrapper.
 

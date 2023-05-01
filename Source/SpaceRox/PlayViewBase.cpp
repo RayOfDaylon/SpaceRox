@@ -724,9 +724,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			if(PlayerShip.IsVisible())
 			{
-				//UpdatePlayerLeftRotation  (InDeltaTime);
-				//UpdatePlayerRightRotation (InDeltaTime);
-				UpdatePlayerRotationEx (InDeltaTime);
+				UpdatePlayerRotation  (InDeltaTime);
 				UpdatePlayerShip      (InDeltaTime);
 			}
 
@@ -1117,35 +1115,7 @@ void UPlayViewBase::StartWave()
 }
 
 
-void UPlayViewBase::UpdatePlayerRotation(float DeltaTime, ERotationDirection Direction)
-{
-	// Early out if rotation requested when the corresponding thruster isn't active.
-
-	if((Direction == ERotationDirection::Clockwise && !bRotateRightActive) || (Direction == ERotationDirection::CounterClockwise && !bRotateLeftActive))
-	{
-		return;
-	}
-
-	if(!PlayerShip.IsValid())
-	{
-		UE_LOG(LogGame, Error, TEXT("Invalid player ship"));
-		return;
-	}
-
-
-	const float Amt = PlayerRotationSpeed * DeltaTime;
-
-	float Angle = PlayerShip.GetAngle();
-
-	Angle += Amt * (int32)Direction;
-
-	Angle = WrapAngle(Angle);
-
-	PlayerShip.SetAngle(Angle);
-}
-
-
-void UPlayViewBase::UpdatePlayerRotationEx(float DeltaTime)
+void UPlayViewBase::UpdatePlayerRotation(float DeltaTime)
 {
 	// Uses a 1D axis value instead of action buttons
 
@@ -1160,18 +1130,6 @@ void UPlayViewBase::UpdatePlayerRotationEx(float DeltaTime)
 	UE_LOG(LogGame, Log, TEXT("Rotation force: %.5f"), RotationForce);
 
 	PlayerShip.SetAngle(WrapAngle(PlayerShip.GetAngle() + Amt * RotationForce));
-}
-
-
-void UPlayViewBase::UpdatePlayerRightRotation(float DeltaTime)
-{
-	UpdatePlayerRotation(DeltaTime, ERotationDirection::Clockwise);
-}
-
-
-void UPlayViewBase::UpdatePlayerLeftRotation(float DeltaTime)
-{
-	UpdatePlayerRotation(DeltaTime, ERotationDirection::CounterClockwise);
 }
 
 

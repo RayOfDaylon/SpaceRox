@@ -19,13 +19,14 @@
 #include "PlayViewBase.generated.h"
 
 
+/*
 UENUM()
 enum class ERotationDirection : int32
 {
 	// These values are casted to int
 	CounterClockwise = -1,
 	Clockwise        =  1,
-};
+};*/
 
 
 UENUM()
@@ -358,12 +359,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	float RotationForce = 0.0f;
 
 	UPROPERTY(Transient, BlueprintReadWrite)
-	bool bRotateRightActive = false;
-
-	UPROPERTY(Transient, BlueprintReadWrite)
-	bool bRotateLeftActive = false;
-
-	UPROPERTY(Transient, BlueprintReadWrite)
 	bool bThrustActive = false;
 
 	UPROPERTY(Transient, BlueprintReadWrite)
@@ -437,10 +432,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void CheckCollisions           ();
 	void ProcessPlayerCollision    ();
 
-	void UpdatePlayerRotationEx    (float DeltaTime);
-	void UpdatePlayerRotation      (float DeltaTime, ERotationDirection Direction);
-	void UpdatePlayerRightRotation (float DeltaTime);
-	void UpdatePlayerLeftRotation  (float DeltaTime);
+	void UpdatePlayerRotation      (float DeltaTime);
 	void UpdatePlayerShip          (float DeltaTime);
 	void UpdateEnemyShips          (float DeltaTime);
 	void UpdateAsteroids           (float DeltaTime);
