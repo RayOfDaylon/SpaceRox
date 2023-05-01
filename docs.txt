@@ -279,6 +279,20 @@ In development mode, this will be in the project's
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
+
+Version 1.5
+-------------------------------------------------------------------------------------
+Switched input handling to the Enhanced Input subsystem 
+which was introduced with Unreal Engine 5.0 and made the 
+official system in UE 5.1.
+
+Added gamepad input support. The Help screen shows an 
+Xbox One controller in its button guide.
+
+Added MainGameMode asset which supercedes the 
+C++ SpaceRoxGameModeBase class.
+
+
 Version 1.41
 -------------------------------------------------------------------------------------
 Refactored the FPlayObject struct to be a template so that 
@@ -293,9 +307,8 @@ Moved the ComputeTargetingSolution function to LocalUtils.
 
 Future Work
 -------------------------------------------------------------------------------------
-Since the Project Settings/Input stuff is deprecated, I need to 
-switch input handling over to Enhanced Input. It's a more complex 
-system, but I can see how it's more useful.
+Need to clean away all the unused old Project Settings/Input stuff
+from the settings and from the PlayView blueprint.
 
 For more performance we could bypass UMG and just use Slate, 
 since UMG is basically just a Slate wrapper.

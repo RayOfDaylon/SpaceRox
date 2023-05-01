@@ -671,6 +671,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering help state"), (int32)PreviousState);
 			}
 
+			RemoveAsteroids();
 			RemoveEnemyShips();
 			Show(HelpContent);
 
@@ -723,8 +724,9 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			if(PlayerShip.IsVisible())
 			{
-				UpdatePlayerLeftRotation  (InDeltaTime);
-				UpdatePlayerRightRotation (InDeltaTime);
+				//UpdatePlayerLeftRotation  (InDeltaTime);
+				//UpdatePlayerRightRotation (InDeltaTime);
+				UpdatePlayerRotationEx (InDeltaTime);
 				UpdatePlayerShip      (InDeltaTime);
 			}
 
@@ -1140,6 +1142,24 @@ void UPlayViewBase::UpdatePlayerRotation(float DeltaTime, ERotationDirection Dir
 	Angle = WrapAngle(Angle);
 
 	PlayerShip.SetAngle(Angle);
+}
+
+
+void UPlayViewBase::UpdatePlayerRotationEx(float DeltaTime)
+{
+	// Uses a 1D axis value instead of action buttons
+
+	if(!PlayerShip.IsValid())
+	{
+		UE_LOG(LogGame, Error, TEXT("Invalid player ship"));
+		return;
+	}
+
+	const float Amt = PlayerRotationSpeed * DeltaTime;
+
+	UE_LOG(LogGame, Log, TEXT("Rotation force: %.5f"), RotationForce);
+
+	PlayerShip.SetAngle(WrapAngle(PlayerShip.GetAngle() + Amt * RotationForce));
 }
 
 
