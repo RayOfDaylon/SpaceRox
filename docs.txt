@@ -14,7 +14,8 @@ to match its look and feel, but coded using Unreal Engine (UE 5.1, specifically)
 Its goals are a) to provide an educational reference for people interested in how 
 this type of game works and how it can be made in UE, and b) to see if such a game 
 using only UMG widgets would be performant enough (it is -- on my nVidia GTX 1050 TI
-it gets between 60 and 120 fps).
+it gets between 60 and 120 fps). Another benefit (fwiw) is helping preserve the legacy of 
+a classic arcade game.
 
 While I've endeavoured to make the source code readable, the rest of this document 
 may provide more clarification.
@@ -37,9 +38,10 @@ Content
 
 Source
     SpaceRox
-        LocalUtils.*           Reusable helper code not specific to the game
         PlayViewBase.*         The specific game logic
-        *ParticlesWidget.*     A UWidget used to efficiently draw explosions
+        LocalUtils.*           Reusable helper code not specific to the game
+        *ParticlesWidget.*     A widget used to efficiently draw explosions
+        *SpriteWidget.*        A widget used to draw animated textures
 
 
 Setting Up
