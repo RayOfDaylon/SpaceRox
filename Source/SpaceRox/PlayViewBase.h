@@ -13,9 +13,9 @@
 #include "UMG/Public/Components/Image.h"
 #include "UMG/Public/Components/EditableTextBox.h"
 #include "Runtime/Engine/Classes/Sound/SoundBase.h"
-#include "UParticlesWidget.h"
-#include "USpriteWidget.h"
-#include "LocalUtils.h"
+#include "UDaylonParticlesWidget.h"
+#include "UDaylonSpriteWidget.h"
+#include "DaylonUtils.h"
 #include "PlayViewBase.generated.h"
 
 
@@ -29,13 +29,6 @@ enum class ERotationDirection : int32
 };*/
 
 
-UENUM()
-enum class EListNavigationDirection : int32
-{
-	// These values are casted to int
-	Backwards = -1,
-	Forwards  =  1,
-};
 
 
 UENUM()
@@ -97,13 +90,13 @@ enum class EGameState : uint8
 
 
 
-struct FTorpedo : public FPlayObject<UImage, ImageWidgetSizeGetter>
+struct FTorpedo : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>
 {
 	bool FiredByPlayer;
 };
 
 
-struct FPlayerShip : public FPlayObject<UImage, ImageWidgetSizeGetter>
+struct FPlayerShip : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>
 {
 	bool  IsUnderThrust;
 	bool  IsSpawning;
@@ -112,7 +105,7 @@ struct FPlayerShip : public FPlayObject<UImage, ImageWidgetSizeGetter>
 };
 
 
-struct FPowerup : public FPlayObject<USpriteWidget, SpriteWidgetSizeGetter>
+struct FPowerup : public Daylon::FPlayObject<UDaylonSpriteWidget, Daylon::SpriteWidgetSizeGetter>
 {
 	EPowerup Kind = EPowerup::Nothing;
 
@@ -127,7 +120,7 @@ struct FPowerup : public FPlayObject<USpriteWidget, SpriteWidgetSizeGetter>
 };
 
 
-struct FAsteroid : public FPlayObject<UImage, ImageWidgetSizeGetter>
+struct FAsteroid : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>
 {
 	FPowerup Powerup;
 
@@ -136,7 +129,7 @@ struct FAsteroid : public FPlayObject<UImage, ImageWidgetSizeGetter>
 
 
 
-struct FEnemyShip : public FPlayObject<UImage, ImageWidgetSizeGetter>
+struct FEnemyShip : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>
 {
 	float TimeRemainingToNextShot = 0.0f;
 	float TimeRemainingToNextMove = 0.0f;
@@ -419,7 +412,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      PopulateHighScores         ();
 	void      ExecuteMenuItem            (EMenuItem Item);
 	void      UpdateMenuReadout          ();
-	void      NavigateMenu               (EListNavigationDirection Direction);
+	void      NavigateMenu               (Daylon::EListNavigationDirection Direction);
 
 
 	// -- Called every frame -----------------------------------------------------------
@@ -444,36 +437,36 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// -- Member variables -----------------------------------------------------------
 
-	FLoopedSound              PlayerShipThrustSoundLoop;
-	FLoopedSound              BigEnemyShipSoundLoop;
-	FLoopedSound              SmallEnemyShipSoundLoop;
+	Daylon::FLoopedSound      PlayerShipThrustSoundLoop;
+	Daylon::FLoopedSound      BigEnemyShipSoundLoop;
+	Daylon::FLoopedSound      SmallEnemyShipSoundLoop;
 
-	FPlayerShip                                  PlayerShip;
-	FPlayObject<UImage, ImageWidgetSizeGetter>   PlayerShield;
+	FPlayerShip                                                  PlayerShip;
+	Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>   PlayerShield;
 
-	TArray<FAsteroid>         Asteroids;
-	TArray<FEnemyShip>        EnemyShips;
-	TArray<FTorpedo>          Torpedos;
-	TArray<FPowerup>          Powerups;
-	TArray<UParticlesWidget*> Explosions;
-	FHighScoreTable           HighScores;
+	TArray<FAsteroid>               Asteroids;
+	TArray<FEnemyShip>              EnemyShips;
+	TArray<FTorpedo>                Torpedos;
+	TArray<FPowerup>                Powerups;
+	TArray<UDaylonParticlesWidget*> Explosions;
+	Daylon::FHighScoreTable         HighScores;
 
-	TArray<FScheduledTask>    ScheduledTasks;
-	TArray<FDurationTask>     DurationTasks;
+	TArray<Daylon::FScheduledTask>  ScheduledTasks;
+	TArray<Daylon::FDurationTask>   DurationTasks;
 
-	EGameState                GameState;
-	EMenuItem                 SelectedMenuItem;
-	int32                     NumPlayerShips;
-	int32                     PlayerScore;
-	int32                     WaveNumber;
-	float                     TimeUntilNextWave;
-	float                     ThrustSoundTimeRemaining;
-	float                     StartMsgAnimationAge;
-	float                     TimeUntilIntroStateEnds;
-	float                     TimeUntilNextPlayerShip;
-	float                     TimeUntilNextEnemyShip;
-	float                     TimeUntilGameOverStateEnds;
-	bool                      IsInitialized;
-	bool                      bEnemyShootsAtPlayer;
-	bool                      bHighScoreWasEntered;
+	EGameState   GameState;
+	EMenuItem    SelectedMenuItem;
+	int32        NumPlayerShips;
+	int32        PlayerScore;
+	int32        WaveNumber;
+	float        TimeUntilNextWave;
+	float        ThrustSoundTimeRemaining;
+	float        StartMsgAnimationAge;
+	float        TimeUntilIntroStateEnds;
+	float        TimeUntilNextPlayerShip;
+	float        TimeUntilNextEnemyShip;
+	float        TimeUntilGameOverStateEnds;
+	bool         IsInitialized;
+	bool         bEnemyShootsAtPlayer;
+	bool         bHighScoreWasEntered;
 };

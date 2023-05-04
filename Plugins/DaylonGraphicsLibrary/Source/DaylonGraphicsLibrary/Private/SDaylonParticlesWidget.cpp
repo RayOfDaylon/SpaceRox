@@ -1,10 +1,10 @@
 // Copyright 2023 Daylon Graphics Ltd. All Rights Reserved.
 
-#include "SParticlesWidget.h"
-#include "LocalUtils.h"
+#include "SDaylonParticlesWidget.h"
+#include "DaylonUtils.h"
 
 
-void SParticlesWidget::Construct(const FArguments& InArgs)
+void SDaylonParticlesWidget::Construct(const FArguments& InArgs)
 {
 	Size = InArgs._Size.Get();
 	MinParticleSize     = InArgs._MinParticleSize.Get();
@@ -19,24 +19,24 @@ void SParticlesWidget::Construct(const FArguments& InArgs)
 }
 
 
-FVector2D SParticlesWidget::ComputeDesiredSize(float) const 
+FVector2D SDaylonParticlesWidget::ComputeDesiredSize(float) const 
 {
 	return Size; 
 }
 
 
-void SParticlesWidget::SetSize                  (const FVector2D& InSize)    { Size = InSize; }
-void SParticlesWidget::SetParticleBrush         (const FSlateBrush& InBrush) { ParticleBrush = InBrush; }
-void SParticlesWidget::SetMinParticleSize       (float InSize)               { MinParticleSize = InSize; }
-void SParticlesWidget::SetMaxParticleSize       (float InSize)               { MaxParticleSize = InSize; }
-void SParticlesWidget::SetMinParticleVelocity   (float Velocity)             { MinParticleVelocity = Velocity; }
-void SParticlesWidget::SetMaxParticleVelocity   (float Velocity)             { MaxParticleVelocity = Velocity; }
-void SParticlesWidget::SetMinParticleLifetime   (float Lifetime)             { MinParticleLifetime = Lifetime; }
-void SParticlesWidget::SetMaxParticleLifetime   (float Lifetime)             { MaxParticleLifetime = Lifetime; }
-void SParticlesWidget::SetFinalOpacity          (float Opacity)              { FinalOpacity = Opacity; }
+void SDaylonParticlesWidget::SetSize                  (const FVector2D& InSize)    { Size = InSize; }
+void SDaylonParticlesWidget::SetParticleBrush         (const FSlateBrush& InBrush) { ParticleBrush = InBrush; }
+void SDaylonParticlesWidget::SetMinParticleSize       (float InSize)               { MinParticleSize = InSize; }
+void SDaylonParticlesWidget::SetMaxParticleSize       (float InSize)               { MaxParticleSize = InSize; }
+void SDaylonParticlesWidget::SetMinParticleVelocity   (float Velocity)             { MinParticleVelocity = Velocity; }
+void SDaylonParticlesWidget::SetMaxParticleVelocity   (float Velocity)             { MaxParticleVelocity = Velocity; }
+void SDaylonParticlesWidget::SetMinParticleLifetime   (float Lifetime)             { MinParticleLifetime = Lifetime; }
+void SDaylonParticlesWidget::SetMaxParticleLifetime   (float Lifetime)             { MaxParticleLifetime = Lifetime; }
+void SDaylonParticlesWidget::SetFinalOpacity          (float Opacity)              { FinalOpacity = Opacity; }
 
 
-void SParticlesWidget::SetNumParticles          (int32 Count)             
+void SDaylonParticlesWidget::SetNumParticles          (int32 Count)             
 {
 	check(Count > 0);
 	Particles.SetNum(Count);
@@ -44,19 +44,19 @@ void SParticlesWidget::SetNumParticles          (int32 Count)
 }
 
 
-void SParticlesWidget::Reset()
+void SDaylonParticlesWidget::Reset()
 {
 	for(auto& Particle : Particles)
 	{
 		Particle.P             = FVector2D(0); // todo: could randomize this a small distance for more realism
 		Particle.Size          = FMath::RandRange(MinParticleSize, MaxParticleSize);
-		Particle.Interia       = RandVector2D() * FMath::RandRange(MinParticleVelocity, MaxParticleVelocity);
+		Particle.Interia       = UDaylonUtils::RandVector2D() * FMath::RandRange(MinParticleVelocity, MaxParticleVelocity);
 		Particle.LifeRemaining = Particle.StartingLifeRemaining = FMath::RandRange(MinParticleLifetime, MaxParticleLifetime);
 	}
 }
 
 
-bool SParticlesWidget::Update(float DeltaTime)
+bool SDaylonParticlesWidget::Update(float DeltaTime)
 {
 	bool Alive = false;
 
@@ -71,7 +71,7 @@ bool SParticlesWidget::Update(float DeltaTime)
 }
 
 
-int32 SParticlesWidget::OnPaint
+int32 SDaylonParticlesWidget::OnPaint
 (
 	const FPaintArgs&          Args,
 	const FGeometry&           AllottedGeometry,

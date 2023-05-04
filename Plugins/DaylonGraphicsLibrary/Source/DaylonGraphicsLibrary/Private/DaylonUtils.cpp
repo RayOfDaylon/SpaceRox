@@ -1,8 +1,8 @@
-// Copyright 2023 Daylon Graphics Ltd. All Rights Reserved.
+// Copyright 2023 Daylon Graphics Ltd. All rights reserved.
 
-#pragma once
 
-#include "LocalUtils.h"
+#include "DaylonUtils.h"
+
 #include "Runtime/GeometryCore/Public/Intersection/IntrTriangle2Triangle2.h"
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "Blueprint/UserWidget.h"
@@ -10,11 +10,65 @@
 #include "Algo/Reverse.h"
 
 
+const double UDaylonUtils::Epsilon = 1e-14;
+
+
+FVector2D UDaylonUtils::AngleToVector2D(float Angle)
+{
+	// We place zero degrees pointing up and increasing clockwise.
+
+	Angle = UKismetMathLibrary::DegreesToRadians(Angle - 90.0f);
+
+	return FVector2D(UKismetMathLibrary::Cos(Angle), UKismetMathLibrary::Sin(Angle));
+}
+
+
+FVector2D UDaylonUtils::RandVector2D()
+{
+	FVector2D Result;
+	FVector::FReal L;
+
+	do
+	{
+		// Check random vectors in the unit sphere so result is statistically uniform.
+		Result.X = FMath::FRand() * 2.f - 1.f;
+		Result.Y = FMath::FRand() * 2.f - 1.f;
+		L = Result.SizeSquared();
+	} while (L > 1.0f || L < UE_KINDA_SMALL_NUMBER);
+
+	return Result * (1.0f / FMath::Sqrt(L));
+}
+
+
+FVector2D UDaylonUtils::Rotate(const FVector2D& P, float Angle)
+{
+	// Rotate P around the origin for Angle degrees.
+
+	const auto Theta = FMath::DegreesToRadians(Angle);
+
+	return FVector2D(P.X * cos(Theta) - P.Y * sin(Theta), P.Y * cos(Theta) + P.X * sin(Theta));
+}
+
+
+float UDaylonUtils::Vector2DToAngle(const FVector2D& Vector)
+{
+	// We place zero degrees pointing up and increasing clockwise.
+
+	return FMath::Atan2(Vector.Y, Vector.X) * 180 / PI + 90;
+}
+
+
+float UDaylonUtils::WrapAngle(float Angle)
+{
+	return (float)UKismetMathLibrary::GenericPercent_FloatFloat(Angle, 360.0);
+}
+
+
+
 static UE::Geometry::TIntrTriangle2Triangle2<double> TriTriIntersector;
 
 
-
-bool DoesLineSegmentIntersectTriangle(const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3])
+bool UDaylonUtils::DoesLineSegmentIntersectTriangle(const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3])
 {
 	// Use a degenerate triangle to mimic the line segment.
 
@@ -28,7 +82,7 @@ bool DoesLineSegmentIntersectTriangle(const FVector2D& P1, const FVector2D& P2, 
 }
 
 
-bool DoesTriangleIntersectTriangle(const FVector2D TriA[3], const FVector2D TriB[3])
+bool UDaylonUtils::DoesTriangleIntersectTriangle(const FVector2D TriA[3], const FVector2D TriB[3])
 {
 	UE::Geometry::FTriangle2d Tri0(TriA);
 	TriTriIntersector.SetTriangle0(Tri0);
@@ -40,17 +94,7 @@ bool DoesTriangleIntersectTriangle(const FVector2D TriA[3], const FVector2D TriB
 }
 
 
-FVector2D Rotate(const FVector2D& P, float Angle)
-{
-	// Rotate P around the origin for Angle degrees.
-
-	const auto Theta = FMath::DegreesToRadians(Angle);
-
-	return FVector2D(P.X * cos(Theta) - P.Y * sin(Theta), P.Y * cos(Theta) + P.X * sin(Theta));
-}
-
-
-bool DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R)
+bool UDaylonUtils::DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R)
 {
 	// Test if a line intersects a circle.
 	// p1 and p2 are the line endpoints.
@@ -157,52 +201,7 @@ bool DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVector2D& P2, co
 }
 
 
-FVector2D RandVector2D()
-{
-	FVector2D Result;
-	FVector::FReal L;
-
-	do
-	{
-		// Check random vectors in the unit sphere so result is statistically uniform.
-		Result.X = FMath::FRand() * 2.f - 1.f;
-		Result.Y = FMath::FRand() * 2.f - 1.f;
-		L = Result.SizeSquared();
-	} while (L > 1.0f || L < UE_KINDA_SMALL_NUMBER);
-
-	return Result * (1.0f / FMath::Sqrt(L));
-}
-
-
-FVector2D AngleToVector2D(float Angle)
-{
-	// We place zero degrees pointing up and increasing clockwise.
-
-	Angle = UKismetMathLibrary::DegreesToRadians(Angle - 90.0f);
-
-	return FVector2D(UKismetMathLibrary::Cos(Angle), UKismetMathLibrary::Sin(Angle));
-}
-
-
-float Vector2DToAngle(const FVector2D& Vector)
-{
-	// We place zero degrees pointing up and increasing clockwise.
-
-	//const auto V = Vector;
-	//auto Len = V.Length();
-	//V /= Len;
-
-	return FMath::Atan2(Vector.Y, Vector.X) * 180 / PI + 90;
-}
-
-
-float WrapAngle(float Angle)
-{
-	return (float)UKismetMathLibrary::GenericPercent_FloatFloat(Angle, 360.0);
-}
-
-
-FVector2D ComputeFiringSolution(const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia)
+FVector2D UDaylonUtils::ComputeFiringSolution(const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia)
 {
 	// Given launch and target positions, torpedo speed, and target inertia, 
 	// return a firing direction.
@@ -218,7 +217,7 @@ FVector2D ComputeFiringSolution(const FVector2D& LaunchP, float TorpedoSpeed, co
 
 	if(Desc <= 0)
 	{
-		return RandVector2D();
+		return UDaylonUtils::RandVector2D();
 	}
 
 	const auto TimeToTarget = 2 * C / (FMath::Sqrt(Desc) - B);
@@ -234,18 +233,18 @@ FVector2D ComputeFiringSolution(const FVector2D& LaunchP, float TorpedoSpeed, co
 }
 
 
-FVector2D GetWidgetDirectionVector(const UWidget* Widget)
+FVector2D UDaylonUtils::GetWidgetDirectionVector(const UWidget* Widget)
 {
 	if (Widget == nullptr)
 	{
 		return FVector2D(0.0f);
 	}
 
-	return AngleToVector2D(Widget->GetRenderTransformAngle());
+	return UDaylonUtils::AngleToVector2D(Widget->GetRenderTransformAngle());
 }
 
 
-void Show(UWidget* Widget, bool Visible)
+void UDaylonUtils::Show(UWidget* Widget, bool Visible)
 {
 	if(Widget == nullptr)
 	{
@@ -256,20 +255,21 @@ void Show(UWidget* Widget, bool Visible)
 }
 
 
-void Hide(UWidget* Widget) 
+void UDaylonUtils::Hide(UWidget* Widget) 
 {
 	Show(Widget, false); 
 }
 
+// ------------------------------------------------------------------------------------------
 
-void FLoopedSound::Start()
+void Daylon::FLoopedSound::Start()
 {
 	TimeRemaining = 0.0f;
 	Tick(0.0f);
 }
 
 
-void FLoopedSound::Tick(float DeltaTime)
+void Daylon::FLoopedSound::Tick(float DeltaTime)
 {
 	TimeRemaining -= DeltaTime;
 
@@ -288,8 +288,9 @@ void FLoopedSound::Tick(float DeltaTime)
 }
 
 
+// ------------------------------------------------------------------------------------------
 
-int32 FHighScoreTable::GetLongestNameLength() const
+int32 Daylon::FHighScoreTable::GetLongestNameLength() const
 {
 	int32 Len = 0;
 
@@ -301,7 +302,7 @@ int32 FHighScoreTable::GetLongestNameLength() const
 }
 
 
-bool FHighScoreTable::CanAdd(int32 Score) const 
+bool Daylon::FHighScoreTable::CanAdd(int32 Score) const 
 {
 	if(Entries.Num() < MaxEntries)
 	{
@@ -322,7 +323,7 @@ bool FHighScoreTable::CanAdd(int32 Score) const
 }
 
 
-void FHighScoreTable::Add(int32 Score, const FString& Name)
+void Daylon::FHighScoreTable::Add(int32 Score, const FString& Name)
 {
 	if(!CanAdd(Score))
 	{

@@ -1,7 +1,7 @@
 // Copyright 2023 Daylon Graphics Ltd. All Rights Reserved.
 
-#include "SSpriteWidget.h"
-#include "LocalUtils.h"
+#include "SDaylonSpriteWidget.h"
+//#include "LocalUtils.h"
 
 
 #define DEBUG_MODULE      0
@@ -11,39 +11,39 @@
 #endif
 
 
-void SSpriteWidget::Construct(const FArguments& InArgs)
+void SDaylonSpriteWidget::Construct(const FArguments& InArgs)
 {
 	Size = InArgs._Size.Get();
 }
 
 
-FVector2D SSpriteWidget::ComputeDesiredSize(float) const 
+FVector2D SDaylonSpriteWidget::ComputeDesiredSize(float) const 
 {
 	return Size; 
 }
 
 
-void SSpriteWidget::SetSize(const FVector2D& InSize)
+void SDaylonSpriteWidget::SetSize(const FVector2D& InSize)
 {
 	Size = InSize; 
 }
 
 
-void SSpriteWidget::SetAtlas(const FSpriteAtlas& InAtlas) 
+void SDaylonSpriteWidget::SetAtlas(const FSpriteAtlas& InAtlas) 
 {
 	Atlas = InAtlas; 
 	Reset();
 }
 
 
-void SSpriteWidget::Reset()
+void SDaylonSpriteWidget::Reset()
 {
 	CurrentCelIndex = 0;
 	CurrentAge      = 0.0f;
 }
 
 
-void SSpriteWidget::Update(float DeltaTime)
+void SDaylonSpriteWidget::Update(float DeltaTime)
 {
 	const auto SecondsPerFrame = 1.0f / Atlas.FrameRate;
 
@@ -63,7 +63,7 @@ void SSpriteWidget::Update(float DeltaTime)
 }
 
 
-int32 SSpriteWidget::OnPaint
+int32 SDaylonSpriteWidget::OnPaint
 (
 	const FPaintArgs&          Args,
 	const FGeometry&           AllottedGeometry,

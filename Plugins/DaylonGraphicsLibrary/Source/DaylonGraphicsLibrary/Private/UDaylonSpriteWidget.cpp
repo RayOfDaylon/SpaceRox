@@ -1,23 +1,23 @@
 // Copyright 2023 Daylon Graphics Ltd. All Rights Reserved.
 
-#include "USpriteWidget.h"
+#include "UDaylonSpriteWidget.h"
 
 
-USpriteWidget::USpriteWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+UDaylonSpriteWidget::UDaylonSpriteWidget(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	bIsVariable = false;
 }
 
 
-TSharedRef<SWidget> USpriteWidget::RebuildWidget()
+TSharedRef<SWidget> UDaylonSpriteWidget::RebuildWidget()
 {
-	MySprite = SNew(SSpriteWidget);
+	MySprite = SNew(SDaylonSpriteWidget);
 
 	return MySprite.ToSharedRef();
 }
 
 
-void USpriteWidget::SynchronizeProperties()
+void UDaylonSpriteWidget::SynchronizeProperties()
 {
 	Super::SynchronizeProperties();
 
@@ -28,7 +28,7 @@ void USpriteWidget::SynchronizeProperties()
 }
 
 
-void USpriteWidget::ReleaseSlateResources(bool bReleaseChildren)
+void UDaylonSpriteWidget::ReleaseSlateResources(bool bReleaseChildren)
 {
 	Super::ReleaseSlateResources(bReleaseChildren);
 
@@ -36,14 +36,14 @@ void USpriteWidget::ReleaseSlateResources(bool bReleaseChildren)
 }
 
 
-void USpriteWidget::Tick(float DeltaTime)
+void UDaylonSpriteWidget::Tick(float DeltaTime)
 {
 	check(MySprite);
 	MySprite->Update(DeltaTime);
 }
 
 
-void USpriteWidget::Reset()
+void UDaylonSpriteWidget::Reset()
 {
 	check(MySprite);
 	MySprite->Reset();

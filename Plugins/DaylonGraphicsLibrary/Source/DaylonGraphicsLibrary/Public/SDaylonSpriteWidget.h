@@ -3,7 +3,7 @@
 #pragma once
 
 #include "SlateCore/Public/Widgets/SLeafWidget.h"
-#include "SSpriteWidget.generated.h"
+#include "SDaylonSpriteWidget.generated.h"
 
 
 
@@ -11,7 +11,7 @@
 
 
 USTRUCT(BlueprintType)
-struct SPACEROX_API FSpriteAtlas
+struct DAYLONGRAPHICSLIBRARY_API FSpriteAtlas
 {
 	GENERATED_USTRUCT_BODY()
 
@@ -36,10 +36,10 @@ struct SPACEROX_API FSpriteAtlas
 };
 
 
-class SPACEROX_API SSpriteWidget : public SLeafWidget
+class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 {
 	public:
-		SLATE_BEGIN_ARGS(SSpriteWidget)
+		SLATE_BEGIN_ARGS(SDaylonSpriteWidget)
 			: 
 			  _Size                (FVector2D(16))
 			{
@@ -50,9 +50,9 @@ class SPACEROX_API SSpriteWidget : public SLeafWidget
 
 			SLATE_END_ARGS()
 
-			SSpriteWidget() {}
+			SDaylonSpriteWidget() {}
 
-			~SSpriteWidget() {}
+			~SDaylonSpriteWidget() {}
 
 			void Construct(const FArguments& InArgs);
 

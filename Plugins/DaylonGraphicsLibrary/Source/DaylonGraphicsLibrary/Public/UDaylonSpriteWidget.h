@@ -6,14 +6,14 @@
 #include "Runtime/UMG/Public/Components/Widget.h"
 #include "Runtime/Engine/Classes/Engine/DataAsset.h"
 
-#include "SSpriteWidget.h"
-#include "USpriteWidget.generated.h"
+#include "SDaylonSpriteWidget.h"
+#include "UDaylonSpriteWidget.generated.h"
 
 // Warning: do NOT use this widget at design time.
 
 
 UCLASS(BluePrintType)
-class SPACEROX_API USpriteWidgetAtlas : public UDataAsset
+class DAYLONGRAPHICSLIBRARY_API USpriteWidgetAtlas : public UDataAsset
 {
 	GENERATED_BODY()
 
@@ -26,7 +26,7 @@ class SPACEROX_API USpriteWidgetAtlas : public UDataAsset
 
 
 UCLASS(meta=(DisplayName="Sprite Widget"))
-class SPACEROX_API USpriteWidget : public UWidget
+class DAYLONGRAPHICSLIBRARY_API UDaylonSpriteWidget : public UWidget
 {
 	GENERATED_UCLASS_BODY()
 
@@ -48,5 +48,5 @@ class SPACEROX_API USpriteWidget : public UWidget
 
 		virtual TSharedRef<SWidget> RebuildWidget() override;
 
-		TSharedPtr<SSpriteWidget> MySprite;
+		TSharedPtr<SDaylonSpriteWidget> MySprite;
 };

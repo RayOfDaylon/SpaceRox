@@ -4,8 +4,8 @@
 
 
 #include "PlayViewBase.h"
-#include "LocalUtils.h"
-#include "UParticlesWidget.h"
+#include "DaylonUtils.h"
+#include "UDaylonParticlesWidget.h"
 
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
@@ -111,7 +111,7 @@ static FVector2D WrapPositionToViewport(const FVector2D& P)
 
 static FVector2D MakeInertia(const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation)
 {
-	FVector2D NewInertia = Rotate(InertiaOld, FMath::RandRange(MinDeviation, MaxDeviation));
+	FVector2D NewInertia = UDaylonUtils::Rotate(InertiaOld, FMath::RandRange(MinDeviation, MaxDeviation));
 
 	return NewInertia;
 }
@@ -326,7 +326,7 @@ void UPlayViewBase::UpdateMenuReadout()
 }
 
 
-void UPlayViewBase::NavigateMenu(EListNavigationDirection Direction)
+void UPlayViewBase::NavigateMenu(Daylon::EListNavigationDirection Direction)
 {
 	if(GameState != EGameState::MainMenu)
 	{
@@ -355,13 +355,13 @@ void UPlayViewBase::OnAbortButtonPressed()
 
 void UPlayViewBase::OnBackButtonPressed()
 {
-	NavigateMenu(EListNavigationDirection::Backwards);
+	NavigateMenu(Daylon::EListNavigationDirection::Backwards);
 }
 
 
 void UPlayViewBase::OnForwardButtonPressed()
 {
-	NavigateMenu(EListNavigationDirection::Forwards);
+	NavigateMenu(Daylon::EListNavigationDirection::Forwards);
 }
 
 
@@ -398,7 +398,7 @@ void UPlayViewBase::OnStartButtonPressed()
 				bHighScoreWasEntered = false;
 				return;
 			}
-			Hide(HighScoresContent);
+			UDaylonUtils::Hide(HighScoresContent);
 			TransitionToState(EGameState::MainMenu);
 			break;
 
@@ -411,14 +411,14 @@ void UPlayViewBase::OnStartButtonPressed()
 
 		case EGameState::Credits:
 
-			Hide(CreditsContent);
+			UDaylonUtils::Hide(CreditsContent);
 			TransitionToState(EGameState::MainMenu);
 			break;
 
 
 		case EGameState::Help:
 
-			Hide(HelpContent);
+			UDaylonUtils::Hide(HelpContent);
 			TransitionToState(EGameState::MainMenu);
 			break;
 
@@ -433,7 +433,7 @@ void UPlayViewBase::OnAnimationFinished_Implementation(const UWidgetAnimation* A
 {
 	if(Animation == MenuOutro)
 	{
-		Hide(MenuContent);
+		UDaylonUtils::Hide(MenuContent);
 		ExecuteMenuItem(SelectedMenuItem);
 		GetOwningPlayer()->EnableInput(nullptr);
 	}
@@ -497,7 +497,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 	GameState = State;
 
-	Show(GameTitle, GameState != EGameState::Intro);
+	UDaylonUtils::Show(GameTitle, GameState != EGameState::Intro);
 
 	// todo: maybe use a polymorphic game state class with an Enter() method instead of a switch statement.
 
@@ -514,33 +514,33 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			RemoveAsteroids();
 			PlayerShip.Hide();
 
-			Hide (MenuContent);
-			Hide (PlayerScoreReadout);
-			Hide (PlayerShipsReadout);
-			Hide (PlayerShieldReadout);
-			Hide (ShieldLabel);
-			Hide (DoubleGunReadout);
-			Hide (DoubleGunLabel);
-			Hide (GameOverMessage);
-			Show (IntroContent);
+			UDaylonUtils::Hide (MenuContent);
+			UDaylonUtils::Hide (PlayerScoreReadout);
+			UDaylonUtils::Hide (PlayerShipsReadout);
+			UDaylonUtils::Hide (PlayerShieldReadout);
+			UDaylonUtils::Hide (ShieldLabel);
+			UDaylonUtils::Hide (DoubleGunReadout);
+			UDaylonUtils::Hide (DoubleGunLabel);
+			UDaylonUtils::Hide (GameOverMessage);
+			UDaylonUtils::Show (IntroContent);
 
 			break;
 
 
 		case EGameState::MainMenu:
 
-			Hide (IntroContent);
-			Hide (HelpContent);
-			Hide (CreditsContent);
-			Hide (HighScoresContent);
-			Hide (PlayerScoreReadout);
-			Hide (PlayerShipsReadout);
-			Hide (PlayerShieldReadout);
-			Hide (ShieldLabel);
-			Hide (DoubleGunReadout);
-			Hide (DoubleGunLabel);
-			Hide (GameOverMessage);
-			Hide (HighScoreEntryContent);
+			UDaylonUtils::Hide (IntroContent);
+			UDaylonUtils::Hide (HelpContent);
+			UDaylonUtils::Hide (CreditsContent);
+			UDaylonUtils::Hide (HighScoresContent);
+			UDaylonUtils::Hide (PlayerScoreReadout);
+			UDaylonUtils::Hide (PlayerShipsReadout);
+			UDaylonUtils::Hide (PlayerShieldReadout);
+			UDaylonUtils::Hide (ShieldLabel);
+			UDaylonUtils::Hide (DoubleGunReadout);
+			UDaylonUtils::Hide (DoubleGunLabel);
+			UDaylonUtils::Hide (GameOverMessage);
+			UDaylonUtils::Hide (HighScoreEntryContent);
 			
 			RemoveExplosions();
 			RemoveTorpedos();
@@ -551,7 +551,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			RemoveEnemyShips();
 
 			StartMsgAnimationAge = 0.0f;
-			Show(MenuContent);
+			UDaylonUtils::Show(MenuContent);
 			MenuContent->SetRenderOpacity(1.0f);
 			UpdateMenuReadout();
 
@@ -580,12 +580,12 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			WaveNumber = 0;
 
-			Show  (PlayerScoreReadout);
-			Show  (PlayerShipsReadout);
-			Show  (PlayerShieldReadout);
-			Show  (ShieldLabel);
-			Show  (DoubleGunReadout);
-			Show  (DoubleGunLabel);
+			UDaylonUtils::Show  (PlayerScoreReadout);
+			UDaylonUtils::Show  (PlayerShipsReadout);
+			UDaylonUtils::Show  (PlayerShieldReadout);
+			UDaylonUtils::Show  (ShieldLabel);
+			UDaylonUtils::Show  (DoubleGunReadout);
+			UDaylonUtils::Show  (DoubleGunLabel);
 
 			UpdatePowerupReadout(EPowerup::DoubleGuns);
 			UpdatePowerupReadout(EPowerup::Shields);
@@ -603,7 +603,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			}
 
 			PlayerShield.Hide();
-			Show(GameOverMessage);
+			UDaylonUtils::Show(GameOverMessage);
 
 			TimeUntilGameOverStateEnds = MaxTimeUntilGameOverStateEnds;
 
@@ -620,11 +620,11 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			LoadHighScores     ();
 			PopulateHighScores (); 
 
-			Hide (GameOverMessage);
-			Hide (HighScoreEntryContent);
-			Show (HighScoresContent);
+			UDaylonUtils::Hide (GameOverMessage);
+			UDaylonUtils::Hide (HighScoreEntryContent);
+			UDaylonUtils::Show (HighScoresContent);
 
-			Show (PlayerScoreReadout, (PreviousState == EGameState::HighScoreEntry));
+			UDaylonUtils::Show (PlayerScoreReadout, (PreviousState == EGameState::HighScoreEntry));
 
 			RemoveEnemyShips();
 
@@ -641,8 +641,8 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			RemoveAsteroids();
 			RemoveEnemyShips();
 
-			Show(PlayerScoreReadout);
-			Hide(GameOverMessage);
+			UDaylonUtils::Show(PlayerScoreReadout);
+			UDaylonUtils::Hide(GameOverMessage);
 			PlayerShield.Hide();
 			
 			HighScoreEntryContent->SetVisibility(ESlateVisibility::Visible);
@@ -659,7 +659,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			}
 
 			RemoveEnemyShips();
-			Show(CreditsContent);
+			UDaylonUtils::Show(CreditsContent);
 
 			break;
 
@@ -673,7 +673,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			RemoveAsteroids();
 			RemoveEnemyShips();
-			Show(HelpContent);
+			UDaylonUtils::Show(HelpContent);
 
 			break;
 
@@ -946,7 +946,9 @@ void UPlayViewBase::ProcessWaveTransition(float DeltaTime)
 
 template<class WidgetT> WidgetT* UPlayViewBase::MakeWidget()
 {
-	return WidgetTree->ConstructWidget<WidgetT>();
+	auto Widget = WidgetTree->ConstructWidget<WidgetT>();
+	check(Widget);
+	return Widget;
 }
 
 
@@ -984,13 +986,15 @@ void UPlayViewBase::SpawnPowerup(FPowerup& Powerup, const FVector2D& P)
 {
 	Powerup.Kind = FMath::RandBool() ? EPowerup::DoubleGuns : EPowerup::Shields;
 
-	Powerup.Widget = MakeWidget<USpriteWidget>();
+	Powerup.Widget = MakeWidget<UDaylonSpriteWidget>();
 
 	switch(Powerup.Kind)
 	{
 		case EPowerup::DoubleGuns: Powerup.Widget->TextureAtlas = DoubleGunsPowerupAtlas; break;
 		case EPowerup::Shields:    Powerup.Widget->TextureAtlas = ShieldPowerupAtlas;     break;
 	}
+
+	check(Powerup.Widget->TextureAtlas);
 
 	// Make the powerups dark so they don't get confused with asteroids.
 	Powerup.Widget->TextureAtlas->Atlas.AtlasBrush.TintColor = FLinearColor(1.0f, 1.0f, 1.0f, PowerupOpacity);
@@ -1046,7 +1050,7 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 #if(TEST_ASTEROIDS==1)
 		const auto Inertia = FVector2D(0);
 #else
-		const auto Inertia = RandVector2D() * FMath::Lerp(MinAsteroidSpeed, MaxAsteroidSpeed, FMath::FRand());
+		const auto Inertia = UDaylonUtils::RandVector2D() * FMath::Lerp(MinAsteroidSpeed, MaxAsteroidSpeed, FMath::FRand());
 #endif
 		Asteroid.LifeRemaining = 1.0f;
 		Asteroid.SpinSpeed     = FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
@@ -1129,7 +1133,7 @@ void UPlayViewBase::UpdatePlayerRotation(float DeltaTime)
 
 	UE_LOG(LogGame, Log, TEXT("Rotation force: %.5f"), RotationForce);
 
-	PlayerShip.SetAngle(WrapAngle(PlayerShip.GetAngle() + Amt * RotationForce));
+	PlayerShip.SetAngle(UDaylonUtils::WrapAngle(PlayerShip.GetAngle() + Amt * RotationForce));
 }
 
 
@@ -1161,7 +1165,7 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 
 		const float Thrust = PlayerThrustForce * DeltaTime;
 
-		const FVector2D Force = GetWidgetDirectionVector(PlayerShip.Widget) * Thrust;
+		const FVector2D Force = UDaylonUtils::GetWidgetDirectionVector(PlayerShip.Widget) * Thrust;
 
 		PlayerShip.Inertia += Force;
 
@@ -1189,7 +1193,7 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 	if(PlayerShield.IsVisible())
 	{
 		// We have to budge the shield texture by two px to look nicely centered around the player ship.
-		PlayerShield.SetPosition(PlayerShip.GetPosition() + Rotate(FVector2D(0, 2), PlayerShip.GetAngle()));
+		PlayerShield.SetPosition(PlayerShip.GetPosition() + UDaylonUtils::Rotate(FVector2D(0, 2), PlayerShip.GetAngle()));
 		AdjustShieldsLeft(-DeltaTime);
 	}
 }
@@ -1208,7 +1212,7 @@ void UPlayViewBase::UpdateAsteroids(float DeltaTime)
 				Asteroid.Powerup.Tick(DeltaTime);
 			}
 #if(FEATURE_SPINNING_ASTEROIDS == 1)
-			Asteroid.SetAngle(WrapAngle(Asteroid.GetAngle() + Asteroid.SpinSpeed * DeltaTime));
+			Asteroid.SetAngle(UDaylonUtils::WrapAngle(Asteroid.GetAngle() + Asteroid.SpinSpeed * DeltaTime));
 #endif
 		}
 	}
@@ -1229,7 +1233,7 @@ void UPlayViewBase::UpdatePowerups(float DeltaTime)
 
 void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 {
-	auto Explosion = MakeWidget<UParticlesWidget>();
+	auto Explosion = MakeWidget<UDaylonParticlesWidget>();
 
 	Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
 	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
@@ -1247,7 +1251,7 @@ void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 
 	// Set up second explosion event for 3/4 second later
 
-	FScheduledTask Task;
+	Daylon::FScheduledTask Task;
 
 	Task.When = 0.66f;
 
@@ -1263,7 +1267,7 @@ void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 			return;
 		}
 
-		auto Explosion = This->MakeWidget<UParticlesWidget>();
+		auto Explosion = This->MakeWidget<UDaylonParticlesWidget>();
 
 		Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
 		Explosion->SetRenderTransformPivot(FVector2D(0.5f));
@@ -1308,7 +1312,7 @@ void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 
 void UPlayViewBase::SpawnExplosion(const FVector2D& P)
 {
-	auto Explosion = MakeWidget<UParticlesWidget>();
+	auto Explosion = MakeWidget<UDaylonParticlesWidget>();
 
 	Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
 	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
@@ -1334,7 +1338,7 @@ void UPlayViewBase::UpdateExplosions(float DeltaTime)
 		return;
 	}
 
-	TArray<UParticlesWidget*> NewList;
+	TArray<UDaylonParticlesWidget*> NewList;
 
 	for(auto Explosion : Explosions)
 	{
@@ -1633,7 +1637,7 @@ void UPlayViewBase::CheckCollisions()
 
 	for(auto& Triangle : PlayerShipTriangle)
 	{
-		Triangle = Rotate(Triangle, ShipAngle);
+		Triangle = UDaylonUtils::Rotate(Triangle, ShipAngle);
 
 		// Use the ship's old position because the current position can cause unwanted self-intersections.
 		Triangle += PlayerShip.OldPosition;
@@ -1671,8 +1675,8 @@ void UPlayViewBase::CheckCollisions()
 		{
 			AsteroidIndex++;
 
-			if(DoesLineSegmentIntersectCircle(OldP, CurrentP, Asteroid.GetPosition(), Asteroid.GetRadius())
-				|| DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, OldP, Asteroid.GetRadius()))
+			if(UDaylonUtils::DoesLineSegmentIntersectCircle(OldP, CurrentP, Asteroid.GetPosition(), Asteroid.GetRadius())
+				|| UDaylonUtils::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, OldP, Asteroid.GetRadius()))
 			{
 				// A torpedo hit a rock.
 
@@ -1688,7 +1692,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			// Torpedo didn't hit a rock and the player didn't fire it, so see if it hit the player ship.
 
-			if(DoesLineSegmentIntersectTriangle(OldP, CurrentP, PlayerShipTriangle))
+			if(UDaylonUtils::DoesLineSegmentIntersectTriangle(OldP, CurrentP, PlayerShipTriangle))
 			{
 				Torpedo.Kill();
 				SpawnExplosion(OldP);
@@ -1704,7 +1708,7 @@ void UPlayViewBase::CheckCollisions()
 			{
 				auto& EnemyShip = EnemyShips[EnemyIndex];
 
-				if(DoesLineSegmentIntersectCircle(OldP, CurrentP, EnemyShip.GetPosition(), EnemyShip.GetRadius()))
+				if(UDaylonUtils::DoesLineSegmentIntersectCircle(OldP, CurrentP, EnemyShip.GetPosition(), EnemyShip.GetRadius()))
 				{
 					Torpedo.Kill();
 					IncreasePlayerScoreBy(EnemyShip.Value);
@@ -1727,8 +1731,8 @@ void UPlayViewBase::CheckCollisions()
 		{
 			AsteroidIndex++;
 
-			if(DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Asteroid.GetPosition(), Asteroid.GetRadius() + PlayerShip.GetRadius())
-				|| DoesLineSegmentIntersectTriangle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, PlayerShipTriangle))
+			if(UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Asteroid.GetPosition(), Asteroid.GetRadius() + PlayerShip.GetRadius())
+				|| UDaylonUtils::DoesLineSegmentIntersectTriangle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, PlayerShipTriangle))
 			{
 				// Player collided with a rock.
 
@@ -1750,7 +1754,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& EnemyShip = EnemyShips[EnemyIndex];
 
-			if (DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, EnemyShip.OldPosition, EnemyShip.GetRadius())
+			if (UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, EnemyShip.OldPosition, EnemyShip.GetRadius())
 				|| FVector2D::Distance(PlayerShip.UnwrappedNewPosition, EnemyShip.UnwrappedNewPosition) < EnemyShip.GetRadius() + PlayerShip.GetRadius())
 			{
 				// Enemy ship collided with player ship.
@@ -1774,7 +1778,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& Powerup = Powerups[PowerupIndex];
 
-			if (DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Powerup.OldPosition, Powerup.GetRadius())
+			if (UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Powerup.OldPosition, Powerup.GetRadius())
 				|| FVector2D::Distance(PlayerShip.UnwrappedNewPosition, Powerup.UnwrappedNewPosition) < Powerup.GetRadius() + PlayerShip.GetRadius())
 			{
 				// Powerup collided with player ship.
@@ -1816,7 +1820,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			AsteroidIndex++;
 
-			if(DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, EnemyShip.GetPosition(), EnemyShip.GetRadius())
+			if(UDaylonUtils::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, EnemyShip.GetPosition(), EnemyShip.GetRadius())
 				|| FVector2D::Distance(WrapPositionToViewport(EnemyShip.UnwrappedNewPosition), Asteroid.OldPosition) < Asteroid.GetRadius() + EnemyShip.GetRadius())
 			{
 				// Enemy ship collided with a rock.
@@ -2136,7 +2140,7 @@ void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBig
 	if(IsBigEnemy)
 	{
 		// Shot vector is random.
-		Direction = RandVector2D();
+		Direction = UDaylonUtils::RandVector2D();
 		LaunchP += Direction * (Shooter.GetSize().X / 2 + 2);
 		LaunchP = WrapPositionToViewport(LaunchP);
 
@@ -2157,13 +2161,13 @@ void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBig
 
 		if(bEnemyShootsAtPlayer || Asteroids.IsEmpty())
 		{
-			Direction = ComputeFiringSolution(LaunchP, Speed, PlayerShip.GetPosition(), PlayerShip.Inertia);
+			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, PlayerShip.GetPosition(), PlayerShip.Inertia);
 		}
 		else
 		{
 			// Shoot at an asteroid.
 			const auto & Asteroid = Asteroids[FMath::RandRange(0, Asteroids.Num() - 1)];
-			Direction = ComputeFiringSolution(LaunchP, Speed, Asteroid.GetPosition(), Asteroid.Inertia);
+			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Asteroid.GetPosition(), Asteroid.Inertia);
 		}
 	}
 
@@ -2182,7 +2186,7 @@ void UPlayViewBase::OnFireTorpedo()
 		return;
 	}
 
-	const FVector2D PlayerFwd = GetWidgetDirectionVector(PlayerShip.Widget);
+	const FVector2D PlayerFwd = UDaylonUtils::GetWidgetDirectionVector(PlayerShip.Widget);
 
 	const auto Inertia = (PlayerFwd * MaxTorpedoSpeed) + PlayerShip.Inertia;
 
@@ -2221,7 +2225,7 @@ void UPlayViewBase::OnFireTorpedo()
 		Torpedo1.FiredByPlayer = true;
 
 		auto P = PlayerFwd * (PlayerShip.GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
-		P = Rotate(P, 90.0f);
+		P = UDaylonUtils::Rotate(P, 90.0f);
 		P += PlayerShip.GetPosition();
 		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
 		P = WrapPositionToViewport(P);
@@ -2239,7 +2243,7 @@ void UPlayViewBase::OnFireTorpedo()
 		Torpedo2.FiredByPlayer = true;
 
 		P = PlayerFwd * (PlayerShip.GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
-		P = Rotate(P, -90.0f);
+		P = UDaylonUtils::Rotate(P, -90.0f);
 		P += PlayerShip.GetPosition();
 		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
 		P = WrapPositionToViewport(P);

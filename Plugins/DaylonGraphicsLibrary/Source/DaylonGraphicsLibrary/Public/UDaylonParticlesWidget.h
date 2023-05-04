@@ -5,13 +5,13 @@
 #include "CoreMinimal.h"
 #include "Runtime/UMG/Public/Components/Widget.h"
 
-#include "SParticlesWidget.h"
-#include "UParticlesWidget.generated.h"
+#include "SDaylonParticlesWidget.h"
+#include "UDaylonParticlesWidget.generated.h"
 
 // Warning: do NOT use this widget at design time.
 
 UCLASS(meta=(DisplayName="Particles Widget"))
-class SPACEROX_API UParticlesWidget : public UWidget
+class DAYLONGRAPHICSLIBRARY_API UDaylonParticlesWidget : public UWidget
 {
 	GENERATED_UCLASS_BODY()
 
@@ -39,5 +39,5 @@ class SPACEROX_API UParticlesWidget : public UWidget
 
 		virtual TSharedRef<SWidget> RebuildWidget() override;
 
-		TSharedPtr<SParticlesWidget> MyDynamicImage;
+		TSharedPtr<SDaylonParticlesWidget> MyParticlesWidget;
 };

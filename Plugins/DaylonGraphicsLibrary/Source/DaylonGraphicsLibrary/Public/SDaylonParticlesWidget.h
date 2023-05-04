@@ -8,7 +8,7 @@
 
 // SParticlesWidget - a drawing widget with a custom Paint event.
 
-struct FParticle
+struct DAYLONGRAPHICSLIBRARY_API FDaylonParticle
 {
 	FVector2D P             = FVector2D(0);
 	FVector2D Interia       = FVector2D(0);
@@ -19,10 +19,10 @@ struct FParticle
 };
 
 
-class SPACEROX_API SParticlesWidget : public SLeafWidget
+class DAYLONGRAPHICSLIBRARY_API SDaylonParticlesWidget : public SLeafWidget
 {
 	public:
-		SLATE_BEGIN_ARGS(SParticlesWidget)
+		SLATE_BEGIN_ARGS(SDaylonParticlesWidget)
 			: 
 			  _Size                (FVector2D(64))
 			, _MinParticleSize     (1.0f)
@@ -49,9 +49,9 @@ class SPACEROX_API SParticlesWidget : public SLeafWidget
 
 			SLATE_END_ARGS()
 
-			SParticlesWidget() {}
+			SDaylonParticlesWidget() {}
 
-			~SParticlesWidget() {}
+			~SDaylonParticlesWidget() {}
 
 			void Construct(const FArguments& InArgs);
 
@@ -100,7 +100,7 @@ class SPACEROX_API SParticlesWidget : public SLeafWidget
 
 		private:
 
-			TArray<FParticle>   Particles;
-			FSlateBrush         ParticleBrush;
-			float               StartingLifetime;
+			TArray<FDaylonParticle>   Particles;
+			FSlateBrush               ParticleBrush;
+			float                     StartingLifetime;
 };
