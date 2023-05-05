@@ -177,43 +177,17 @@ void UPlayViewBase::InitializePlayerShip()
 	PlayerShip.DoubleShotsLeft = 0;
 	PlayerShip.ShieldsLeft     = 0.0f;
 
-	PlayerShip.Widget = MakeWidget<UImage>();
-
-	PlayerShip.Widget->Brush = PlayerShipBrush;
-	PlayerShip.Widget->SetRenderTransformPivot(FVector2D(0.5f));
-
-	auto CanvasSlot = RootCanvas->AddChildToCanvas(PlayerShip.Widget);
-	CanvasSlot->SetAnchors(FAnchors());
-	CanvasSlot->SetAutoSize(true);
-	CanvasSlot->SetAlignment(FVector2D(0.5));
-	PlayerShip.UpdateWidgetSize();
-
-	PlayerShip.RadiusFactor = 0.4f;
-
-	PlayerShip.Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
-
-	PlayerShip.Hide();
+	PlayerShip.Create (PlayerShipBrush, 0.4f);
+	PlayerShip.Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
+	PlayerShip.Hide   ();
 }
 
 
 void UPlayViewBase::InitializePlayerShield()
 {
-	PlayerShield.Widget = MakeWidget<UImage>();
-
-	PlayerShield.Widget->Brush = ShieldBrush;
-	PlayerShield.Widget->SetRenderTransformPivot(FVector2D(0.5f));
-
-	auto CanvasSlot = RootCanvas->AddChildToCanvas(PlayerShield.Widget);
-	CanvasSlot->SetAnchors(FAnchors());
-	CanvasSlot->SetAutoSize(true);
-	CanvasSlot->SetAlignment(FVector2D(0.5));
-	PlayerShield.UpdateWidgetSize();
-
-	//PlayerShield.RadiusFactor = 0.5f;
-
-	PlayerShield.Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
-
-	PlayerShield.Hide();
+	PlayerShield.Create (ShieldBrush, 0.5f);
+	PlayerShield.Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
+	PlayerShield.Hide   ();
 }
 
 
@@ -225,19 +199,11 @@ void UPlayViewBase::CreateTorpedos()
 
 		Torpedo.Inertia = FVector2D(0);
 		Torpedo.LifeRemaining = 0.0f;
-		Torpedo.Widget = MakeWidget<UImage>();
+
+		Torpedo.Create(TorpedoBrush, 0.5f);
+		Torpedo.Hide();
+
 		Torpedos.Add(Torpedo);
-
-		Torpedo.Widget->SetVisibility(ESlateVisibility::Collapsed);
-		Torpedo.Widget->Brush = TorpedoBrush;
-		Torpedo.Widget->SetRenderTransformPivot(FVector2D(0.5f));
-
-		auto CanvasSlot = RootCanvas->AddChildToCanvas(Torpedo.Widget);
-
-		CanvasSlot->SetAnchors(FAnchors());
-		CanvasSlot->SetAutoSize(true);
-		CanvasSlot->SetAlignment(FVector2D(0.5));
-		Torpedo.UpdateWidgetSize();
 	}
 }
 
@@ -273,6 +239,9 @@ void UPlayViewBase::NativeOnInitialized()
 		StopRunning(TEXT("Cannot get canvas"), ReasonIsFatal);
 		return;
 	}
+
+	UDaylonUtils::SetWidgetTree(WidgetTree);
+	UDaylonUtils::SetRootCanvas(RootCanvas);
 
 	InitializeVariables    ();
 	PreloadSounds          ();
@@ -805,7 +774,7 @@ void UPlayViewBase::AddPlayerShips(int32 Amount)
 	{
 		while(PlayerShipsReadout->GetChildrenCount() < NumPlayerShips)
 		{
-			UImage* Image = MakeWidget<UImage>();
+			UImage* Image = UDaylonUtils::MakeWidget<UImage>();
 			Image->SetBrush(PlayerShipBrush);
 			Image->Brush.SetImageSize(FVector2D(24));
 			
@@ -944,12 +913,6 @@ void UPlayViewBase::ProcessWaveTransition(float DeltaTime)
 }
 
 
-template<class WidgetT> WidgetT* UPlayViewBase::MakeWidget()
-{
-	auto Widget = WidgetTree->ConstructWidget<WidgetT>();
-	check(Widget);
-	return Widget;
-}
 
 
 void UPlayViewBase::RemoveAsteroid(int32 Index)
@@ -986,29 +949,18 @@ void UPlayViewBase::SpawnPowerup(FPowerup& Powerup, const FVector2D& P)
 {
 	Powerup.Kind = FMath::RandBool() ? EPowerup::DoubleGuns : EPowerup::Shields;
 
-	Powerup.Widget = MakeWidget<UDaylonSpriteWidget>();
+	UDaylonSpriteWidgetAtlas* Atlas = nullptr;
 
 	switch(Powerup.Kind)
 	{
-		case EPowerup::DoubleGuns: Powerup.Widget->TextureAtlas = DoubleGunsPowerupAtlas; break;
-		case EPowerup::Shields:    Powerup.Widget->TextureAtlas = ShieldPowerupAtlas;     break;
+		case EPowerup::DoubleGuns: Atlas = DoubleGunsPowerupAtlas; break;
+		case EPowerup::Shields:    Atlas = ShieldPowerupAtlas;     break;
 	}
 
-	check(Powerup.Widget->TextureAtlas);
+	check(Atlas);
 
 	// Make the powerups dark so they don't get confused with asteroids.
-	Powerup.Widget->TextureAtlas->Atlas.AtlasBrush.TintColor = FLinearColor(1.0f, 1.0f, 1.0f, PowerupOpacity);
-	Powerup.Widget->Size = FVector2D(32);
-
-	auto CanvasSlot = RootCanvas->AddChildToCanvas(Powerup.Widget);
-
-	Powerup.Widget->SynchronizeProperties();
-
-	CanvasSlot->SetAlignment(FVector2D(0.5));
-	CanvasSlot->SetAnchors(FAnchors());
-	CanvasSlot->SetAutoSize(true);
-
-	Powerup.UpdateWidgetSize();
+	Powerup.Create(Atlas, 0.5f, FLinearColor(1.0f, 1.0f, 1.0f, PowerupOpacity), FVector2D(32));
 
 	Powerup.Show();
 	Powerup.SetPosition(P);
@@ -1054,14 +1006,16 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 #endif
 		Asteroid.LifeRemaining = 1.0f;
 		Asteroid.SpinSpeed     = FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
-		Asteroid.Widget        = MakeWidget<UImage>();
+		//Asteroid.Widget        = UDaylonUtils::MakeWidget<UImage>();
 
-		Asteroid.Widget->SetRenderTransformPivot(FVector2D(0.5f));
+		//Asteroid.Widget->SetRenderTransformPivot(FVector2D(0.5f));
+
+		FSlateBrush AsteroidBrush;
 
 		switch(AsteroidSize)
 		{
 			case 0:
-				Asteroid.Widget->Brush = BigRockBrushes[FMath::RandRange(0, 3)]; 
+				AsteroidBrush = BigRockBrushes[FMath::RandRange(0, 3)]; 
 				Asteroid.Value = ValueBigAsteroid;
 
 				if(Index % 4 == 0)
@@ -1071,25 +1025,17 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 				break;
 
 			case 1: 
-				Asteroid.Widget->Brush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
+				AsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
 				Asteroid.Value = ValueMediumAsteroid;
 				break;
 
 			case 2: 
-				Asteroid.Widget->Brush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
+				AsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
 				Asteroid.Value = ValueSmallAsteroid;
 				break;
 		}
 
-		auto CanvasSlot = RootCanvas->AddChildToCanvas(Asteroid.Widget);
-
-		CanvasSlot->SetAnchors(FAnchors());
-		CanvasSlot->SetAutoSize(true);
-		CanvasSlot->SetAlignment(FVector2D(0.5));
-
-		// autosize true doesn't automatically set the slot offsets to the image size, so do it here.
-		Asteroid.UpdateWidgetSize();
-
+		Asteroid.Create(AsteroidBrush, 0.5f);
 		Asteroid.Spawn(P, Inertia, 1.0f);
 
 		// Do this last since the play object is copied.
@@ -1233,7 +1179,7 @@ void UPlayViewBase::UpdatePowerups(float DeltaTime)
 
 void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 {
-	auto Explosion = MakeWidget<UDaylonParticlesWidget>();
+	auto Explosion = UDaylonUtils::MakeWidget<UDaylonParticlesWidget>();
 
 	Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
 	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
@@ -1267,7 +1213,7 @@ void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 			return;
 		}
 
-		auto Explosion = This->MakeWidget<UDaylonParticlesWidget>();
+		auto Explosion = UDaylonUtils::MakeWidget<UDaylonParticlesWidget>();
 
 		Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
 		Explosion->SetRenderTransformPivot(FVector2D(0.5f));
@@ -1312,7 +1258,7 @@ void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 
 void UPlayViewBase::SpawnExplosion(const FVector2D& P)
 {
-	auto Explosion = MakeWidget<UDaylonParticlesWidget>();
+	auto Explosion = UDaylonUtils::MakeWidget<UDaylonParticlesWidget>();
 
 	Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
 	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
@@ -1450,9 +1396,10 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	NewAsteroid.LifeRemaining = 1.0f;
 	NewAsteroid.SpinSpeed     = Asteroid.SpinSpeed * AsteroidSpinScale;// FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
 
-	NewAsteroid.Widget = MakeWidget<UImage>();
-	NewAsteroid.Widget->SetVisibility(ESlateVisibility::HitTestInvisible);
-	NewAsteroid.Widget->SetRenderTransformPivot(FVector2D(0.5f));
+
+	//NewAsteroid.Widget = UDaylonUtils::MakeWidget<UImage>();
+	//NewAsteroid.Widget->SetVisibility(ESlateVisibility::HitTestInvisible);
+	//NewAsteroid.Widget->SetRenderTransformPivot(FVector2D(0.5f));
 
 	Asteroid.LifeRemaining = 1.0f;
 	Asteroid.Inertia = MakeInertia(Asteroid.Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
@@ -1466,20 +1413,22 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 		Asteroid.Inertia *= FMath::RandRange(0.25f, 1.0f);
 	}
 
+	FSlateBrush NewAsteroidBrush;
+
 	switch(Asteroid.Value)
 	{
 		case ValueBigAsteroid:
 			NewAsteroid.Value = ValueMediumAsteroid;
-			NewAsteroid.Widget->Brush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
+			NewAsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
 			Asteroid.Value = ValueMediumAsteroid;
-			Asteroid.Widget->Brush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
+			Asteroid.SetBrush(MediumRockBrushes[FMath::RandRange(0, 3)]); 
 			break;
 
 		case ValueMediumAsteroid:
 			NewAsteroid.Value = ValueSmallAsteroid;
-			NewAsteroid.Widget->Brush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
+			NewAsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
 			Asteroid.Value = ValueSmallAsteroid;
-			Asteroid.Widget->Brush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
+			Asteroid.SetBrush(SmallRockBrushes[FMath::RandRange(0, 3)]); 
 			break;
 	}
 
@@ -1488,16 +1437,12 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 
 	Asteroid.SpinSpeed *= AsteroidSpinScale;
 
-	auto CanvasSlot = RootCanvas->AddChildToCanvas(NewAsteroid.Widget);
-
-	CanvasSlot->SetAnchors(FAnchors());
-	CanvasSlot->SetAutoSize(true);
-	CanvasSlot->SetAlignment(FVector2D(0.5));
+	NewAsteroid.Create(NewAsteroidBrush, 0.5f);
+	NewAsteroid.Show();
 
 	NewAsteroid.OldPosition = 
 	NewAsteroid.UnwrappedNewPosition = Asteroid.UnwrappedNewPosition;
-	CanvasSlot->SetPosition(NewAsteroid.UnwrappedNewPosition);
-	NewAsteroid.UpdateWidgetSize();
+	NewAsteroid.SetPosition(NewAsteroid.UnwrappedNewPosition);
 
 	// Do this last since the play object is copied.
 	Asteroids.Add(NewAsteroid);
@@ -2037,7 +1982,7 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 			// We can spawn.
 			FEnemyShip EnemyShip;
 
-			EnemyShip.RadiusFactor = 0.375f;
+			//EnemyShip.RadiusFactor = 0.375f;
 
 			// Generate a big enemy ship vs. small one based on player score.
 			// The higher the score, the likelier a small enemy will appear.
@@ -2054,10 +1999,6 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 			EnemyShip.TimeRemainingToNextMove = 3.0f;
 			auto Inertia = FVector2D(1, 0) * 300; // todo: use global constant for speed, maybe min/max it
 
-			EnemyShip.Widget = MakeWidget<UImage>();
-			EnemyShip.Widget->Brush = IsBigEnemy ? BigEnemyBrush : SmallEnemyBrush;
-			EnemyShip.Widget->SetRenderTransformPivot(FVector2D(0.5));
-
 			// Choose a random Y-pos to appear at. Leave room to avoid ship appearing clipped.
 			FVector2D P(0.0, FMath::RandRange(EnemyShip.GetSize().Y + 2, ViewportSize.Y - (EnemyShip.GetSize().Y + 2)));
 
@@ -2067,12 +2008,7 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 				P.X = ViewportSize.X - 1.0f; // avoid immediate removal
 			}
 			
-
-			auto CanvasSlot = RootCanvas->AddChildToCanvas(EnemyShip.Widget);
-
-			CanvasSlot->SetAutoSize(true);
-			CanvasSlot->SetAlignment(FVector2D(0.5));
-			
+			EnemyShip.Create(IsBigEnemy ? BigEnemyBrush : SmallEnemyBrush, 0.375f);
 			EnemyShip.Spawn(WrapPositionToViewport(P), Inertia, 0.0f);
 
 			// Reset the timer.
@@ -2353,11 +2289,11 @@ void UPlayViewBase::PopulateHighScores()
 
 	for(const auto& Entry : HighScores.Entries)
 	{
-		auto EntryBox = MakeWidget<UHorizontalBox>();
+		auto EntryBox = UDaylonUtils::MakeWidget<UHorizontalBox>();
 
 		auto EntrySlot = HighScoresReadout->AddChildToVerticalBox(EntryBox);
 
-		auto TextBlockScore = MakeWidget<UTextBlock>();
+		auto TextBlockScore = UDaylonUtils::MakeWidget<UTextBlock>();
 		TextBlockScore->SetFont(HighScoreReadoutFont);
 		TextBlockScore->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 0.75f)));
 		TextBlockScore->SetText(FText::FromString(FString::Format(TEXT("{0}"), { Entry.Score })));
@@ -2368,7 +2304,7 @@ void UPlayViewBase::PopulateHighScores()
 		ScoreSize.Value = 7;
 		ScoreSlot->SetSize(ScoreSize);
 
-		auto TextBlockName = MakeWidget<UTextBlock>();
+		auto TextBlockName = UDaylonUtils::MakeWidget<UTextBlock>();
 		TextBlockName->SetFont(HighScoreReadoutFont);
 		TextBlockName->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 0.75f)));
 		TextBlockName->SetText(FText::FromString(Entry.Name));

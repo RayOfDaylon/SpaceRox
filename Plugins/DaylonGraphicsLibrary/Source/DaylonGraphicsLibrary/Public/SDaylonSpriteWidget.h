@@ -11,11 +11,11 @@
 
 
 USTRUCT(BlueprintType)
-struct DAYLONGRAPHICSLIBRARY_API FSpriteAtlas
+struct DAYLONGRAPHICSLIBRARY_API FDaylonSpriteAtlas
 {
 	GENERATED_USTRUCT_BODY()
 
-	FSpriteAtlas() {}
+	FDaylonSpriteAtlas() {}
 
 	// Texture containing a flipbook of one or more cels.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
@@ -58,7 +58,7 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 
 
 			void SetSize                  (const FVector2D& InSize);
-			void SetAtlas                 (const FSpriteAtlas& InAtlas);
+			void SetAtlas                 (const FDaylonSpriteAtlas& InAtlas);
 
 			void Update                   (float DeltaTime);
 			void Reset                    ();
@@ -80,8 +80,8 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 
 		protected:
 
-			FVector2D              Size;
-			mutable FSpriteAtlas   Atlas;
+			FVector2D                    Size;
+			mutable FDaylonSpriteAtlas   Atlas;
 
 			float              CurrentAge = 0.0f;
 			int32              CurrentCelIndex = 0;

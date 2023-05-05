@@ -29,7 +29,7 @@ void SDaylonSpriteWidget::SetSize(const FVector2D& InSize)
 }
 
 
-void SDaylonSpriteWidget::SetAtlas(const FSpriteAtlas& InAtlas) 
+void SDaylonSpriteWidget::SetAtlas(const FDaylonSpriteAtlas& InAtlas) 
 {
 	Atlas = InAtlas; 
 	Reset();

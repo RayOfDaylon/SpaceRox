@@ -19,15 +19,6 @@
 #include "PlayViewBase.generated.h"
 
 
-/*
-UENUM()
-enum class ERotationDirection : int32
-{
-	// These values are casted to int
-	CounterClockwise = -1,
-	Clockwise        =  1,
-};*/
-
 
 
 
@@ -90,13 +81,13 @@ enum class EGameState : uint8
 
 
 
-struct FTorpedo : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>
+struct FTorpedo : public Daylon::FImagePlayObject
 {
 	bool FiredByPlayer;
 };
 
 
-struct FPlayerShip : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>
+struct FPlayerShip : public Daylon::FImagePlayObject
 {
 	bool  IsUnderThrust;
 	bool  IsSpawning;
@@ -105,7 +96,7 @@ struct FPlayerShip : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeG
 };
 
 
-struct FPowerup : public Daylon::FPlayObject<UDaylonSpriteWidget, Daylon::SpriteWidgetSizeGetter>
+struct FPowerup : public Daylon::FSpritePlayObject
 {
 	EPowerup Kind = EPowerup::Nothing;
 
@@ -120,7 +111,7 @@ struct FPowerup : public Daylon::FPlayObject<UDaylonSpriteWidget, Daylon::Sprite
 };
 
 
-struct FAsteroid : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>
+struct FAsteroid : public Daylon::FImagePlayObject
 {
 	FPowerup Powerup;
 
@@ -129,7 +120,7 @@ struct FAsteroid : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGet
 
 
 
-struct FEnemyShip : public Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>
+struct FEnemyShip : public Daylon::FImagePlayObject
 {
 	float TimeRemainingToNextShot = 0.0f;
 	float TimeRemainingToNextMove = 0.0f;
@@ -253,11 +244,11 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// The animation flipbook for the asteroids' double guns powerup badge 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	USpriteWidgetAtlas* DoubleGunsPowerupAtlas;
+	UDaylonSpriteWidgetAtlas* DoubleGunsPowerupAtlas;
 
 	// The animation flipbook for the asteroids' shield powerup badge 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	USpriteWidgetAtlas* ShieldPowerupAtlas;
+	UDaylonSpriteWidgetAtlas* ShieldPowerupAtlas;
 
 
 	// -- Fonts -------------------------------------------------
@@ -375,7 +366,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	void      TransitionToState          (EGameState State);
 
-	template<class WidgetT> WidgetT* MakeWidget();
+	//template<class WidgetT> WidgetT* MakeWidget();
 
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnPowerup               (FPowerup& Powerup, const FVector2D& P);
@@ -441,8 +432,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	Daylon::FLoopedSound      BigEnemyShipSoundLoop;
 	Daylon::FLoopedSound      SmallEnemyShipSoundLoop;
 
-	FPlayerShip                                                  PlayerShip;
-	Daylon::FPlayObject<UImage, Daylon::ImageWidgetSizeGetter>   PlayerShield;
+	FPlayerShip                  PlayerShip;
+	Daylon::FImagePlayObject     PlayerShield;
 
 	TArray<FAsteroid>               Asteroids;
 	TArray<FEnemyShip>              EnemyShips;

@@ -4,24 +4,45 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "UMG/Public/Blueprint/WidgetTree.h"
 #include "UMG/Public/Components/Widget.h"
 #include "UMG/Public/Components/Image.h"
+#include "UMG/Public/Components/CanvasPanel.h"
 #include "UMG/Public/Components/CanvasPanelSlot.h"
 #include "UDaylonSpriteWidget.h"
 #include "DaylonUtils.generated.h"
 
 
-/**
- * 
- */
+DECLARE_LOG_CATEGORY_EXTERN(LogDaylon, Log, All);
+
+
 UCLASS()
 class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
+	protected:
+
+	static UWidgetTree*  WidgetTree;
+	static UCanvasPanel* RootCanvas;
+
+
 	public:
 
 	static const double Epsilon;
+
+	template<class WidgetT> static WidgetT* MakeWidget()
+	{
+		auto Widget = WidgetTree->ConstructWidget<WidgetT>();
+		check(Widget);
+		return Widget;
+	}
+
+
+	static void          SetWidgetTree   (UWidgetTree* InWidgetTree) { WidgetTree = InWidgetTree; }
+	static UWidgetTree*  GetWidgetTree   () { return WidgetTree; }
+	static void          SetRootCanvas   (UCanvasPanel* InCanvas) { RootCanvas = InCanvas; }
+	static UCanvasPanel* GetRootCanvas   () { return RootCanvas; }
 
 	static FVector2D   AngleToVector2D   (float Angle);
 	static FVector2D   RandVector2D      ();
@@ -39,6 +60,7 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary
 	static FVector2D   GetWidgetDirectionVector             (const UWidget* Widget);
 	static void        Show                                 (UWidget*, bool Visible = true);
 	static void        Hide                                 (UWidget* Widget);
+
 };
 
 
@@ -51,6 +73,16 @@ namespace Daylon
 		Backwards = -1,
 		Forwards  =  1,
 	};
+
+
+	/*
+	UENUM()
+	enum class ERotationDirection : int32
+	{
+		// These values are casted to int
+		CounterClockwise = -1,
+		Clockwise        =  1,
+	};*/
 
 
 	struct DAYLONGRAPHICSLIBRARY_API FLoopedSound
@@ -241,6 +273,25 @@ namespace Daylon
 
 		SizeGetterT SizeGetter;
 
+
+		void FinishCreating(float InRadiusFactor)
+		{
+			check(Widget);
+
+			Widget->SetRenderTransformPivot(FVector2D(0.5f));
+
+			auto CanvasSlot = UDaylonUtils::GetRootCanvas()->AddChildToCanvas(Widget);
+			CanvasSlot->SetAnchors(FAnchors());
+			CanvasSlot->SetAutoSize(true);
+			CanvasSlot->SetAlignment(FVector2D(0.5));
+
+			// Autosize(true) doesn't automatically set the slot offsets to the image size, so do it here.
+			UpdateWidgetSize();
+
+			RadiusFactor = InRadiusFactor;
+		}
+
+
 		void UpdateWidgetSize() 
 		{
 			auto Size = SizeGetter.GetSize(Widget); 
@@ -380,7 +431,7 @@ namespace Daylon
 		{
 			if(Widget == nullptr)
 			{
-				UE_LOG(LogGame, Error, TEXT("UPlayViewBase::Spawn: PlayObject has no widget."));
+				UE_LOG(LogDaylon, Error, TEXT("FPlayObject::Spawn: no widget member."));
 				return;
 			}
 
@@ -393,6 +444,47 @@ namespace Daylon
 			Show();
 		}
 
+	};
+
+
+	struct DAYLONGRAPHICSLIBRARY_API FImagePlayObject  : public FPlayObject<UImage, ImageWidgetSizeGetter> 
+	{
+		void Create(const FSlateBrush& Brush, float Radius)
+		{
+			Widget = UDaylonUtils::MakeWidget<UImage>();
+			check(Widget);
+
+			Widget->Brush = Brush;
+
+			FinishCreating(Radius);
+		}
+
+
+		void SetBrush(const FSlateBrush& Brush)
+		{
+			Widget->Brush = Brush;
+		}
+	};
+
+	
+	struct DAYLONGRAPHICSLIBRARY_API FSpritePlayObject : public FPlayObject<UDaylonSpriteWidget, SpriteWidgetSizeGetter> 
+	{
+		void Create(UDaylonSpriteWidgetAtlas* WidgetAtlas, float InRadiusFactor, const FLinearColor& Tint, const FVector2D& Size)
+		{
+			check(WidgetAtlas);
+			check(Size.X > 0 && Size.Y > 0);
+
+			Widget = UDaylonUtils::MakeWidget<UDaylonSpriteWidget>();
+			check(Widget);
+
+			Widget->TextureAtlas = WidgetAtlas;
+			Widget->TextureAtlas->Atlas.AtlasBrush.TintColor = Tint;
+			Widget->Size = Size;
+
+			FinishCreating(InRadiusFactor);
+
+			Widget->SynchronizeProperties();
+		}
 	};
 
 

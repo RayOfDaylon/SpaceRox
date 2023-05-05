@@ -10,7 +10,13 @@
 #include "Algo/Reverse.h"
 
 
+DEFINE_LOG_CATEGORY(LogDaylon)
+
+
 const double UDaylonUtils::Epsilon = 1e-14;
+
+UWidgetTree*  UDaylonUtils::WidgetTree = nullptr;
+UCanvasPanel* UDaylonUtils::RootCanvas = nullptr;
 
 
 FVector2D UDaylonUtils::AngleToVector2D(float Angle)
@@ -275,7 +281,7 @@ void Daylon::FLoopedSound::Tick(float DeltaTime)
 
 	if(Sound == nullptr || WorldContextPtr == nullptr)
 	{
-		//UE_LOG(LogGame, Error, TEXT("Looped sound has no sound or context"));
+		//UE_LOG(LogDaylon, Error, TEXT("Looped sound has no sound or context"));
 		return;
 	}
 

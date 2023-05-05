@@ -11,9 +11,8 @@
 
 // Warning: do NOT use this widget at design time.
 
-
 UCLASS(BluePrintType)
-class DAYLONGRAPHICSLIBRARY_API USpriteWidgetAtlas : public UDataAsset
+class DAYLONGRAPHICSLIBRARY_API UDaylonSpriteWidgetAtlas : public UDataAsset
 {
 	GENERATED_BODY()
 
@@ -21,7 +20,7 @@ class DAYLONGRAPHICSLIBRARY_API USpriteWidgetAtlas : public UDataAsset
 
 		// The texture holding the sprite cels.
 		UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		FSpriteAtlas Atlas;
+		FDaylonSpriteAtlas Atlas;
 };
 
 
@@ -33,7 +32,7 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonSpriteWidget : public UWidget
 	public:  
 
 		UPROPERTY(EditAnywhere, BlueprintReadonly)
-		USpriteWidgetAtlas* TextureAtlas;
+		UDaylonSpriteWidgetAtlas* TextureAtlas;
 
 		FVector2D   Size = FVector2D(16);
 

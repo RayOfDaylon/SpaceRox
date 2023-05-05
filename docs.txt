@@ -2,7 +2,7 @@ Documentation for SpaceRox game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 3, 2023
+May 4, 2023
 
 
 
@@ -36,12 +36,15 @@ Content
     Main                       The main (and only) level map
     PlayView                   The main (and only) UUserWidget for the viewport
 
+Plugins
+    DaylonGraphicsLibrary      Reusable code for widget-based 2D games
+        DaylonUtils.*              Library routines and types
+        *ParticlesWidget.*         A widget used to efficiently draw explosions
+        *SpriteWidget.*            A widget used to draw animated textures
+
 Source
     SpaceRox
         PlayViewBase.*         The specific game logic
-        LocalUtils.*           Reusable helper code not specific to the game
-        *ParticlesWidget.*     A widget used to efficiently draw explosions
-        *SpriteWidget.*        A widget used to draw animated textures
 
 
 Setting Up
@@ -131,7 +134,7 @@ for the various input events, then repackage or play from the editor.
 
 How the Game Works
 -------------------------------------------------------------------------------------
-The main data type (class) of interest is FPlayObject, defined in LocalUtils.h.
+The main data type (class) of interest is Daylon::FPlayObject, defined in DaylonUtils.h.
 Every object in the playfield is either an FPlayObject or a subclass. This class 
 associates a UMG widget with an inertia (direction + speed) vector, the 
 amount of life remaining in seconds, and a previous/current position. There are 
@@ -140,6 +143,9 @@ also methods to manage these values, show/hide the widget, etc.
 Play object subclasses need two template arguments: a UWidget-derived type 
 and a class that implements a GetSize(WidgetT*) method. Currently the widget 
 types in use are UImage and USpriteWidget.
+
+For greater abstraction, the game uses the Daylon::FImagePlayObject and 
+Daylon::FSpritePlayObject subclasses.
 
 A play object's position is at the widget's center, which simplifies 
 rotation and collision detection. This is achieved by using a canvas 
@@ -308,7 +314,10 @@ Moved the ComputeTargetingSolution function to LocalUtils.
 Future Work
 -------------------------------------------------------------------------------------
 For more performance we could bypass UMG and just use Slate, 
-since UMG is basically just a Slate wrapper.
+since UMG is basically just a Slate wrapper. The abstraction work 
+done in 1.5 to move widget-related calls to DaylonUtils is part 
+of that migration. Eventually, the game-level logic will have no 
+idea how play objects are implemented.
 
 It would be good to add component members to FPlayObject to avoid 
 doing the subclasses' features entirely by inheritance, to have 
@@ -317,7 +326,7 @@ class dtors automatically remove widgets from the canvas, and have
 powerup readouts automatically update their widgets when the 
 related value variable changes.
 
-There's also a fair bit of duplicate code e.g. widget spawning, 
+There's still some duplicate code e.g. widget spawning, 
 so we want patterns or function consolidation.
 
 The player-rock collision detection seems to be a bit too generous 
