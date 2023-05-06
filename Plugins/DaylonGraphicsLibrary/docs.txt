@@ -1,0 +1,117 @@
+Documentation for DaylonGraphicsLibrary plug-in for Unreal Engine
+
+Author(s): Ray Gardener (support@daylongraphics.com)
+Repository: https://github.com/RayOfDaylon/SpaceRox (inside Plugins folder)
+May 5, 2023
+
+
+
+Introduction
+-------------------------------------------------------------------------------------
+The DaylonGraphicsLibrary provides common routines and data types (classes)
+useful for 2D Unreal Engine games. It's used e.g. by the SpaceRox game, 
+an Atari Asteroids clone.
+
+
+UDaylonUtils
+-------------------------------------------------------------------------------------
+This is a blueprint function library (although no functions are blueprint callable)
+containing several static functions.
+
+  SetWidgetTree    Call this early to establish the WidgetTree to use when 
+                   constructing widgets.
+
+  SetRootCanvas    Call this early to establish which UCanvasPanel widget
+                   to use when adding a widget to your scene. Normally, this 
+                   will be the top-level widget immediately below the 
+                   UUserWidget that was added to the UE viewport.
+
+  MakeWidget       Call this to construct a UWidget of the desired type. 
+
+  Show/Hide        Shows or hides the specified UWidget.
+
+  AngleToVector2D  Converts an angle (in degrees) to a unit vector. 
+                   Angle zero corresponds to a vector of [0, -1] and 
+                   increasing angles proceed clockwise.
+
+  RandVector2D     Returns a random unit 2D vector.
+
+  Rotate           Rotates a 2D point around a given angle (in degrees).
+                   The pivot point is the origin (0, 0).
+
+  Vector2DToAngle  Converts a 2D vector to an angle, in degrees.
+                   A vector of [0, -y] corresponds to zero degrees, 
+                   a vector of [+x, 0] corresponds to ninety degrees, etc.
+
+  WrapAngle        Modulates a degree value to be within the 0-360 range.
+
+  ComputeFiringSolution   Given a launch point, a projectile speed, a target point
+                          and a target inertia, returns the projectile inertia that will 
+                          make it intersect the target.
+
+  GetWidgetDirectionVector    Returns the unit direction vector for a widget's rotation.
+                              The rotation is encoded in the widget's render transform.
+
+  DoesLineSegmentIntersectCircle      Returns true if a line intersects a circle.
+
+  DoesLineSegmentIntersectTriangle    Returns true if a line intersects a triangle.
+
+  DoesTriangleIntersectTriangle       Returns true if two triangles intersect.
+
+
+
+Daylon namespace
+-------------------------------------------------------------------------------------
+This namespace contains data types (other than UObject-based ones which cannot reside 
+within a namespace).
+
+EListNavigationDirection      Enum constants for list navigation.
+
+FLoopedSound                  A simple class that plays a sound over and over 
+                              as long as its Tick method is called.
+
+FScheduledTask                A class that executes a function at some specified 
+                              number of seconds into the future.
+
+FDurationTask                 A class that executes a function every time 
+                              Tick is called for a finite number of seconds, 
+                              and then calls an optional completion function.
+
+FHighScore                    A single entry in a high score table.
+
+FHighScoreTable               A simple high score table.
+
+IPlayObject                   Abstract base class of 2D game objects (actors).
+
+FPlayObject                   Template class implementing most 2D game object functionality.
+                              You should use a specific subclass such as FImagePlayObject though.
+
+FImagePlayObject              An FPlayObject that uses a UImage widget. Suitable
+                              for game objects that have a static appearance.
+
+FSpritePlayObject             An FPlayObject that uses a UDaylonSpriteWidget.
+                              Good for game objects that have a dynamic appearance.
+                              The SpaceRox powerups e.g. use this class.
+
+
+UDaylonSpriteWidget
+-------------------------------------------------------------------------------------
+This UWidget renders a picture that can change over time. It contains a 
+UDaylonSpriteWidgetAtlas member that defines a texture atlas and frame rate.
+The texture atlas class is FDaylonSpriteAtlas. It's assumed that the cels (tiles)
+inside the atlas fill it out with an equal number of pixels per cel.
+
+Call the Tick method to animate the picture.
+
+
+UDaylonParticlesWidget
+-------------------------------------------------------------------------------------
+This UWidget draws particles moving away randomly from the widget's center.
+The SpaceRox game e.g. uses it for all of its explosions.
+
+Call the Update method to advance the animation. If it returns false, 
+the animation has ended and the widget can be disposed or hidden.
+
+Call the Reset method to set the animation for another replay.
+
+
