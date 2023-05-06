@@ -1,14 +1,14 @@
-Documentation for SpaceRox game project
+Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 5, 2023
+May 6, 2023
 
 
 
 Introduction
 -------------------------------------------------------------------------------------
-SpaceRox is a remake of the classic Atari Asteroids 1979 arcade game which tries 
+Stellar Mayhem is a remake of the classic Atari Asteroids 1979 arcade game which tries 
 to match its look and feel, but coded using Unreal Engine (UE 5.1, specifically).
 
 Its goals are a) to provide an educational reference for people interested in how 
@@ -19,6 +19,10 @@ a classic arcade game.
 
 While I've endeavoured to make the source code readable, the rest of this document 
 may provide more clarification.
+
+"SpaceRox" is the project's internal codename. It used to be the actual name, 
+but it turns out there are other games already called that.
+
 
 
 Project Structure
@@ -47,6 +51,7 @@ Source
         PlayViewBase.*         The specific game logic
 
 
+
 Setting Up
 -------------------------------------------------------------------------------------
 You should already have UE installed (of course). As of this writing, the project 
@@ -62,6 +67,7 @@ you have installed.
 
 Once you have the project's .sln file, you can open it in Visual Studio and 
 browse/modify/debug the code, build it, launch the development editor, etc.
+
 
 
 How the Game is Played
@@ -114,6 +120,7 @@ The double-gun (or power) powerup grants 100 double-shot rounds. The player ship
 will automatically switch to double guns if any such rounds have been acquired.
 
 
+
 Keyboard Issues
 -----------------------------------------------------------------------------------
 If you're having trouble getting key presses to register, your keyboard may 
@@ -130,6 +137,7 @@ There's one online at https://www.mechanical-keyboard.org/key-rollover-test/
 If you want to change the default key assignments, open the project in the 
 UE Editor, access Project Settings, Input and change the key assignments 
 for the various input events, then repackage or play from the editor.
+
 
 
 How the Game Works

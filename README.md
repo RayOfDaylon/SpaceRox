@@ -1,5 +1,7 @@
-# SpaceRox
+# Stellar Mayhem
 Remake of Atari Asteroids 1979 arcade game using Unreal Engine
+
+"SpaceRox" is the internal project name.
 
 An example gameplay video is available at https://www.youtube.com/watch?v=mXKK6ThleVQ
 
