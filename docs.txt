@@ -290,6 +290,11 @@ Version 1.6
 -------------------------------------------------------------------------------------
 Multiple enemy ships can appear on the screen together. 
 To disable this, set the FEATURE_MULTIPLE_ENEMIES macro to 0.
+   There's still a time delay between enemy respawn, so 
+the effect occurs more as the player score increases.
+If you want to see the effect early, set your initial 
+player score in the PlayView blueprint (in the Testing section)
+to e.g 95,000. You should also grab a shield powerup. :)
 
 An input action for ship aiming with the left gamepad joystick 
 was added, but not used. Thrust would probably need to be factored 
