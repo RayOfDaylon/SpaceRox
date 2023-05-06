@@ -35,6 +35,9 @@ DEFINE_LOG_CATEGORY(LogGame)
 
 #define FEATURE_SPINNING_ASTEROIDS  1
 
+#define FEATURE_MULTIPLE_ENEMIES    1
+
+
 #if(DEBUG_MODULE == 1)
 #pragma optimize("", off)
 #endif
@@ -61,7 +64,7 @@ const float PlayerRotationSpeed            = 300.0f;  // degrees per second
 								           
 const float MaxTorpedoSpeed                = 600.0f;  // px per second
 const float MaxTorpedoLifeTime             =   1.5f;  // seconds
-const int32 TorpedoCount                   =  20;     // make room for player and enemy torpedos which are in the same array
+const int32 TorpedoCount                   =  30;     // make room for player and enemy torpedos which are in the same array
 								           
 const int32 MaxInitialAsteroids            =  24;
 const float MinAsteroidSpeed               =  50.0f;  // px per second
@@ -216,6 +219,9 @@ void UPlayViewBase::InitializeVariables()
 	PlayerScore                   = 0;
 	WaveNumber                    = 0;
 
+	NumSmallEnemyShips            = 0;
+	NumBigEnemyShips              = 0;
+
 	ThrustSoundTimeRemaining      = 0.0f;
 	StartMsgAnimationAge          = 0.0f;
 	TimeUntilNextWave             = 0.0f;
@@ -331,6 +337,19 @@ void UPlayViewBase::OnBackButtonPressed()
 void UPlayViewBase::OnForwardButtonPressed()
 {
 	NavigateMenu(Daylon::EListNavigationDirection::Forwards);
+}
+
+
+void UPlayViewBase::OnAimPlayerShip(const FVector2D& Direction)
+{
+	// Aiming with a gamepad joystick doesn't really work that well; 
+	// one keeps expecting it to also include thrust. We could do 
+	// that, so we may revisit this as a todo item.
+
+	if(GameState == EGameState::Active)
+	{
+		PlayerShip.SetAngle(UDaylonUtils::Vector2DToAngle(Direction));
+	}
 }
 
 
@@ -1870,6 +1889,19 @@ void UPlayViewBase::RemoveEnemyShip(int32 EnemyIndex)
 
 	auto& EnemyShip = EnemyShips[EnemyIndex];
 
+
+	if(EnemyShip.Value == ValueBigEnemy)
+	{
+		NumBigEnemyShips--;
+	}
+	else
+	{
+		NumSmallEnemyShips--;
+	}
+
+	check(NumBigEnemyShips >= 0 && NumSmallEnemyShips >= 0);
+
+
 	EnemyShip.DestroyWidget();
 
 	EnemyShips.RemoveAt(EnemyIndex);
@@ -1915,8 +1947,70 @@ void UPlayViewBase::RemoveTorpedos()
 }
 
 
+void UPlayViewBase::SpawnEnemyShip()
+{
+	FEnemyShip EnemyShip;
+
+	// Generate a big enemy ship vs. small one based on player score.
+	// The higher the score, the likelier a small enemy will appear.
+	// Regardless of score, there's always a 10% chance of a big enemy ship.
+
+	const int32 ScoreTmp = FMath::Max(0, PlayerScore - 5000);
+	float BigEnemyProbability = pow(FMath::Lerp(1.0f, 0.1f,  FMath::Min(1.0f, ScoreTmp / 65'000.0f)), 2.0f);
+	BigEnemyProbability = FMath::Max(0.1f, BigEnemyProbability);
+
+	const bool IsBigEnemy = (FMath::FRand() <= BigEnemyProbability);
+	EnemyShip.Value = IsBigEnemy ? ValueBigEnemy : ValueSmallEnemy; // todo: favor small enemies as player score increases.
+
+	EnemyShip.TimeRemainingToNextShot = (IsBigEnemy ? BigEnemyReloadTime : SmallEnemyReloadTime);
+	EnemyShip.TimeRemainingToNextMove = 3.0f;
+	auto Inertia = FVector2D(1, 0) * 300; // todo: use global constant for speed, maybe min/max it
+
+	// Choose a random Y-pos to appear at. Leave room to avoid ship appearing clipped.
+	FVector2D P(0.0, FMath::RandRange(EnemyShip.GetSize().Y + 2, ViewportSize.Y - (EnemyShip.GetSize().Y + 2)));
+
+	if(FMath::RandBool())
+	{
+		Inertia.X *= -1; // make enemy ship travel from right to left.
+		P.X = ViewportSize.X - 1.0f; // avoid immediate removal
+	}
+			
+	EnemyShip.Create(IsBigEnemy ? BigEnemyBrush : SmallEnemyBrush, 0.375f);
+	EnemyShip.Spawn(WrapPositionToViewport(P), Inertia, 0.0f);
+
+	EnemyShips.Add(EnemyShip);
+
+	if(IsBigEnemy)
+	{
+		NumBigEnemyShips++;
+	}
+	else
+	{
+		NumSmallEnemyShips++;
+	}
+
+
+	if(IsBigEnemy)
+	{
+		if(NumBigEnemyShips == 1)
+		{
+			BigEnemyShipSoundLoop.Start();
+		}
+	}
+	else
+	{
+		if(NumSmallEnemyShips == 1)
+		{
+			SmallEnemyShipSoundLoop.Start();
+		}
+	}
+}
+
+
 void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 {
+	check(NumBigEnemyShips + NumSmallEnemyShips == EnemyShips.Num());
+
 	for(int32 ShipIndex = EnemyShips.Num() - 1; ShipIndex >= 0; ShipIndex--)
 	{
 		auto& EnemyShip = EnemyShips[ShipIndex];
@@ -1927,6 +2021,7 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 
 		// If we've reached the opposite side of the viewport, remove us.
 		const auto P2 = WrapPositionToViewport(EnemyShip.UnwrappedNewPosition);
+
 		if(P2.X != EnemyShip.UnwrappedNewPosition.X)
 		{
 			// Ship tried to wrap around horizontally.
@@ -1969,7 +2064,9 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 		}
 	}
 
+#if(FEATURE_MULTIPLE_ENEMIES == 0)
 	if(EnemyShips.IsEmpty())
+#endif
 	{
 		// See if we need to spawn an enemy ship.
 		// Time between enemy ship spawns depends on asteroid density (no ships if too many rocks)
@@ -1979,37 +2076,7 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 
 		if(TimeUntilNextEnemyShip <= 0.0f)
 		{
-			// We can spawn.
-			FEnemyShip EnemyShip;
-
-			//EnemyShip.RadiusFactor = 0.375f;
-
-			// Generate a big enemy ship vs. small one based on player score.
-			// The higher the score, the likelier a small enemy will appear.
-			// Regardless of score, there's always a 10% chance of a big enemy ship.
-
-			const int32 ScoreTmp = FMath::Max(0, PlayerScore - 5000);
-			float BigEnemyProbability = pow(FMath::Lerp(1.0f, 0.1f,  FMath::Min(1.0f, ScoreTmp / 65'000.0f)), 2.0f);
-			BigEnemyProbability = FMath::Max(0.1f, BigEnemyProbability);
-
-			const bool IsBigEnemy = (FMath::FRand() <= BigEnemyProbability);
-			EnemyShip.Value = IsBigEnemy ? ValueBigEnemy : ValueSmallEnemy; // todo: favor small enemies as player score increases.
-
-			EnemyShip.TimeRemainingToNextShot = (IsBigEnemy ? BigEnemyReloadTime : SmallEnemyReloadTime);
-			EnemyShip.TimeRemainingToNextMove = 3.0f;
-			auto Inertia = FVector2D(1, 0) * 300; // todo: use global constant for speed, maybe min/max it
-
-			// Choose a random Y-pos to appear at. Leave room to avoid ship appearing clipped.
-			FVector2D P(0.0, FMath::RandRange(EnemyShip.GetSize().Y + 2, ViewportSize.Y - (EnemyShip.GetSize().Y + 2)));
-
-			if(FMath::RandBool())
-			{
-				Inertia.X *= -1; // make enemy ship travel from right to left.
-				P.X = ViewportSize.X - 1.0f; // avoid immediate removal
-			}
-			
-			EnemyShip.Create(IsBigEnemy ? BigEnemyBrush : SmallEnemyBrush, 0.375f);
-			EnemyShip.Spawn(WrapPositionToViewport(P), Inertia, 0.0f);
+			SpawnEnemyShip();
 
 			// Reset the timer.
 			TimeUntilNextEnemyShip = FMath::Lerp(MaxTimeUntilEnemyRespawn, MinTimeUntilEnemyRespawn, (float)FMath::Min(PlayerScore, ExpertPlayerScore) / ExpertPlayerScore);
@@ -2018,30 +2085,17 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 			//         50'000 --> 5 seconds
 			//        100'000+ --> 1 second
 			// might want to apply a gamma curve to speed up spawning at lower scores
-
-			EnemyShips.Add(EnemyShip);
-
-			if(IsBigEnemy)
-			{
-				BigEnemyShipSoundLoop.Start();
-			}
-			else
-			{
-				SmallEnemyShipSoundLoop.Start();
-			}
 		}
 	}
 
-	for(const auto& EnemyShip : EnemyShips)
+	if(NumBigEnemyShips > 0)
 	{
-		if(EnemyShip.Value == ValueBigEnemy)
-		{
-			BigEnemyShipSoundLoop.Tick(DeltaTime);
-		}
-		else
-		{
-			SmallEnemyShipSoundLoop.Tick(DeltaTime);
-		}
+		BigEnemyShipSoundLoop.Tick(DeltaTime);
+	}
+
+	if(NumSmallEnemyShips > 0)
+	{
+		SmallEnemyShipSoundLoop.Tick(DeltaTime);
 	}
 }
 

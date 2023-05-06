@@ -161,6 +161,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void OnAbortButtonPressed();
 
 	UFUNCTION(BlueprintCallable, Category = SpaceRox)
+	void OnAimPlayerShip(const FVector2D& Direction);
+
+	UFUNCTION(BlueprintCallable, Category = SpaceRox)
 	void OnEnterHighScore(const FString& Name);
 
 
@@ -369,6 +372,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	//template<class WidgetT> WidgetT* MakeWidget();
 
 	void      SpawnAsteroids             (int32 NumAsteroids);
+	void      SpawnEnemyShip             ();
 	void      SpawnPowerup               (FPowerup& Powerup, const FVector2D& P);
 	void      SpawnExplosion             (const FVector2D& P);
 	void      SpawnPlayerShipExplosion   (const FVector2D& P);
@@ -450,6 +454,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	int32        NumPlayerShips;
 	int32        PlayerScore;
 	int32        WaveNumber;
+	int32        NumSmallEnemyShips;
+	int32        NumBigEnemyShips;
 	float        TimeUntilNextWave;
 	float        ThrustSoundTimeRemaining;
 	float        StartMsgAnimationAge;

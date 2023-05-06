@@ -2,7 +2,7 @@ Documentation for SpaceRox game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 4, 2023
+May 5, 2023
 
 
 
@@ -285,6 +285,24 @@ In development mode, this will be in the project's
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
+
+Version 1.6
+-------------------------------------------------------------------------------------
+Multiple enemy ships can appear on the screen together. 
+To disable this, set the FEATURE_MULTIPLE_ENEMIES macro to 0.
+
+An input action for ship aiming with the left gamepad joystick 
+was added, but not used. Thrust would probably need to be factored 
+in because when one aims with the stick, there's an instinctive 
+feeling that the ship should also move in that direction.
+   Aiming is also very "fussy" -- it's easy to make the ship 
+immediately point in some different direction. We'd likely 
+need to also add some dampening to make the ship rotate
+over time.
+   If you want to try it, access the PlayView's blueprint
+graph and connect up the input action pins to the OnAim node, 
+and disable the pins on the existing RotateShip action.
+ 
 
 Version 1.5
 -------------------------------------------------------------------------------------
