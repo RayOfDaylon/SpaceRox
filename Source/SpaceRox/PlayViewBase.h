@@ -271,6 +271,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Testing)
 	int32 NumAsteroidsOverride = 0;
 
+	// Make player omnipotent
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Testing)
+	bool bGodMode = false;
+
 	
 	// -- Design-time widgets -----------------------------------------------------------
 
@@ -450,6 +454,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	TArray<UDaylonParticlesWidget*> Explosions;
 	Daylon::FHighScoreTable         HighScores;
 	Daylon::FHighScore              MostRecentHighScore;
+	UTextBlock*                     MostRecentHighScoreTextBlock[2];
 
 	TArray<Daylon::FScheduledTask>  ScheduledTasks;
 	TArray<Daylon::FDurationTask>   DurationTasks;
@@ -468,6 +473,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	float        TimeUntilNextPlayerShip;
 	float        TimeUntilNextEnemyShip;
 	float        TimeUntilGameOverStateEnds;
+	float        MruHighScoreAnimationAge;
 	bool         IsInitialized;
 	bool         bEnemyShootsAtPlayer;
 	bool         bHighScoreWasEntered;

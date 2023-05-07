@@ -179,7 +179,7 @@ void UPlayViewBase::InitializePlayerShip()
 {
 	PlayerShip.IsUnderThrust   = false;
 	PlayerShip.IsSpawning      = false;
-	PlayerShip.DoubleShotsLeft = 0;
+	PlayerShip.DoubleShotsLeft = bGodMode ? 10000 : 0;
 	PlayerShip.ShieldsLeft     = 0.0f;
 
 	PlayerShip.Create (PlayerShipBrush, 0.4f);
@@ -230,6 +230,7 @@ void UPlayViewBase::InitializeVariables()
 	TimeUntilNextPlayerShip       = 0.0f;
 	TimeUntilNextEnemyShip        = 0.0f;
 	TimeUntilGameOverStateEnds    = 0.0f;
+	MruHighScoreAnimationAge      = 0.0f;
 
 	GameState                     = EGameState::Startup;
 	SelectedMenuItem              = EMenuItem::StartPlaying;
@@ -778,6 +779,26 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 
 		case EGameState::HighScores:
+
+			UpdateAsteroids           (InDeltaTime);
+			UpdatePowerups            (InDeltaTime);
+
+			if(MostRecentHighScoreTextBlock[0] != nullptr)
+			{
+				check(MostRecentHighScoreTextBlock[1] != nullptr);
+
+				const auto T = MruHighScoreAnimationAge * PI * 2.0f;
+
+				for(auto TextBlock : MostRecentHighScoreTextBlock)
+				{
+					TextBlock->SetOpacity(FMath::Lerp(0.5f, 1.0f, 0.5f + sin(T) * 0.5f));
+				}
+
+				MruHighScoreAnimationAge = FMath::Wrap(MruHighScoreAnimationAge + InDeltaTime, 0.0f, 10.0f);
+			}
+
+			break;
+
 		case EGameState::Credits:
 		case EGameState::Help:
 
@@ -1581,7 +1602,7 @@ void UPlayViewBase::AdjustShieldsLeft(float Amount)
 
 void UPlayViewBase::ProcessPlayerCollision()
 {
-	if(PlayerShield.IsVisible())
+	if(PlayerShield.IsVisible() || bGodMode)
 	{
 		PlaySound(ShieldBonkSound);
 	}
@@ -2353,11 +2374,16 @@ void UPlayViewBase::PopulateHighScores()
 	int32 RowIndex = 0;
 	bool  MruScoreHighlighted = false;
 
+	MostRecentHighScoreTextBlock[0] = nullptr;
+	MostRecentHighScoreTextBlock[1] = nullptr;
+
 	for(const auto& Entry : HighScores.Entries)
 	{
 		auto EntryColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 0.5f));
 
-		if(!MruScoreHighlighted && Entry == MostRecentHighScore)
+		const bool IsMostRecentHighScore = (!MruScoreHighlighted && Entry == MostRecentHighScore);
+
+		if(IsMostRecentHighScore)
 		{
 			EntryColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		}
@@ -2381,6 +2407,12 @@ void UPlayViewBase::PopulateHighScores()
 		NameSlot->SetPadding(FMargin(30.0f, 0.0f, 0.0f, 0.0f));
 		NameSlot->SetRow(RowIndex);
 		NameSlot->SetColumn(1);
+
+		if(IsMostRecentHighScore)
+		{
+			MostRecentHighScoreTextBlock[0] = TextBlockScore;
+			MostRecentHighScoreTextBlock[1] = TextBlockName;
+		}
 
 		RowIndex++;
 	}
