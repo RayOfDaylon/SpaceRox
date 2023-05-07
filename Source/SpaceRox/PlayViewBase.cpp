@@ -516,10 +516,17 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Show (IntroContent);
 
+			PlayAnimation(PressToStartFlash, 0.0f, 0);
+
 			break;
 
 
 		case EGameState::MainMenu:
+
+			if(PreviousState == EGameState::Intro)
+			{
+				StopAnimation(PressToStartFlash);
+			}
 
 			UDaylonUtils::Hide (IntroContent);
 			UDaylonUtils::Hide (HelpContent);
@@ -694,13 +701,14 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	{
 		case EGameState::Intro:
 
+#if 0
 			if(TimeUntilIntroStateEnds <= 0.0f)
 			{
 				TransitionToState(EGameState::MainMenu);
 			}
 
 			TimeUntilIntroStateEnds -= InDeltaTime;
-
+#endif
 			break;
 
 

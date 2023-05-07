@@ -332,6 +332,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	// -- Design-time animations -----------------------------------------------------------
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* PressToStartFlash;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	UWidgetAnimation* MenuOutro;
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
