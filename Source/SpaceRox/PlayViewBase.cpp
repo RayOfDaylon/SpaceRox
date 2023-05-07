@@ -14,6 +14,8 @@
 #include "UMG/Public/Components/CanvasPanelSlot.h"
 #include "UMG/Public/Components/HorizontalBoxSlot.h"
 #include "UMG/Public/Components/VerticalBoxSlot.h"
+#include "UMG/Public/Components/GridPanel.h"
+#include "UMG/Public/Components/GridSlot.h"
 #include "UMG/Public/Blueprint/WidgetTree.h"
 #include "UMG/Public/Blueprint/WidgetLayoutLibrary.h"
 #include "UMG/Public/Blueprint/WidgetBlueprintLibrary.h"
@@ -446,6 +448,8 @@ void UPlayViewBase::OnEnterHighScore(const FString& Name)
 	UWidgetBlueprintLibrary::SetInputMode_GameOnly(GetOwningPlayer(), true);
 
 	bHighScoreWasEntered = true;
+
+	MostRecentHighScore.Set(PlayerScore, Str);
 
 	HighScores.Add(PlayerScore, Str);
 
@@ -2323,7 +2327,6 @@ void UPlayViewBase::LoadHighScores()
 
 		HighScores.Add(Score, Name);
 	}
-
 #endif
 }
 
@@ -2337,37 +2340,41 @@ void UPlayViewBase::PopulateHighScores()
 
 	HighScoresReadout->ClearChildren();
 
-	// We want one line per score, using a horizontal box holding two text boxes.
+	// We want one line per score.
 
-	const int32 LongestNameLength = HighScores.GetLongestNameLength();
+	int32 RowIndex = 0;
+	bool  MruScoreHighlighted = false;
 
 	for(const auto& Entry : HighScores.Entries)
 	{
-		auto EntryBox = UDaylonUtils::MakeWidget<UHorizontalBox>();
+		auto EntryColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 0.5f));
 
-		auto EntrySlot = HighScoresReadout->AddChildToVerticalBox(EntryBox);
+		if(!MruScoreHighlighted && Entry == MostRecentHighScore)
+		{
+			EntryColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
+		}
 
 		auto TextBlockScore = UDaylonUtils::MakeWidget<UTextBlock>();
 		TextBlockScore->SetFont(HighScoreReadoutFont);
-		TextBlockScore->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 0.75f)));
+		TextBlockScore->SetColorAndOpacity(EntryColor);
 		TextBlockScore->SetText(FText::FromString(FString::Format(TEXT("{0}"), { Entry.Score })));
 
-		auto ScoreSlot = EntryBox->AddChildToHorizontalBox(TextBlockScore);
+		auto ScoreSlot = HighScoresReadout->AddChildToGrid(TextBlockScore);
 		ScoreSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Right);
-		FSlateChildSize ScoreSize;
-		ScoreSize.Value = 7;
-		ScoreSlot->SetSize(ScoreSize);
+		ScoreSlot->SetRow(RowIndex);
+		ScoreSlot->SetColumn(0);
 
 		auto TextBlockName = UDaylonUtils::MakeWidget<UTextBlock>();
 		TextBlockName->SetFont(HighScoreReadoutFont);
-		TextBlockName->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 0.75f)));
+		TextBlockName->SetColorAndOpacity(EntryColor);
 		TextBlockName->SetText(FText::FromString(Entry.Name));
 
-		auto NameSlot = EntryBox->AddChildToHorizontalBox(TextBlockName);
-		FSlateChildSize NameSize;
-		NameSize.Value = LongestNameLength;
-		NameSlot->SetSize(NameSize);
+		auto NameSlot = HighScoresReadout->AddChildToGrid(TextBlockName);
 		NameSlot->SetPadding(FMargin(30.0f, 0.0f, 0.0f, 0.0f));
+		NameSlot->SetRow(RowIndex);
+		NameSlot->SetColumn(1);
+
+		RowIndex++;
 	}
 }
 

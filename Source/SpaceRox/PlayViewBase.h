@@ -10,6 +10,7 @@
 #include "UMG/Public/Components/CanvasPanel.h"
 #include "UMG/Public/Components/HorizontalBox.h"
 #include "UMG/Public/Components/VerticalBox.h"
+#include "UMG/Public/Components/GridPanel.h"
 #include "UMG/Public/Components/Image.h"
 #include "UMG/Public/Components/EditableTextBox.h"
 #include "Runtime/Engine/Classes/Sound/SoundBase.h"
@@ -322,7 +323,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UEditableTextBox* HighScoreNameEntry;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UVerticalBox* HighScoresReadout;
+	UGridPanel* HighScoresReadout;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UTextBlock* DebugSavePath;
@@ -445,6 +446,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	TArray<FPowerup>                Powerups;
 	TArray<UDaylonParticlesWidget*> Explosions;
 	Daylon::FHighScoreTable         HighScores;
+	Daylon::FHighScore              MostRecentHighScore;
 
 	TArray<Daylon::FScheduledTask>  ScheduledTasks;
 	TArray<Daylon::FDurationTask>   DurationTasks;

@@ -195,10 +195,25 @@ namespace Daylon
 		FString Name;
 		int32   Score = 0;
 
+		
 		FHighScore() {}
 		FHighScore(int32 InScore, const FString& InName) : Name(InName), Score(InScore)	{}
 
-		bool operator < (const FHighScore& Rhs) const 
+		
+		void Set(int32 InScore, const FString& InName)
+		{
+			Name  = InName;
+			Score = InScore;
+		}
+
+
+		bool operator == (const FHighScore& Rhs) const
+		{
+			return (Name == Rhs.Name && Score == Rhs.Score);
+		}
+
+
+		bool operator < (const FHighScore& Rhs) const
 		{
 			if(Score == Rhs.Score)
 			{
