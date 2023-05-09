@@ -57,10 +57,10 @@ const int32 MaxPlayerScore                 = 9'999'990;
 const int32 ExpertPlayerScore              = 100'000;  // The score at which e.g. enemy ships will respawn fastest.
 const int32 InitialPlayerShipCount         =  3;
 const int32 PlayerShipBonusAt              = 10000;
-const int32 MaxPlayerShipsDisplayable      = 10;     // We don't want the player ships readout to be impractically wide.
-const float MaxTimeUntilNextPlayerShip     =  4.0f;  // Actual time may be longer because of asteroid intersection avoidance.
+const int32 MaxPlayerShipsDisplayable      = 10;      // We don't want the player ships readout to be impractically wide.
+const float MaxTimeUntilNextPlayerShip     =  4.0f;   // Actual time may be longer because of asteroid intersection avoidance.
 							           
-const float MaxPlayerShipSpeed             = 2000.0f; // px/sec
+const float MaxPlayerShipSpeed             = 1000.0f; // px/sec
 const float PlayerThrustForce              = 650.0f;
 const float PlayerRotationSpeed            = 300.0f;  // degrees per second
 								           
@@ -697,19 +697,78 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 	UpdateTasks(InDeltaTime);
 
+	static float ExploCountAge = 1.0f;
 
 	switch(GameState)
 	{
+
 		case EGameState::Intro:
 
-#if 0
-			if(TimeUntilIntroStateEnds <= 0.0f)
+#if 1
+			// Fade in the title graphic and version number while explosions rage
+
+			if(TimeUntilIntroStateEnds > 0.0f)
 			{
-				TransitionToState(EGameState::MainMenu);
+				TitleGraphic->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 1.5f) / MaxIntroStateLifetime));
+
+				VersionReadout->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 3.0f) / MaxIntroStateLifetime));
+
+				// spawn an explosion every 1/4 second.
+				ExploCountAge -= InDeltaTime;
+				
+				if(ExploCountAge <= 0.0f)
+				{
+					ExploCountAge = 0.1f;
+					auto Explosion = UDaylonUtils::MakeWidget<UDaylonParticlesWidget>();
+
+					FVector2D P(
+						FMath::FRandRange(480.0, 1500.0),
+						FMath::FRandRange(300.0, 550.0)
+					);
+
+					Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
+					Explosion->SetRenderTransformPivot(FVector2D(0.5f));
+
+					Explosion->ParticleBrush = TorpedoBrush;
+
+					Explosion->MinParticleSize     *= 1.5f;
+					Explosion->MaxParticleSize     *= 3;
+					Explosion->MinParticleVelocity *= 1.5f;
+					Explosion->MaxParticleVelocity *= 3;
+					Explosion->MinParticleLifetime *= 2;
+					Explosion->MaxParticleLifetime *= 4;
+					Explosion->FinalOpacity        = 0.25f;
+					Explosion->NumParticles        *= 2;
+
+					auto CanvasSlot = RootCanvas->AddChildToCanvas(Explosion);
+
+					Explosion->SynchronizeProperties();
+
+					CanvasSlot->SetAnchors(FAnchors());
+					CanvasSlot->SetAlignment(FVector2D(0.5f));
+					CanvasSlot->SetAutoSize(true);
+					CanvasSlot->SetPosition(P);
+
+					Explosions.Add(Explosion);
+
+					if(FMath::RandRange(0, 5) == 0)
+					{
+						PlaySound(PlayerShipDestroyedSound);
+					}
+					else
+					{
+						PlaySound(ExplosionSounds[FMath::FRandRange(0, ExplosionSounds.Num() - 1)]);
+					}
+				}
 			}
+
+			UpdateExplosions(InDeltaTime);
 
 			TimeUntilIntroStateEnds -= InDeltaTime;
 #endif
+
+
+
 			break;
 
 
@@ -1129,7 +1188,7 @@ void UPlayViewBase::UpdatePlayerRotation(float DeltaTime)
 
 	const float Amt = PlayerRotationSpeed * DeltaTime;
 
-	UE_LOG(LogGame, Log, TEXT("Rotation force: %.5f"), RotationForce);
+	//UE_LOG(LogGame, Log, TEXT("Rotation force: %.5f"), RotationForce);
 
 	PlayerShip.SetAngle(UDaylonUtils::WrapAngle(PlayerShip.GetAngle() + Amt * RotationForce));
 }

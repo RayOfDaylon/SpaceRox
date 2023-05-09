@@ -266,6 +266,23 @@ void UDaylonUtils::Hide(UWidget* Widget)
 	Show(Widget, false); 
 }
 
+
+void UDaylonUtils::Show(SWidget* Widget, bool Visible)
+{
+	if(Widget == nullptr)
+	{
+		return;
+	}
+
+	Widget->SetVisibility(Visible ? EVisibility::HitTestInvisible : EVisibility::Collapsed);
+}
+
+
+void UDaylonUtils::Hide(SWidget* Widget) 
+{
+	Show(Widget, false); 
+}
+
 // ------------------------------------------------------------------------------------------
 
 void Daylon::FLoopedSound::Start()

@@ -119,6 +119,32 @@ struct FAsteroid : public Daylon::FImagePlayObject
 	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
 };
 
+/*
+struct FAsteroid : public Daylon::FImagePlayObjectEx
+{
+	FPowerup Powerup;
+
+
+	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
+
+
+	FAsteroid() {}
+
+
+	FAsteroid(const FAsteroid& Rhs) : Daylon::FImagePlayObjectEx(Rhs)
+	{
+		Powerup = Rhs.Powerup;
+	}
+
+
+	FAsteroid& operator=(const FAsteroid& Rhs)
+	{
+		FImagePlayObjectEx::operator=(Rhs);
+		Powerup = Rhs.Powerup;
+
+		return *this;
+	}
+};*/
 
 
 struct FEnemyShip : public Daylon::FImagePlayObject
@@ -280,6 +306,12 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UCanvasPanel* RootCanvas;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UImage* TitleGraphic;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* VersionReadout;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UTextBlock* GameTitle;
