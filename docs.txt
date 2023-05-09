@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 6, 2023
+May 9, 2023
 
 
 
@@ -344,11 +344,17 @@ Moved the ComputeTargetingSolution function to LocalUtils.
 
 Future Work
 -------------------------------------------------------------------------------------
-For more performance we could bypass UMG and just use Slate, 
-since UMG is basically just a Slate wrapper. The abstraction work 
-done in 1.5 to move widget-related calls to DaylonUtils is part 
-of that migration. Eventually, the game-level logic will have no 
-idea how play objects are implemented.
+A sector map has been added but is not currently used.
+It's part of a planned upgrade to sector-based gameplay
+instead of waves. We'll eventually get rid of the player score 
+and the high score table as well.
+
+Need to use the Slate-only play object system for the other 
+game object types, not just the asteroids. Eventually the 
+existing UMG-based system will be retired and the UMG 
+classes for sprites and particles can go away. Although 
+they're handy because we could maybe preview those 
+in the Widget Designer.
 
 It would be good to add component members to FPlayObject to avoid 
 doing the subclasses' features entirely by inheritance, to have 
@@ -357,8 +363,7 @@ class dtors automatically remove widgets from the canvas, and have
 powerup readouts automatically update their widgets when the 
 related value variable changes.
 
-There's still some duplicate code e.g. widget spawning, 
-so we want patterns or function consolidation.
+There's still some duplicate code so we want patterns or function consolidation.
 
 The player-rock collision detection seems to be a bit too generous 
 in some cases.
