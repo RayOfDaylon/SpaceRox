@@ -112,39 +112,35 @@ struct FPowerup : public Daylon::FSpritePlayObject
 };
 
 
-struct FAsteroid : public Daylon::FImagePlayObject
+/*struct FAsteroid : public Daylon::FImagePlayObject
 {
 	FPowerup Powerup;
 
 	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
-};
-
-/*
-struct FAsteroid : public Daylon::FImagePlayObjectEx
-{
-	FPowerup Powerup;
-
-
-	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
-
-
-	FAsteroid() {}
-
-
-	FAsteroid(const FAsteroid& Rhs) : Daylon::FImagePlayObjectEx(Rhs)
-	{
-		Powerup = Rhs.Powerup;
-	}
-
-
-	FAsteroid& operator=(const FAsteroid& Rhs)
-	{
-		FImagePlayObjectEx::operator=(Rhs);
-		Powerup = Rhs.Powerup;
-
-		return *this;
-	}
 };*/
+
+
+class FAsteroid : public Daylon::ImagePlayObject2D
+{
+	public:
+
+	FPowerup Powerup;
+
+	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
+
+	static TSharedPtr<FAsteroid> Create(FSlateBrush& Brush)
+	{
+		auto Widget = SNew(FAsteroid);
+
+		Daylon::FinishCreating<SImage>(Widget, 0.5f);
+
+		Widget->Brush = Brush;
+		Widget->SetImage(&Widget->Brush);
+		Widget->UpdateWidgetSize();
+
+		return Widget;
+	}
+};
 
 
 struct FEnemyShip : public Daylon::FImagePlayObject
@@ -394,23 +390,22 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// -- Class methods --------------------------------------------------
 
+	void      TransitionToState          (EGameState State);
 	void      StopRunning                (const FString& Reason, bool bFatal = false);
 
 	void      PreloadSounds              ();
 	void      PreloadSound               (USoundBase* Sound);
 	void      PlaySound                  (USoundBase* Sound, float VolumeScale = 1.0f);
+
 	void      InitializeScore            ();
 	void      InitializePlayerShipCount  ();
 	void      InitializeVariables        ();
 	void      InitializePlayerShip       ();
 	void      InitializePlayerShield     ();
+	void      CreatePlayerShip           ();
 	void      CreateTorpedos             ();
+
 	void      LaunchTorpedoFromEnemy     (const FEnemyShip& Shooter, bool IsBigEnemy);
-
-	void      TransitionToState          (EGameState State);
-
-	//template<class WidgetT> WidgetT* MakeWidget();
-
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnEnemyShip             ();
 	void      SpawnPowerup               (FPowerup& Powerup, const FVector2D& P);
@@ -445,6 +440,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      LoadHighScores             ();
 	void      SaveHighScores             ();
 	void      PopulateHighScores         ();
+
 	void      ExecuteMenuItem            (EMenuItem Item);
 	void      UpdateMenuReadout          ();
 	void      NavigateMenu               (Daylon::EListNavigationDirection Direction);
@@ -452,10 +448,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// -- Called every frame -----------------------------------------------------------
 
-	//void MovePlayObject            (IPlayObject& PlayObject, float DeltaTime);
 	void ProcessWaveTransition     (float DeltaTime);
 	void ProcessPlayerShipSpawn    (float DeltaTime);
-	//void AnimateStartMessage     (float DeltaTime);
 
 	void CheckCollisions           ();
 	void ProcessPlayerCollision    ();
@@ -472,18 +466,20 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// -- Member variables -----------------------------------------------------------
 
-	Daylon::FLoopedSound      PlayerShipThrustSoundLoop;
-	Daylon::FLoopedSound      BigEnemyShipSoundLoop;
-	Daylon::FLoopedSound      SmallEnemyShipSoundLoop;
+	Daylon::FLoopedSound            PlayerShipThrustSoundLoop;
+	Daylon::FLoopedSound            BigEnemyShipSoundLoop;
+	Daylon::FLoopedSound            SmallEnemyShipSoundLoop;
 
-	FPlayerShip                  PlayerShip;
-	Daylon::FImagePlayObject     PlayerShield;
+	FPlayerShip                     PlayerShip;
+	Daylon::FImagePlayObject        PlayerShield;
 
-	TArray<FAsteroid>               Asteroids;
+	//TArray<FAsteroid>             Asteroids;
+	TArray<TSharedPtr<FAsteroid>>   Asteroids;
 	TArray<FEnemyShip>              EnemyShips;
 	TArray<FTorpedo>                Torpedos;
 	TArray<FPowerup>                Powerups;
 	TArray<UDaylonParticlesWidget*> Explosions;
+
 	Daylon::FHighScoreTable         HighScores;
 	Daylon::FHighScore              MostRecentHighScore;
 	UTextBlock*                     MostRecentHighScoreTextBlock[2];

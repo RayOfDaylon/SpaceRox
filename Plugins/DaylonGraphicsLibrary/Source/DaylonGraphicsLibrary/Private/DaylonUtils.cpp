@@ -9,8 +9,9 @@
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 #include "Algo/Reverse.h"
 
+//DECLARE_LOG_CATEGORY_EXTERN(LogDaylon, Log, All);
 
-DEFINE_LOG_CATEGORY(LogDaylon)
+DEFINE_LOG_CATEGORY(LogDaylon);
 
 
 const double UDaylonUtils::Epsilon = 1e-14;
@@ -364,3 +365,27 @@ void Daylon::FHighScoreTable::Add(int32 Score, const FString& Name)
 		Entries.Pop();
 	}
 }
+
+
+TSharedPtr<Daylon::ImagePlayObject2D> Daylon::CreateImagePlayObject2D(const FSlateBrush& Brush, float Radius)
+{
+	auto PlayObj = SNew(ImagePlayObject2D);
+	Daylon::FinishCreating<SImage>(PlayObj, Radius);
+	PlayObj->SetBrush(Brush);
+
+	return PlayObj;
+}
+
+
+void Daylon::Destroy(TSharedPtr<Daylon::ImagePlayObject2D> Widget)
+{
+	if(!Widget->IsValid())
+	{
+		UE_LOG(LogDaylon, Error, TEXT("Daylon::Destroy(ImagePlayObject2D) tried to destroy an invalid Slate widget!"));
+		return;
+	}
+
+	UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(Widget.ToSharedRef());
+}
+
+

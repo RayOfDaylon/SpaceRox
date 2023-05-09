@@ -175,6 +175,14 @@ void UPlayViewBase::InitializePlayerShipCount()
 }
 
 
+void UPlayViewBase::CreatePlayerShip()
+{
+	PlayerShip.Create (PlayerShipBrush, 0.4f);
+
+	InitializePlayerShip();
+}
+
+
 void UPlayViewBase::InitializePlayerShip()
 {
 	PlayerShip.IsUnderThrust   = false;
@@ -182,7 +190,6 @@ void UPlayViewBase::InitializePlayerShip()
 	PlayerShip.DoubleShotsLeft = bGodMode ? 10000 : 0;
 	PlayerShip.ShieldsLeft     = 0.0f;
 
-	PlayerShip.Create (PlayerShipBrush, 0.4f);
 	PlayerShip.Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
 	PlayerShip.Hide   ();
 }
@@ -255,7 +262,7 @@ void UPlayViewBase::NativeOnInitialized()
 	InitializeVariables    ();
 	PreloadSounds          ();
 	CreateTorpedos         ();
-	InitializePlayerShip   ();
+	CreatePlayerShip       ();
 	InitializePlayerShield ();
 
 	PlayerShipThrustSoundLoop.Set (this, ThrustSound);
@@ -542,13 +549,15 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Hide (HighScoreEntryContent);
 			
-			RemoveExplosions();
-			RemoveTorpedos();
 
 			PlayerShip.Hide(); // to be safe
 			PlayerShield.Hide();
 
-			RemoveEnemyShips();
+			RemoveExplosions  ();
+			RemoveTorpedos    ();
+			RemoveEnemyShips  ();
+			RemovePowerups    ();
+
 
 			StartMsgAnimationAge = 0.0f;
 			UDaylonUtils::Show(MenuContent);
@@ -575,8 +584,10 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			InitializeScore           ();
 			InitializePlayerShipCount ();
+			InitializePlayerShip      ();
 			RemoveAsteroids           ();
 			RemoveEnemyShips          ();
+			RemovePowerups            ();
 
 			WaveNumber = 0;
 
@@ -638,8 +649,9 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering high score entry state"), (int32)PreviousState);
 			}
 
-			RemoveAsteroids();
-			RemoveEnemyShips();
+			RemoveAsteroids   ();
+			RemoveEnemyShips  ();
+			RemovePowerups    ();
 
 			UDaylonUtils::Show(PlayerScoreReadout);
 			UDaylonUtils::Hide(GameOverMessage);
@@ -658,7 +670,9 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering credits state"), (int32)PreviousState);
 			}
 
-			RemoveEnemyShips();
+			RemoveEnemyShips ();
+			RemovePowerups   ();
+
 			UDaylonUtils::Show(CreditsContent);
 
 			break;
@@ -671,8 +685,10 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering help state"), (int32)PreviousState);
 			}
 
-			RemoveAsteroids();
-			RemoveEnemyShips();
+			RemoveAsteroids   ();
+			RemoveEnemyShips  ();
+			RemovePowerups    ();
+
 			UDaylonUtils::Show(HelpContent);
 
 			break;
@@ -713,7 +729,6 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 				VersionReadout->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 3.0f) / MaxIntroStateLifetime));
 
-				// spawn an explosion every 1/4 second.
 				ExploCountAge -= InDeltaTime;
 				
 				if(ExploCountAge <= 0.0f)
@@ -757,7 +772,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 					}
 					else
 					{
-						PlaySound(ExplosionSounds[FMath::FRandRange(0, ExplosionSounds.Num() - 1)]);
+						PlaySound(ExplosionSounds[FMath::RandRange(0, ExplosionSounds.Num() - 1)]);
 					}
 				}
 			}
@@ -957,6 +972,27 @@ bool ObjectsIntersectBox(const TArray<T>& PlayObjects, const UE::Geometry::FAxis
 	return false;
 }
 
+template <typename T>
+bool ImageObjectsIntersectBox(const TArray<TSharedPtr<T>>& PlayObjects, const UE::Geometry::FAxisAlignedBox2d& SafeZone)
+{
+	for(const auto& PlayObject : PlayObjects)
+	{
+		const auto ObjectHalfSize = PlayObject->GetSize() / 2;
+
+		const UE::Geometry::FAxisAlignedBox2d ObjectBox
+		(
+			PlayObject->UnwrappedNewPosition - ObjectHalfSize,
+			PlayObject->UnwrappedNewPosition + ObjectHalfSize
+		);
+
+		if(ObjectBox.Intersects(SafeZone))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 
 bool UPlayViewBase::IsSafeToSpawnPlayer() const
 {
@@ -981,7 +1017,7 @@ bool UPlayViewBase::IsSafeToSpawnPlayer() const
 		ScreenCenter - SafeZoneSize / 2,
 		ScreenCenter + SafeZoneSize / 2);
 
-	return (!ObjectsIntersectBox(Asteroids, SafeZone) && !ObjectsIntersectBox(EnemyShips, SafeZone));
+	return (!ImageObjectsIntersectBox(Asteroids, SafeZone) && !ObjectsIntersectBox(EnemyShips, SafeZone));
 }
 
 
@@ -1034,14 +1070,15 @@ void UPlayViewBase::RemoveAsteroid(int32 Index)
 		return;
 	}
 
-	auto& Asteroid = Asteroids[Index];
+	auto& Asteroid = *Asteroids[Index].Get();
 
 	if(Asteroid.HasPowerup())
 	{
 		Asteroid.Powerup.DestroyWidget();
 	}
 
-	Asteroid.DestroyWidget();
+	//Asteroid.DestroyWidget();
+	Daylon::Destroy(Asteroids[Index]);
 
 	Asteroids.RemoveAt(Index);
 }
@@ -1079,8 +1116,11 @@ void UPlayViewBase::SpawnPowerup(FPowerup& Powerup, const FVector2D& P)
 }
 
 
+#if 0
 void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 {
+	// The UMG way.
+
 	for(int32 Index = 0; Index < NumAsteroids; Index++)
 	{
 		// 0=big, 1=med, 2=small
@@ -1148,6 +1188,85 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 
 		Asteroid.Create(AsteroidBrush, 0.5f);
 		Asteroid.Spawn(P, Inertia, 1.0f);
+
+		// Do this last since the play object is copied.
+		Asteroids.Add(Asteroid);
+	}
+}
+#endif
+
+
+void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
+{
+	// The Slate way.
+
+	for(int32 Index = 0; Index < NumAsteroids; Index++)
+	{
+		// 0=big, 1=med, 2=small
+#if(TEST_ASTEROIDS==1)
+		const int32 AsteroidSize = Index;
+#else
+		const int32 AsteroidSize = 0; 
+#endif
+
+
+#if(TEST_ASTEROIDS==1)
+		FVector2D P(500, Index * 300 + 200);
+#else
+		// Place randomly along edges of screen.
+		FVector2D P(0);
+
+		if(FMath::RandBool())
+		{
+			P.X = FMath::RandRange(0.0, ViewportSize.X);
+		}
+		else
+		{
+			P.Y = FMath::RandRange(0.0, ViewportSize.Y);
+		}
+#endif
+
+		const auto V = FMath::VRand();
+
+#if(TEST_ASTEROIDS==1)
+		const auto Inertia = FVector2D(0);
+#else
+		const auto Inertia = UDaylonUtils::RandVector2D() * FMath::Lerp(MinAsteroidSpeed, MaxAsteroidSpeed, FMath::FRand());
+#endif
+
+		FSlateBrush AsteroidBrush;
+		int32 AsteroidValue = 0;
+
+		switch(AsteroidSize)
+		{
+			case 0:
+				AsteroidBrush = BigRockBrushes[FMath::RandRange(0, 3)]; 
+				AsteroidValue = ValueBigAsteroid;
+
+				break;
+
+			case 1: 
+				AsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
+				AsteroidValue = ValueMediumAsteroid;
+				break;
+
+			case 2: 
+				AsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
+				AsteroidValue = ValueSmallAsteroid;
+				break;
+		}
+
+		auto Asteroid = FAsteroid::Create(AsteroidBrush);
+		Asteroid->Value = AsteroidValue;
+		Asteroid->LifeRemaining = 1.0f;
+		Asteroid->SpinSpeed = FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
+
+		if(AsteroidSize == 0 && Index % 4 == 0)
+		{
+			SpawnPowerup(Asteroid->Powerup, P);
+		}
+
+		Asteroid->Spawn(P, Inertia, 1.0f);
 
 		// Do this last since the play object is copied.
 		Asteroids.Add(Asteroid);
@@ -1258,8 +1377,10 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 
 void UPlayViewBase::UpdateAsteroids(float DeltaTime)
 {
-	for (auto& Asteroid : Asteroids)
+	for (auto& Elem : Asteroids)
 	{
+		auto& Asteroid = *Elem.Get();
+
 		if (Asteroid.LifeRemaining > 0.0f)
 		{
 			Asteroid.Move(DeltaTime, WrapPositionToViewport);
@@ -1435,7 +1556,7 @@ void UPlayViewBase::KillPlayerShip()
 	// ProcessPlayerShipSpawn() will handle the wait til next spawn and transition to game over, if needed. 
 }
 
-
+#if 0
 void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 {
 	// Kill the rock. Split it if isn't a small rock.
@@ -1445,7 +1566,7 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 		return;
 	}
 
-	auto& Asteroid = Asteroids[AsteroidIndex];
+	auto& Asteroid = *Asteroids[AsteroidIndex].Get();
 
 	if(KilledByPlayer)
 	{
@@ -1557,6 +1678,129 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 
 	// Do this last since the play object is copied.
 	Asteroids.Add(NewAsteroid);
+}
+#endif
+
+
+void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
+{
+	// Kill the rock. Split it if isn't a small rock.
+	// Slate style.
+
+	if(!Asteroids.IsValidIndex(AsteroidIndex))
+	{
+		return;
+	}
+
+	auto& Asteroid = *Asteroids[AsteroidIndex].Get();
+
+	if(KilledByPlayer)
+	{
+		IncreasePlayerScoreBy(Asteroid.Value);
+	}
+
+	SpawnExplosion(Asteroid.UnwrappedNewPosition);
+
+	int32 SoundIndex = 0;
+	
+	if(Asteroid.Value == ValueMediumAsteroid)
+	{
+		SoundIndex = 1;
+	}
+	else if(Asteroid.Value == ValueSmallAsteroid)
+	{
+		SoundIndex = 2;
+	}
+
+	if(ExplosionSounds.IsValidIndex(SoundIndex))
+	{
+		PlaySound(ExplosionSounds[SoundIndex]);
+	}
+
+
+	// If asteroid was small, just delete it.
+	if(Asteroid.Value == ValueSmallAsteroid)
+	{
+		// Release any powerup the asteroid was holding.
+
+		if(Asteroid.HasPowerup())
+		{
+			auto PowerupIndex = Powerups.Add(Asteroid.Powerup);
+			Asteroid.Powerup.Kind = EPowerup::Nothing;
+			if(PowerupsCanMove)
+			{
+				Powerups[PowerupIndex].Inertia = Asteroid.Inertia;
+			}
+		}
+
+		RemoveAsteroid(AsteroidIndex);
+
+		return;
+	}
+
+	// Asteroid was not small, so split it up.
+	// Apparently we always split into two children.
+	// For efficiency, we reformulate the parent rock into one of the kids.
+	// For the new inertias, we want the kids to generally be faster but 
+	// once in a while, one of the kids can be slower.
+
+	FSlateBrush NewAsteroidBrush;
+
+	switch(Asteroid.Value)
+	{
+		case ValueBigAsteroid:
+			NewAsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
+			Asteroid.Value = ValueMediumAsteroid;
+			Asteroid.SetBrush(MediumRockBrushes[FMath::RandRange(0, 3)]); 
+			break;
+
+		case ValueMediumAsteroid:
+			NewAsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
+			Asteroid.Value = ValueSmallAsteroid;
+			Asteroid.SetBrush(SmallRockBrushes[FMath::RandRange(0, 3)]); 
+			break;
+	}
+
+	auto NewAsteroidPtr = FAsteroid::Create(NewAsteroidBrush);
+	auto& NewAsteroid   = *NewAsteroidPtr.Get();
+
+	NewAsteroid.Value = Asteroid.Value;
+
+
+	const bool BothKidsFast = FMath::RandRange(0, 10) < 9;
+
+	NewAsteroid.Inertia = MakeInertia(Asteroid.Inertia, MinAsteroidSplitAngle, MaxAsteroidSplitAngle);
+	NewAsteroid.Inertia *= FMath::RandRange(1.2f, 3.0f);
+
+	NewAsteroid.LifeRemaining = 1.0f;
+	NewAsteroid.SpinSpeed     = Asteroid.SpinSpeed * AsteroidSpinScale;// FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
+
+	Asteroid.Inertia = MakeInertia(Asteroid.Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
+
+	if(BothKidsFast)
+	{
+		Asteroid.Inertia *= FMath::RandRange(1.2f, 3.0f);
+	}
+	else
+	{
+		Asteroid.Inertia *= FMath::RandRange(0.25f, 1.0f);
+	}
+
+
+	// Update size of existing rock.
+	//Asteroid.UpdateWidgetSize();
+
+	Asteroid.SpinSpeed *= AsteroidSpinScale;
+
+	//NewAsteroid.Create(NewAsteroidBrush, 0.5f);
+	NewAsteroid.Show();
+
+	NewAsteroid.OldPosition = 
+	NewAsteroid.UnwrappedNewPosition = Asteroid.UnwrappedNewPosition;
+	NewAsteroid.SetPosition(NewAsteroid.UnwrappedNewPosition);
+
+	// Do this last since the play object is copied.
+	Asteroids.Add(NewAsteroidPtr);
 }
 
 
@@ -1727,9 +1971,11 @@ void UPlayViewBase::CheckCollisions()
 
 		int32 AsteroidIndex = -1;
 
-		for(auto& Asteroid : Asteroids)
+		for(auto& Elem : Asteroids)
 		{
 			AsteroidIndex++;
+
+			auto& Asteroid = *Elem.Get();
 
 			if(UDaylonUtils::DoesLineSegmentIntersectCircle(OldP, CurrentP, Asteroid.GetPosition(), Asteroid.GetRadius())
 				|| UDaylonUtils::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, OldP, Asteroid.GetRadius()))
@@ -1783,9 +2029,11 @@ void UPlayViewBase::CheckCollisions()
 	{
 		int32 AsteroidIndex = -1;
 
-		for(auto& Asteroid : Asteroids)
+		for(auto& Elem : Asteroids)
 		{
 			AsteroidIndex++;
+
+			auto& Asteroid = *Elem.Get();
 
 			if(UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Asteroid.GetPosition(), Asteroid.GetRadius() + PlayerShip.GetRadius())
 				|| UDaylonUtils::DoesLineSegmentIntersectTriangle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, PlayerShipTriangle))
@@ -1872,9 +2120,11 @@ void UPlayViewBase::CheckCollisions()
 		auto& EnemyShip = EnemyShips[EnemyIndex];
 		int32 AsteroidIndex = -1; 
 
-		for(auto& Asteroid : Asteroids)
+		for(auto& Elem : Asteroids)
 		{
 			AsteroidIndex++;
+
+			auto& Asteroid = *Elem.Get();
 
 			if(UDaylonUtils::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, EnemyShip.GetPosition(), EnemyShip.GetRadius())
 				|| FVector2D::Distance(WrapPositionToViewport(EnemyShip.UnwrappedNewPosition), Asteroid.OldPosition) < Asteroid.GetRadius() + EnemyShip.GetRadius())
@@ -2248,7 +2498,7 @@ void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBig
 		else
 		{
 			// Shoot at an asteroid.
-			const auto & Asteroid = Asteroids[FMath::RandRange(0, Asteroids.Num() - 1)];
+			const auto& Asteroid = *Asteroids[FMath::RandRange(0, Asteroids.Num() - 1)].Get();
 			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Asteroid.GetPosition(), Asteroid.Inertia);
 		}
 	}

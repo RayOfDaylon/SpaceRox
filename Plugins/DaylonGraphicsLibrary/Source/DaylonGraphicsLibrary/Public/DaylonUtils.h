@@ -510,30 +510,26 @@ namespace Daylon
 		}
 	};
 
-#if(INCLUDE_SLATE_ONLY_SYSTEM == 1)
-	// -- Slate only -----------------------------------------------------------
-
-	struct SImageSpecifics
-	{
-		// Keep a copy here because SImage has no public GetImage() method.
-		FSlateBrush Brush;
-
-		FVector2D GetSize(SImage* Image) const { return Brush.GetImageSize(); }
-	};
 
 
-	template <class SWidgetT, class WidgetSpecificsT>
-	struct FPlayObjectEx// : public IPlayObject
+	// -------------------------------------------------------------------------------------------------------------------
+	// Slate-only 2D play object
+	// Instead of embedding an SWidget inside a struct, we 
+
+
+	template <class SWidgetT>
+	class PlayObject2D : public SWidgetT
 	{
 		// Stuff common to visible game entities like ships, player, bullets, etc.
 
-		TSharedPtr<SWidgetT> Widget; // Associated Slate widget
+		protected:
 
-		WidgetSpecificsT WidgetSpecifics;
+		SConstraintCanvas::FSlot* Slot = nullptr; // We need this because we cannot get a slot directly from an SWidget.
 
 		FWidgetTransform RenderTransform;
 
-		SConstraintCanvas::FSlot* Slot = nullptr; // We need this because we cannot get a slot directly from an SWidget.
+
+		public:
 
 		FVector2D Inertia; // Direction and velocity, px/sec
 		FVector2D OldPosition;
@@ -545,54 +541,39 @@ namespace Daylon
 		int32 Value         = 0;
 
 
-		virtual ~FPlayObjectEx() {}
+		virtual ~PlayObject2D() {}
 
-		FPlayObjectEx()
+
+		virtual FVector2D GetActualSize() const = 0;
+
+
+		void SetSlot(SConstraintCanvas::FSlot* InSlot) 
 		{
-		}
+			check(Slot == nullptr);
 
-		FPlayObjectEx(const FPlayObjectEx& Rhs)
-		{
-			*this = Rhs;
-		}
-
-		FPlayObjectEx& operator=(const FPlayObjectEx& Rhs)
-		{
-			Widget          = Rhs.Widget;
-			Slot            = Rhs.Slot;
-			RenderTransform = Rhs.RenderTransform;
-			WidgetSpecifics = Rhs.WidgetSpecifics;
-
-			Inertia               = Rhs.Inertia; 
-			OldPosition           = Rhs.OldPosition;
-			UnwrappedNewPosition  = Rhs.UnwrappedNewPosition;
-
-			LifeRemaining = Rhs.LifeRemaining;
-			RadiusFactor  = Rhs.RadiusFactor;
-			SpinSpeed     = Rhs.SpinSpeed;
-			Value         = Rhs.Value;
-
-			return *this;
+			Slot = InSlot; 
 		}
 
 
-		void FinishCreating(float InRadiusFactor)
+		bool IsValid   () const 
+		{ 
+			return ((Slot != nullptr) && (Value >= 0));
+		}
+
+
+		void Update    (float DeltaTime) {}
+
+		bool IsAlive   () const { return (LifeRemaining > 0.0f); }
+		bool IsDead    () const { return !IsAlive(); }
+		void Show      (bool Visible = true) { UDaylonUtils::Show(this, Visible); }
+		void Hide      () { Show(false); }
+		void Kill      () { LifeRemaining = 0.0f; Hide(); }
+		
+		bool IsVisible () const 
 		{
-			check(Widget);
-
-			Widget->SetRenderTransformPivot(FVector2D(0.5f));
-
-			auto Canvas = UDaylonUtils::GetRootCanvas()->GetCanvasWidget();
-
-			auto SlotArgs = Canvas->AddSlot();
-
-			Slot = SlotArgs.GetSlot();
-
-			SlotArgs[Widget.ToSharedRef()];
-			SlotArgs.AutoSize(true);
-			SlotArgs.Alignment(FVector2D(0.5));
-
-			RadiusFactor = InRadiusFactor;
+			return (IsValid() 
+				? (GetVisibility() != EVisibility::Collapsed && GetVisibility() != EVisibility::Hidden) 
+				: false);
 		}
 
 
@@ -603,7 +584,7 @@ namespace Daylon
 				return;
 			}
 
-			const auto Size = WidgetSpecifics.GetSize(Widget.Get()); 
+			const auto Size = GetActualSize();
 		
 			auto Margin = Slot->GetOffset();
 
@@ -611,43 +592,6 @@ namespace Daylon
 			Margin.Bottom = Size.Y;
 
 			Slot->SetOffset(Margin);
-		}
-
-
-		void DestroyWidget()
-		{
-			if(!IsValid())
-			{
-				UE_LOG(LogDaylon, Error, TEXT("Daylon::FPlayObjectEx::DestroyWidget tried to destroy an invalid Slate widget!"));
-				return;
-			}
-
-			UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(Widget.ToSharedRef());
-
-			Slot = nullptr;
-		}
-
-
-
-
-		bool IsAlive   () const { return (LifeRemaining > 0.0f); }
-		bool IsDead    () const { return !IsAlive(); }
-		
-		bool IsVisible () const 
-		{
-			return (IsValid() 
-				? (Widget->GetVisibility() != EVisibility::Collapsed && Widget->GetVisibility() != EVisibility::Hidden) 
-				: false);
-		}
-
-		void Show      (bool Visible = true) { UDaylonUtils::Show(Widget.Get(), Visible); }
-		void Hide      () { Show(false); }
-		void Kill      () { LifeRemaining = 0.0f; Hide(); }
-
-	
-		bool IsValid   () const 
-		{ 
-			return (Widget && (Slot != nullptr) && (Value >= 0));
 		}
 
 	
@@ -718,17 +662,14 @@ namespace Daylon
 
 		void SetAngle(float Angle)
 		{
-			if(Widget == nullptr)
+			if(!IsValid())
 			{
 				return;
 			}
 
 			RenderTransform.Angle = Angle;
-			Widget->SetRenderTransform(RenderTransform.ToSlateRenderTransform());
+			SetRenderTransform(RenderTransform.ToSlateRenderTransform());
 		}
-
-
-		virtual void Tick(float DeltaTime) {}
 
 
 		void Move(float DeltaTime, const TFunction<FVector2D(const FVector2D&)>& WrapFunction)
@@ -746,7 +687,7 @@ namespace Daylon
 		{
 			if(!IsValid())
 			{
-				UE_LOG(LogDaylon, Error, TEXT("FPlayObjectEx::Spawn: invalid widget!"));
+				//UE_LOG(LogDaylon, Error, TEXT("FPlayObjectEx::Spawn: invalid widget!"));
 				return;
 			}
 
@@ -762,52 +703,50 @@ namespace Daylon
 	};
 
 
-	struct DAYLONGRAPHICSLIBRARY_API FImagePlayObjectEx  : public FPlayObjectEx<SImage, SImageSpecifics> 
+	class ImagePlayObject2D : public PlayObject2D<SImage>
 	{
-		FImagePlayObjectEx() {}
+		protected:
 
-		FImagePlayObjectEx(const FImagePlayObjectEx& Rhs)
+		FSlateBrush Brush;
+
+		
+		public:
+
+		virtual FVector2D GetActualSize() const override { return Brush.GetImageSize(); }
+
+
+		void SetBrush(const FSlateBrush& InBrush)
 		{
-			*this = Rhs;
-		}
-
-		FImagePlayObjectEx& operator=(const FImagePlayObjectEx& Rhs)
-		{
-			FPlayObjectEx::operator=(Rhs);
-
-			if(IsValid())
-			{
-				Widget->SetImage(&WidgetSpecifics.Brush);
-				UpdateWidgetSize();
-			}
-
-			return *this;
-		}
-
-		void Create(const FSlateBrush& Brush, float Radius)
-		{
-			Widget = SNew(SImage);
-			check(Widget);
-
-			FinishCreating(Radius);
-
-			SetBrush(Brush);
-		}
-
-
-		void SetBrush(const FSlateBrush& Brush)
-		{
-			if(!IsValid()) 
-			{
-				return;
-			}
-			WidgetSpecifics.Brush = Brush;
-			Widget->SetImage(&WidgetSpecifics.Brush);
-
+			Brush = InBrush;
+			SetImage(&Brush);
 			UpdateWidgetSize();
 		}
 	};
 
-#endif
+
+	template <class SWidgetT>
+	void FinishCreating(TSharedPtr<PlayObject2D<SWidgetT>> Widget, float InRadiusFactor)
+	{
+		Widget->SetRenderTransformPivot(FVector2D(0.5f));
+
+		auto Canvas = UDaylonUtils::GetRootCanvas()->GetCanvasWidget();
+
+		auto SlotArgs = Canvas->AddSlot();
+
+		Widget->SetSlot(SlotArgs.GetSlot());
+
+		SlotArgs[Widget.ToSharedRef()];
+		SlotArgs.AutoSize(true);
+		SlotArgs.Alignment(FVector2D(0.5));
+
+		Widget->RadiusFactor = InRadiusFactor;
+	}
+
+
+	DAYLONGRAPHICSLIBRARY_API TSharedPtr<ImagePlayObject2D> CreateImagePlayObject2D(const FSlateBrush& Brush, float Radius);
+
+
+	DAYLONGRAPHICSLIBRARY_API void Destroy(TSharedPtr<ImagePlayObject2D> Widget);
+
 
 } // namespace Daylon
