@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 9, 2023
+May 11, 2023
 
 
 
@@ -138,42 +138,71 @@ If you want to change the default key assignments, open the project in the
 UE Editor, access Project Settings, Input and change the key assignments 
 for the various input events, then repackage or play from the editor.
 
+Typical keyboards lack the responsiveness of the original 
+arcade cabinet pushbuttons, causing a suboptimal firing rate.
+Although I can get small rapid-fire bursts, I find it 
+only possible in brief moments. Your mileage may vary 
+since there are many keyboard designs out there. One can 
+also configure inputs from arcade-like controllers 
+which may offer faster action.
+
+The arcade pushbuttons are also better (at least, I think they were)
+at allowing smaller rotation thrusts, letting you change your aim 
+more slightly to improve asteroid demolition and hitting targets in general.
+The Xbox gamepad joysticks seem to share the keyboard's coarser-grained 
+rotating, which is frustrating but maybe a "gamma correction" or 
+"smoothstep" force tuning can be used to make rotating from a 
+standstill more accurate.
+
 
 
 How the Game Works
 -------------------------------------------------------------------------------------
-The main data type (class) of interest is Daylon::FPlayObject, defined in DaylonUtils.h.
-Every object in the playfield is either an FPlayObject or a subclass. This class 
-associates a UMG widget with an inertia (direction + speed) vector, the 
-amount of life remaining in seconds, and a previous/current position. There are 
-also methods to manage these values, show/hide the widget, etc.
+The main data type (class) of interest is Daylon::PlayObject2D, defined in DaylonUtils.h.
+Every object in the playfield is either a PlayObject2D or a subclass. This class 
+subclasses a Slate widget and adds members for slot, render transform, 
+an inertia (direction + speed) vector, the amount of life remaining in seconds, 
+and a previous/current position. There are also methods to manage these values,
+show/hide the widget, etc.
 
-Play object subclasses need two template arguments: a UWidget-derived type 
-and a class that implements a GetSize(WidgetT*) method. Currently the widget 
-types in use are UImage and USpriteWidget.
+Generally, the term "widget" means "play object" when the widget is 
+used as a play object.
 
-For greater abstraction, the game uses the Daylon::FImagePlayObject and 
-Daylon::FSpritePlayObject subclasses.
+Play object subclasses need an SWidget template argument in their 
+inheritance declaration, and need to override GetActualSize(). 
+Current SWidget types used are SImage and SDaylonSpriteWidget.
+GetActualSize() is needed because GetSize() doesn't return e.g. 
+the brush size despite Autosize(true) (at least not initally?).
+When the brush is installed, UpdateWidgetSize() is called to 
+force the widget's right/bottom parts of its slot Offset to 
+be the brush size.
+
+For greater abstraction, the game uses the Daylon::ImagePlayObject2D and 
+Daylon::SpritePlayObject2D subclasses.
 
 A play object's position is at the widget's center, which simplifies 
 rotation and collision detection. This is achieved by using a canvas 
 slot alignment of (0.5, 0.5). For rotations we also use a RenderTransform 
 pivot of (0.5, 0.5).
 
+All the play objects at runtime are TSharedPtr instances.
+
 The player ship is its own UPlayViewBase member variable, while asteroids, 
 enemies, and torpedos have their own TArray containers. Torpedos are 
 preallocated in a fixed quantity since they are frequently getting 
 created/destroyed. Explosions are a TArray of UParticleWidget* instead 
 of being play objects because they don't need any logic besides appearing
-on the screen.
+on the screen. The player ship shield is its own widget as well. 
+The player ship's thrust exhaust is implemented by just changing to 
+a different overall brush for the ship.
 
-UPlayViewBase::MakeWidget handles widget creation, while 
-FPlayObject::DestroyWidget handles destruction. Since widgets 
-are UObjects, we just remove them from the scenegraph and 
-let the engine's garbage collector actually delete them.
-We don't tag any widget pointers as UPROPERTY or otherwise 
-assign owners. Raw pointers are okay as long as a widget 
-is inside the scenegraph/widget tree.
+Each play object class like FPlayerShip, FAsteroid, etc. have their 
+own static Create() method to make new instances, and they just 
+call SNew(). Daylon::Destroy() is used to remove the widget from 
+the canvas, and usually that's the last reference to the widget 
+so the widget goes away as well. Internally, SNew and TSharedPtr's 
+resource destroyer default to operator new/delete (although, like 
+stdlib, they do allow custom allocators).
 
 The UPlayViewBase class is a UUserWidget holding the game logic. A blueprint 
 subclass "PlayView" is used to hold design-time objects like menus, info displays, etc.
@@ -260,14 +289,6 @@ To avoid unwanted self-intersections when firing torpedos,
 the FTorpedo class includes a FiredByPlayer member 
 which lets shooters avoid friendly fire.
 
-Typical keyboards lack the responsiveness of the original 
-arcade cabinet pushbuttons, causing a suboptimal firing rate.
-Although I can get small rapid-fire bursts, I find it 
-only possible in brief moments. Your mileage may vary 
-since there are many keyboard designs out there. One can 
-also configure inputs from arcade-like controllers 
-which may offer faster action.
-
 Although only one enemy ship appears at a time, the 
 EnemyShips array and associated logic was designed 
 with the potential for having multiple ships onscreen.
@@ -292,6 +313,16 @@ High scores are kept in a highscores.txt file.
 In development mode, this will be in the project's 
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
+
+
+Version 1.6.5
+-------------------------------------------------------------------------------------
+Except for explosions, all widgets have been migrated from UMG to Slate.
+So we get a little more performance both in speed and memory usage, and 
+the GC doesn't have to collect as many gameplay objects during the game loop.
+   Turns out the root UCanvas doesn't get its Slate widget installed until 
+after NativeOnInitalized finishes, so the player, player shield, and 
+torpedo creation code was moved to TransitionToState(Active).
 
 
 Version 1.6
@@ -349,14 +380,14 @@ It's part of a planned upgrade to sector-based gameplay
 instead of waves. We'll eventually get rid of the player score 
 and the high score table as well.
 
-Need to use the Slate-only play object system for the other 
-game object types, not just the asteroids. Eventually the 
-existing UMG-based system will be retired and the UMG 
+Need to use the Slate-only play object system for explosions. 
+Eventually the existing UMG-based system will be retired and the UMG 
 classes for sprites and particles can go away. Although 
 they're handy because we could maybe preview those 
-in the Widget Designer.
+in the Widget Designer. It'll probably be moved to a legacy 
+non-build file.
 
-It would be good to add component members to FPlayObject to avoid 
+It would be good to add component members to FPlayObject2D to avoid 
 doing the subclasses' features entirely by inheritance, to have 
 class dtors automatically remove widgets from the canvas, and have 
 "subscribable variables" so that things like player score and the 

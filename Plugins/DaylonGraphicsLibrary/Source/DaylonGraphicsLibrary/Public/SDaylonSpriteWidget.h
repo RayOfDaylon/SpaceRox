@@ -57,11 +57,11 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 			void Construct(const FArguments& InArgs);
 
 
-			void SetSize                  (const FVector2D& InSize);
-			void SetAtlas                 (const FDaylonSpriteAtlas& InAtlas);
+			void SetSize    (const FVector2D& InSize);
+			void SetAtlas   (const FDaylonSpriteAtlas& InAtlas);
 
-			void Update                   (float DeltaTime);
-			void Reset                    ();
+			void Update     (float DeltaTime);
+			void Reset      ();
 
 
 			virtual int32 OnPaint

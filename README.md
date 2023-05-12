@@ -3,9 +3,12 @@ Remake of Atari Asteroids 1979 arcade game using Unreal Engine
 
 "SpaceRox" is the internal project name.
 
-An example gameplay video is available at https://www.youtube.com/watch?v=mXKK6ThleVQ
+Example Videos
 
-Another video is available at https://www.youtube.com/watch?v=i2CBQ7l-PXI
+Version 1.2: https://www.youtube.com/watch?v=mXKK6ThleVQ  
+Version 1.4 (powerups): https://www.youtube.com/watch?v=i2CBQ7l-PXI  
+Version 1.6.4 (nicer intro): https://www.youtube.com/watch?v=xYPj2w0ImMY
+
 
 Unreal Engine 5.1 or higher required.
 
@@ -15,7 +18,7 @@ A 1920 x 1080 (HD) viewport is used. Monitors of different sizes and/or display 
 
 Game sounds may be loud. Until a volume setting is added, it's recommended to manually lower the volume in your OS speaker/headphone settings.
 
-All graphics are done in UMG/Slate. This project was partly done to see how performant a pure UMG game could be. It's fine, but UMG will likely be dropped to prefer Slate to gain performance.
+All graphics are done in UMG/Slate. This project was partly done to see how performant a pure UMG game could be. It's fine, but Slate is taking over for UMG to be even better.
 
 If you prefer to just download a Windows binary to play the game, one is available at https://www.daylongraphics.com/download/spacerox/SpaceRox.zip
 

@@ -561,7 +561,7 @@ namespace Daylon
 		}
 
 
-		void Update    (float DeltaTime) {}
+		virtual void Update    (float DeltaTime) {}
 
 		bool IsAlive   () const { return (LifeRemaining > 0.0f); }
 		bool IsDead    () const { return !IsAlive(); }
@@ -584,12 +584,12 @@ namespace Daylon
 				return;
 			}
 
-			const auto Size = GetActualSize();
+			const auto S = GetActualSize();
 		
 			auto Margin = Slot->GetOffset();
 
-			Margin.Right  = Size.X;
-			Margin.Bottom = Size.Y;
+			Margin.Right  = S.X;
+			Margin.Bottom = S.Y;
 
 			Slot->SetOffset(Margin);
 		}
@@ -672,6 +672,17 @@ namespace Daylon
 		}
 
 
+		FVector2D GetDirectionVector() const
+		{
+			if(!IsValid())
+			{
+				return FVector2D(0.0f);
+			}
+
+			return UDaylonUtils::AngleToVector2D(GetAngle());
+		}
+
+
 		void Move(float DeltaTime, const TFunction<FVector2D(const FVector2D&)>& WrapFunction)
 		{
 			const auto P = GetPosition();
@@ -724,6 +735,17 @@ namespace Daylon
 	};
 
 
+	class SpritePlayObject2D : public PlayObject2D<SDaylonSpriteWidget>
+	{
+		public:
+
+		virtual FVector2D GetActualSize() const override { return Size; }
+
+		virtual void Update(float DeltaTime) override { SDaylonSpriteWidget::Update(DeltaTime); }
+
+	};
+
+
 	template <class SWidgetT>
 	void FinishCreating(TSharedPtr<PlayObject2D<SWidgetT>> Widget, float InRadiusFactor)
 	{
@@ -743,10 +765,13 @@ namespace Daylon
 	}
 
 
-	DAYLONGRAPHICSLIBRARY_API TSharedPtr<ImagePlayObject2D> CreateImagePlayObject2D(const FSlateBrush& Brush, float Radius);
+	DAYLONGRAPHICSLIBRARY_API TSharedPtr<ImagePlayObject2D>          CreateImagePlayObject2D  (const FSlateBrush& Brush, float Radius);
+	DAYLONGRAPHICSLIBRARY_API TSharedPtr<Daylon::SpritePlayObject2D> CreateSpritePlayObject2D (const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float Radius);
 
+	DAYLONGRAPHICSLIBRARY_API void DestroyImpl(TSharedPtr<SWidget> Widget);
 
 	DAYLONGRAPHICSLIBRARY_API void Destroy(TSharedPtr<ImagePlayObject2D> Widget);
+	DAYLONGRAPHICSLIBRARY_API void Destroy(TSharedPtr<SpritePlayObject2D> Widget);
 
 
 } // namespace Daylon

@@ -82,12 +82,34 @@ enum class EGameState : uint8
 
 
 
+/*
 struct FTorpedo : public Daylon::FImagePlayObject
 {
 	bool FiredByPlayer;
 };
+*/
 
 
+class FTorpedo : public Daylon::ImagePlayObject2D
+{
+	public:
+
+	bool FiredByPlayer;
+
+	static TSharedPtr<FTorpedo> Create(FSlateBrush& Brush, float RadiusFactor)
+	{
+		auto Widget = SNew(FTorpedo);
+
+		Daylon::FinishCreating<SImage>(Widget, RadiusFactor);
+
+		Widget->SetBrush(Brush);
+
+		return Widget;
+	}
+};
+
+
+/*
 struct FPlayerShip : public Daylon::FImagePlayObject
 {
 	bool  IsUnderThrust;
@@ -95,9 +117,32 @@ struct FPlayerShip : public Daylon::FImagePlayObject
 	int32 DoubleShotsLeft;
 	float ShieldsLeft;
 };
+*/
 
 
-struct FPowerup : public Daylon::FSpritePlayObject
+class FPlayerShip : public Daylon::ImagePlayObject2D
+{
+	public:
+
+	bool   IsUnderThrust;
+	bool   IsSpawning;
+	int32  DoubleShotsLeft;
+	float  ShieldsLeft;
+
+	static TSharedPtr<FPlayerShip> Create(FSlateBrush& Brush, float RadiusFactor)
+	{
+		auto Widget = SNew(FPlayerShip);
+
+		Daylon::FinishCreating<SImage>(Widget, RadiusFactor);
+
+		Widget->SetBrush(Brush);
+
+		return Widget;
+	}
+};
+
+
+/*struct FPowerup : public Daylon::FSpritePlayObject
 {
 	EPowerup Kind = EPowerup::Nothing;
 
@@ -109,6 +154,18 @@ struct FPowerup : public Daylon::FSpritePlayObject
 			Widget->Tick(DeltaTime);
 		}
 	}
+};*/
+
+
+class FPowerup : public Daylon::SpritePlayObject2D
+{
+	public:
+
+	EPowerup Kind = EPowerup::Nothing;
+
+	static TSharedPtr<FPowerup> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S);
+
+	virtual void Update(float DeltaTime) override { Daylon::SpritePlayObject2D::Update(DeltaTime); }
 };
 
 
@@ -124,9 +181,10 @@ class FAsteroid : public Daylon::ImagePlayObject2D
 {
 	public:
 
-	FPowerup Powerup;
+	//FPowerup Powerup;
+	TSharedPtr<FPowerup> Powerup;
 
-	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
+	bool HasPowerup() const { return (Powerup && Powerup->Kind != EPowerup::Nothing); }
 
 	static TSharedPtr<FAsteroid> Create(FSlateBrush& Brush)
 	{
@@ -134,21 +192,51 @@ class FAsteroid : public Daylon::ImagePlayObject2D
 
 		Daylon::FinishCreating<SImage>(Widget, 0.5f);
 
-		Widget->Brush = Brush;
-		Widget->SetImage(&Widget->Brush);
-		Widget->UpdateWidgetSize();
+		Widget->SetBrush(Brush);
 
 		return Widget;
 	}
 };
 
 
+class FScavenger : public Daylon::SpritePlayObject2D
+{
+	public:
+
+	static TSharedPtr<FScavenger> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S);
+};
+
+
+/*
 struct FEnemyShip : public Daylon::FImagePlayObject
 {
 	float TimeRemainingToNextShot = 0.0f;
 	float TimeRemainingToNextMove = 0.0f;
 };
+*/
 
+
+class FEnemyShip : public Daylon::ImagePlayObject2D
+{
+	public:
+
+	float TimeRemainingToNextShot = 0.0f;
+	float TimeRemainingToNextMove = 0.0f;
+
+
+	static TSharedPtr<FEnemyShip> Create(FSlateBrush& Brush, int Value, float RadiusFactor)
+	{
+		auto Widget = SNew(FEnemyShip);
+
+		Daylon::FinishCreating<SImage>(Widget, RadiusFactor);
+
+		Widget->SetBrush(Brush);
+
+		Widget->Value = Value;
+
+		return Widget;
+	}
+};
 
 
 // Base view class of the SpaceRox game arena.
@@ -276,6 +364,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* ShieldPowerupAtlas;
 
+	// The animation flipbook for the scavenger enemy 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	UDaylonSpriteWidgetAtlas* ScavengerAtlas;
+
 
 	// -- Fonts -------------------------------------------------
 
@@ -284,6 +376,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 
 	// -- Testing-related properties -------------------------------------------------
+
+	// Number of seconds to delay starting the intro (useful for video captures, use zero for shipping)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Testing)
+	float InitialDelay = 0.0f;
 
 	// Player score to start game at, to immediately increase difficulty (use zero for shipping)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Testing)
@@ -405,16 +501,19 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      CreatePlayerShip           ();
 	void      CreateTorpedos             ();
 
+	//void    SpawnPowerup               (FPowerup& Powerup, const FVector2D& P);
+
 	void      LaunchTorpedoFromEnemy     (const FEnemyShip& Shooter, bool IsBigEnemy);
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnEnemyShip             ();
-	void      SpawnPowerup               (FPowerup& Powerup, const FVector2D& P);
+	void      SpawnPowerup               (TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P);
 	void      SpawnExplosion             (const FVector2D& P);
 	void      SpawnPlayerShipExplosion   (const FVector2D& P);
 	void      RemoveAsteroid             (int32 Index);
 	void      RemoveAsteroids            ();
 	void      RemoveEnemyShip            (int32 EnemyIndex);
 	void      RemoveEnemyShips           ();
+	void      RemoveScavenger            (int32 ScavangerIndex);
 	void      RemoveExplosions           ();
 	void      RemovePowerup              (int32 PowerupIndex);
 	void      RemovePowerups             ();
@@ -470,15 +569,22 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	Daylon::FLoopedSound            BigEnemyShipSoundLoop;
 	Daylon::FLoopedSound            SmallEnemyShipSoundLoop;
 
-	FPlayerShip                     PlayerShip;
-	Daylon::FImagePlayObject        PlayerShield;
-
+	//FPlayerShip                   PlayerShip;
+	//Daylon::FImagePlayObject      PlayerShield;
 	//TArray<FAsteroid>             Asteroids;
+	//TArray<FEnemyShip>            EnemyShips;
+	//TArray<FPowerup>              Powerups;
+	//TArray<FTorpedo>              Torpedos;
+
+	TSharedPtr<FPlayerShip>                 PlayerShip;
+	TSharedPtr<Daylon::ImagePlayObject2D>   PlayerShield;
+
 	TArray<TSharedPtr<FAsteroid>>   Asteroids;
-	TArray<FEnemyShip>              EnemyShips;
-	TArray<FTorpedo>                Torpedos;
-	TArray<FPowerup>                Powerups;
-	TArray<UDaylonParticlesWidget*> Explosions;
+	TArray<TSharedPtr<FEnemyShip>>  EnemyShips;
+	TArray<TSharedPtr<FScavenger>>  Scavengers;
+	TArray<TSharedPtr<FTorpedo>>    Torpedos;
+	TArray<TSharedPtr<FPowerup>>    Powerups;
+	TArray<UDaylonParticlesWidget*> Explosions; // todo: switch to TArray<TSharedPtr<Daylon::ParticlesPlayObject2D>>
 
 	Daylon::FHighScoreTable         HighScores;
 	Daylon::FHighScore              MostRecentHighScore;
@@ -505,4 +611,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	bool         IsInitialized;
 	bool         bEnemyShootsAtPlayer;
 	bool         bHighScoreWasEntered;
+
+	float        TimeUntilNextScavenger;
 };

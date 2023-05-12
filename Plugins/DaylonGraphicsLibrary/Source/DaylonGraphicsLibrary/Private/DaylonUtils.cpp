@@ -370,22 +370,50 @@ void Daylon::FHighScoreTable::Add(int32 Score, const FString& Name)
 TSharedPtr<Daylon::ImagePlayObject2D> Daylon::CreateImagePlayObject2D(const FSlateBrush& Brush, float Radius)
 {
 	auto PlayObj = SNew(ImagePlayObject2D);
+
 	Daylon::FinishCreating<SImage>(PlayObj, Radius);
+
 	PlayObj->SetBrush(Brush);
 
 	return PlayObj;
 }
 
 
-void Daylon::Destroy(TSharedPtr<Daylon::ImagePlayObject2D> Widget)
+TSharedPtr<Daylon::SpritePlayObject2D> Daylon::CreateSpritePlayObject2D(const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float Radius)
 {
-	if(!Widget->IsValid())
-	{
-		UE_LOG(LogDaylon, Error, TEXT("Daylon::Destroy(ImagePlayObject2D) tried to destroy an invalid Slate widget!"));
-		return;
-	}
+	auto PlayObj = SNew(SpritePlayObject2D);
 
-	UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(Widget.ToSharedRef());
+	Daylon::FinishCreating<SDaylonSpriteWidget>(PlayObj, Radius);
+
+	PlayObj->SetAtlas(Atlas);
+	PlayObj->SetSize(S);
+	PlayObj->UpdateWidgetSize();
+
+	return PlayObj;
 }
 
 
+void Daylon::DestroyImpl(TSharedPtr<SWidget> Widget)
+{
+	UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(Widget.ToSharedRef());
+}
+
+#define DESTROY_PLAYOBJECT(_Widget)	\
+	if(!_Widget->IsValid())	\
+	{	\
+		UE_LOG(LogDaylon, Error, TEXT("Daylon::Destroy() tried to destroy an invalid Slate widget!"));	\
+		return;	\
+	}	\
+	DestroyImpl(StaticCastSharedPtr<SWidget>(Widget));
+
+
+void Daylon::Destroy(TSharedPtr<Daylon::ImagePlayObject2D> Widget)
+{
+	DESTROY_PLAYOBJECT(Widget);
+}
+
+
+void Daylon::Destroy(TSharedPtr<SpritePlayObject2D> Widget)
+{
+	DESTROY_PLAYOBJECT(Widget);
+}
