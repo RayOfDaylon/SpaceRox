@@ -201,7 +201,7 @@ own static Create() method to make new instances, and they just
 call SNew(). Daylon::Destroy() is used to remove the widget from 
 the canvas, and usually that's the last reference to the widget 
 so the widget goes away as well. Internally, SNew and TSharedPtr's 
-resource destroyer default to operator new/delete (although, like 
+resource releaser default to operator new/delete (although, like 
 stdlib, they do allow custom allocators).
 
 The UPlayViewBase class is a UUserWidget holding the game logic. A blueprint 
@@ -289,9 +289,7 @@ To avoid unwanted self-intersections when firing torpedos,
 the FTorpedo class includes a FiredByPlayer member 
 which lets shooters avoid friendly fire.
 
-Although only one enemy ship appears at a time, the 
-EnemyShips array and associated logic was designed 
-with the potential for having multiple ships onscreen.
+Since 1.6, multiple enemy ships can appear together.
 
 Enemy ship movement is fairly simple: a random Y-position 
 along a screen edge is chosen, a left/right direction 
