@@ -507,6 +507,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnEnemyShip             ();
 	void      SpawnPowerup               (TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P);
+	void      SpawnExplosion             (const FVector2D& P, float MinParticleSize, float MaxParticleSize, float MinParticleVelocity, float MaxParticleVelocity,
+                                          float MinParticleLifetime, float MaxParticleLifetime, float FinalOpacity, int32 NumParticles);
 	void      SpawnExplosion             (const FVector2D& P);
 	void      SpawnPlayerShipExplosion   (const FVector2D& P);
 	void      RemoveAsteroid             (int32 Index);
@@ -575,16 +577,17 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	//TArray<FEnemyShip>            EnemyShips;
 	//TArray<FPowerup>              Powerups;
 	//TArray<FTorpedo>              Torpedos;
+	//TArray<UDaylonParticlesWidget*> Explosions;
 
 	TSharedPtr<FPlayerShip>                 PlayerShip;
 	TSharedPtr<Daylon::ImagePlayObject2D>   PlayerShield;
 
-	TArray<TSharedPtr<FAsteroid>>   Asteroids;
-	TArray<TSharedPtr<FEnemyShip>>  EnemyShips;
-	TArray<TSharedPtr<FScavenger>>  Scavengers;
-	TArray<TSharedPtr<FTorpedo>>    Torpedos;
-	TArray<TSharedPtr<FPowerup>>    Powerups;
-	TArray<UDaylonParticlesWidget*> Explosions; // todo: switch to TArray<TSharedPtr<Daylon::ParticlesPlayObject2D>>
+	TArray<TSharedPtr<FAsteroid>>              Asteroids;
+	TArray<TSharedPtr<FEnemyShip>>             EnemyShips;
+	TArray<TSharedPtr<FScavenger>>             Scavengers;
+	TArray<TSharedPtr<FTorpedo>>               Torpedos;
+	TArray<TSharedPtr<FPowerup>>               Powerups;
+	TArray<TSharedPtr<SDaylonParticlesWidget>> Explosions; 
 
 	Daylon::FHighScoreTable         HighScores;
 	Daylon::FHighScore              MostRecentHighScore;

@@ -24,7 +24,7 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonParticlesWidget : public SLeafWidget
 	public:
 		SLATE_BEGIN_ARGS(SDaylonParticlesWidget)
 			: 
-			  _Size                (FVector2D(64))
+			  _Size                (FVector2D(4))
 			, _MinParticleSize     (1.0f)
 			, _MaxParticleSize     (1.0f)
 			, _MinParticleVelocity (1.0f)

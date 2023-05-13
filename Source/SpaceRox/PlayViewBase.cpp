@@ -41,6 +41,7 @@ DEFINE_LOG_CATEGORY(LogGame)
 
 #define FEATURE_SCAVENGERS          0
 
+
 #if(DEBUG_MODULE == 1)
 #pragma optimize("", off)
 #endif
@@ -108,6 +109,8 @@ const float MaxScavengerSpeed              = 200.0f;
 
 const float ShieldPowerupIncrease          = 20.0f; // Number of seconds of shield life given when shield powerup gained.
 const int32 DoubleGunsPowerupIncrease      = 100;   // Number of double shots given when double guns powerup gained.
+
+const float ShieldBonkDamage               = 4.0f;  // Number of seconds to take from shield life when shields impact something.
 
 const float PowerupOpacity                 = 0.5f;
 const bool  PowerupsCanMove                = false;
@@ -236,8 +239,6 @@ void UPlayViewBase::InitializePlayerShield()
 	PlayerShield->SetBrush(ShieldBrush);
 	PlayerShield->UpdateWidgetSize();
 
-	//PlayerShield->RadiusFactor = RadiusFactor;
-
 	PlayerShield->Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
 	PlayerShield->Hide   ();
 }
@@ -247,9 +248,7 @@ void UPlayViewBase::CreateTorpedos()
 {
 	for(int32 Index = 0; Index < TorpedoCount; Index++)
 	{
-
 		auto TorpedoPtr = FTorpedo::Create(TorpedoBrush, 0.5f);
-		//Torpedo.Create(TorpedoBrush, 0.5f);
 
 		TorpedoPtr->Inertia = FVector2D(0);
 		TorpedoPtr->LifeRemaining = 0.0f;
@@ -601,10 +600,6 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Hide (HighScoreEntryContent);
 			
-
-			//PlayerShip->Hide(); // to be safe
-			//PlayerShield->Hide();
-
 			RemoveExplosions  ();
 			RemoveTorpedos    ();
 			RemoveEnemyShips  ();
@@ -682,7 +677,6 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			Daylon::Destroy(PlayerShield);
 			PlayerShield.Reset();
-			//PlayerShield->Hide();
 
 			UDaylonUtils::Show(GameOverMessage);
 
@@ -725,7 +719,6 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			UDaylonUtils::Show(PlayerScoreReadout);
 			UDaylonUtils::Hide(GameOverMessage);
-			//PlayerShield->Hide();
 			
 			HighScoreEntryContent->SetVisibility(ESlateVisibility::Visible);
 			HighScoreNameEntry->SetFocus();
@@ -772,6 +765,50 @@ void UPlayViewBase::TransitionToState(EGameState State)
 }
 
 
+void UPlayViewBase::SpawnExplosion
+(
+	const FVector2D& P,
+	float MinParticleSize,
+	float MaxParticleSize,
+	float MinParticleVelocity,
+	float MaxParticleVelocity,
+	float MinParticleLifetime,
+	float MaxParticleLifetime,
+	float FinalOpacity,
+	int32 NumParticles
+)
+{
+	auto Explosion = SNew(SDaylonParticlesWidget)
+		.MinParticleSize      (MinParticleSize)
+		.MaxParticleSize      (MaxParticleSize)
+		.MinParticleVelocity  (MinParticleVelocity)
+		.MaxParticleVelocity  (MaxParticleVelocity)
+		.MinParticleLifetime  (MinParticleLifetime)
+		.MaxParticleLifetime  (MaxParticleLifetime)
+		.FinalOpacity         (FinalOpacity)
+		.NumParticles         (NumParticles);
+
+	Explosion->SetVisibility(EVisibility::HitTestInvisible);
+	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
+
+	Explosion->SetParticleBrush(TorpedoBrush);
+
+	auto SlotArgs = RootCanvas->GetCanvasWidget()->AddSlot();
+
+	SlotArgs[Explosion];
+	SlotArgs.AutoSize(true);
+	SlotArgs.Alignment(FVector2D(0.5));
+
+	auto Margin = SlotArgs.GetSlot()->GetOffset();
+	Margin.Left = P.X;
+	Margin.Top  = P.Y;
+
+	SlotArgs.GetSlot()->SetOffset(Margin);
+
+	Explosions.Add(Explosion);
+}
+
+
 void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
@@ -812,37 +849,23 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				if(ExploCountAge <= 0.0f)
 				{
 					ExploCountAge = 0.1f;
-					auto Explosion = UDaylonUtils::MakeWidget<UDaylonParticlesWidget>();
 
-					FVector2D P(
+					const FVector2D P(
 						FMath::FRandRange(480.0, 1500.0),
 						FMath::FRandRange(300.0, 550.0)
 					);
 
-					Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
-					Explosion->SetRenderTransformPivot(FVector2D(0.5f));
-
-					Explosion->ParticleBrush = TorpedoBrush;
-
-					Explosion->MinParticleSize     *= 1.5f;
-					Explosion->MaxParticleSize     *= 3;
-					Explosion->MinParticleVelocity *= 1.5f;
-					Explosion->MaxParticleVelocity *= 3;
-					Explosion->MinParticleLifetime *= 2;
-					Explosion->MaxParticleLifetime *= 4;
-					Explosion->FinalOpacity        = 0.25f;
-					Explosion->NumParticles        *= 2;
-
-					auto CanvasSlot = RootCanvas->AddChildToCanvas(Explosion);
-
-					Explosion->SynchronizeProperties();
-
-					CanvasSlot->SetAnchors(FAnchors());
-					CanvasSlot->SetAlignment(FVector2D(0.5f));
-					CanvasSlot->SetAutoSize(true);
-					CanvasSlot->SetPosition(P);
-
-					Explosions.Add(Explosion);
+					SpawnExplosion(
+						P,
+						4.5f,   // MinParticleSize
+						9.0f,   // MaxParticleSize
+						45.0f,  // MinParticleVelocity
+						240.0f, // MaxParticleVelocity
+						0.5f,   // MinParticleLifetime
+						4.0f,   // MaxParticleLifetime
+						0.25f,  // FinalOpacity
+						80      // NumParticles
+						);
 
 					if(FMath::RandRange(0, 5) == 0)
 					{
@@ -1047,6 +1070,7 @@ bool ObjectsIntersectBox(const TArray<T>& PlayObjects, const UE::Geometry::FAxis
 	return false;
 }
 
+
 template <typename T>
 bool ImageObjectsIntersectBox(const TArray<TSharedPtr<T>>& PlayObjects, const UE::Geometry::FAxisAlignedBox2d& SafeZone)
 {
@@ -1150,10 +1174,8 @@ void UPlayViewBase::RemoveAsteroid(int32 Index)
 	if(Asteroid.HasPowerup())
 	{
 		Daylon::Destroy(Asteroid.Powerup);
-		//Asteroid.Powerup.DestroyWidget();
 	}
 
-	//Asteroid.DestroyWidget();
 	Daylon::Destroy(Asteroids[Index]);
 
 	Asteroids.RemoveAt(Index);
@@ -1167,31 +1189,6 @@ void UPlayViewBase::RemoveAsteroids()
 		RemoveAsteroid(Index);		
 	}
 }
-
-#if 0
-void UPlayViewBase::SpawnPowerup(FPowerup& Powerup, const FVector2D& P)
-{
-	Powerup.Kind = FMath::RandBool() ? EPowerup::DoubleGuns : EPowerup::Shields;
-
-	UDaylonSpriteWidgetAtlas* Atlas = nullptr;
-
-	switch(Powerup.Kind)
-	{
-		case EPowerup::DoubleGuns: Atlas = DoubleGunsPowerupAtlas; break;
-		case EPowerup::Shields:    Atlas = ShieldPowerupAtlas;     break;
-	}
-
-	check(Atlas);
-
-	// Make the powerups dark so they don't get confused with asteroids.
-	Powerup.Create(Atlas, 0.5f, FLinearColor(1.0f, 1.0f, 1.0f, PowerupOpacity), FVector2D(32));
-	
-
-	Powerup.Show();
-	Powerup.SetPosition(P);
-	Powerup.Inertia.Set(0, 0);
-}
-#endif
 
 
 void UPlayViewBase::SpawnPowerup(TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P)
@@ -1222,85 +1219,6 @@ void UPlayViewBase::SpawnPowerup(TSharedPtr<FPowerup>& PowerupPtr, const FVector
 	Powerup.SetPosition(P);
 	Powerup.Inertia.Set(0, 0);
 }
-
-#if 0
-void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
-{
-	// The UMG way.
-
-	for(int32 Index = 0; Index < NumAsteroids; Index++)
-	{
-		// 0=big, 1=med, 2=small
-#if(TEST_ASTEROIDS==1)
-		const int32 AsteroidSize = Index;
-#else
-		const int32 AsteroidSize = 0; 
-#endif
-
-		FAsteroid Asteroid;
-
-#if(TEST_ASTEROIDS==1)
-		FVector2D P(500, Index * 300 + 200);
-#else
-		// Place randomly along edges of screen.
-		FVector2D P(0);
-
-		if(FMath::RandBool())
-		{
-			P.X = FMath::RandRange(0.0, ViewportSize.X);
-		}
-		else
-		{
-			P.Y = FMath::RandRange(0.0, ViewportSize.Y);
-		}
-#endif
-
-		const auto V = FMath::VRand();
-
-#if(TEST_ASTEROIDS==1)
-		const auto Inertia = FVector2D(0);
-#else
-		const auto Inertia = UDaylonUtils::RandVector2D() * FMath::Lerp(MinAsteroidSpeed, MaxAsteroidSpeed, FMath::FRand());
-#endif
-		Asteroid.LifeRemaining = 1.0f;
-		Asteroid.SpinSpeed     = FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
-		//Asteroid.Widget        = UDaylonUtils::MakeWidget<UImage>();
-
-		//Asteroid.Widget->SetRenderTransformPivot(FVector2D(0.5f));
-
-		FSlateBrush AsteroidBrush;
-
-		switch(AsteroidSize)
-		{
-			case 0:
-				AsteroidBrush = BigRockBrushes[FMath::RandRange(0, 3)]; 
-				Asteroid.Value = ValueBigAsteroid;
-
-				if(Index % 4 == 0)
-				{
-					SpawnPowerup(Asteroid.Powerup, P);
-				}
-				break;
-
-			case 1: 
-				AsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
-				Asteroid.Value = ValueMediumAsteroid;
-				break;
-
-			case 2: 
-				AsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
-				Asteroid.Value = ValueSmallAsteroid;
-				break;
-		}
-
-		Asteroid.Create(AsteroidBrush, 0.5f);
-		Asteroid.Spawn(P, Inertia, 1.0f);
-
-		// Do this last since the play object is copied.
-		Asteroids.Add(Asteroid);
-	}
-}
-#endif
 
 
 void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
@@ -1518,21 +1436,16 @@ void UPlayViewBase::UpdatePowerups(float DeltaTime)
 
 void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 {
-	auto Explosion = UDaylonUtils::MakeWidget<UDaylonParticlesWidget>();
+	SpawnExplosion(P, 
+		3.0f,
+		6.0f,
+		30.0f,
+		160.0f,
+		0.5f,
+		3.0f,
+		0.25f,
+		80);
 
-	Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
-	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
-
-	Explosion->ParticleBrush = TorpedoBrush;
-
-	Explosion->MinParticleSize     *= 1;
-	Explosion->MaxParticleSize     *= 2;
-	Explosion->MinParticleVelocity *= 1;
-	Explosion->MaxParticleVelocity *= 2;
-	Explosion->MinParticleLifetime *= 2;
-	Explosion->MaxParticleLifetime *= 3;
-	Explosion->FinalOpacity        = 0.25f;
-	Explosion->NumParticles        *= 2;
 
 	// Set up second explosion event for 3/4 second later
 
@@ -1552,67 +1465,24 @@ void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 			return;
 		}
 
-		auto Explosion = UDaylonUtils::MakeWidget<UDaylonParticlesWidget>();
-
-		Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
-		Explosion->SetRenderTransformPivot(FVector2D(0.5f));
-
-		Explosion->ParticleBrush = This->TorpedoBrush;
-
-		Explosion->MinParticleSize     *= 1.5f;
-		Explosion->MaxParticleSize     *= 3;
-		Explosion->MinParticleVelocity *= 1.5f;
-		Explosion->MaxParticleVelocity *= 3;
-		Explosion->MinParticleLifetime *= 2;
-		Explosion->MaxParticleLifetime *= 4;
-		Explosion->FinalOpacity        = 0.25f;
-		Explosion->NumParticles        *= 2;
-
-		auto CanvasSlot = This->RootCanvas->AddChildToCanvas(Explosion);
-
-		Explosion->SynchronizeProperties();
-
-		CanvasSlot->SetAnchors(FAnchors());
-		CanvasSlot->SetAlignment(FVector2D(0.5f));
-		CanvasSlot->SetAutoSize(true);
-		CanvasSlot->SetPosition(P);
-
-		This->Explosions.Add(Explosion);
+		This->SpawnExplosion(P, 
+			4.5f,
+			9.0f,
+			45.0f,
+			240.0f,
+			0.5f,
+			4.0f,
+			0.25f,
+			80);
 	};
 
 	ScheduledTasks.Add(Task);
-
-	auto CanvasSlot = RootCanvas->AddChildToCanvas(Explosion);
-
-	Explosion->SynchronizeProperties();
-
-	CanvasSlot->SetAnchors(FAnchors());
-	CanvasSlot->SetAlignment(FVector2D(0.5f));
-	CanvasSlot->SetAutoSize(true);
-	CanvasSlot->SetPosition(P);
-
-	Explosions.Add(Explosion);
 }
 
 
 void UPlayViewBase::SpawnExplosion(const FVector2D& P)
 {
-	auto Explosion = UDaylonUtils::MakeWidget<UDaylonParticlesWidget>();
-
-	Explosion->SetVisibility(ESlateVisibility::HitTestInvisible);
-	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
-	Explosion->ParticleBrush = TorpedoBrush;
-
-	auto CanvasSlot = RootCanvas->AddChildToCanvas(Explosion);
-
-	Explosion->SynchronizeProperties();
-
-	CanvasSlot->SetAnchors(FAnchors());
-	CanvasSlot->SetAlignment(FVector2D(0.5f));
-	CanvasSlot->SetAutoSize(true);
-	CanvasSlot->SetPosition(P);
-
-	Explosions.Add(Explosion);
+	SpawnExplosion(P, 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40);
 }
 
 
@@ -1623,21 +1493,14 @@ void UPlayViewBase::UpdateExplosions(float DeltaTime)
 		return;
 	}
 
-	TArray<UDaylonParticlesWidget*> NewList;
-
-	for(auto Explosion : Explosions)
+	for(int32 Index = Explosions.Num() - 1; Index >= 0; Index--)
 	{
-		if(Explosion->Update(DeltaTime))
+		if(!Explosions[Index]->Update(DeltaTime))
 		{
-			NewList.Add(Explosion);
-		}
-		else
-		{
-			RootCanvas->RemoveChild(Explosion);
+			RootCanvas->GetCanvasWidget()->RemoveSlot(Explosions[Index].ToSharedRef());
+			Explosions.RemoveAt(Index);
 		}
 	}
-
-	Explosions = NewList;
 }
 
 
@@ -2006,6 +1869,11 @@ void UPlayViewBase::AdjustDoubleShotsLeft(int32 Amount)
 
 void UPlayViewBase::AdjustShieldsLeft(float Amount)
 {
+	if(PlayerShip->ShieldsLeft < 0.0f)
+	{
+		PlayerShip->ShieldsLeft = 0.0f;
+	}
+
 	PlayerShip->ShieldsLeft = FMath::Max(0.0f, PlayerShip->ShieldsLeft + Amount);
 	UpdatePowerupReadout(EPowerup::Shields);
 }
@@ -2016,6 +1884,11 @@ void UPlayViewBase::ProcessPlayerCollision()
 	if(PlayerShield->IsVisible() || bGodMode)
 	{
 		PlaySound(ShieldBonkSound);
+
+		if(PlayerShield->IsVisible())
+		{
+			AdjustShieldsLeft(-ShieldBonkDamage);
+		}
 	}
 	else 
 	{
@@ -2029,34 +1902,41 @@ void UPlayViewBase::CheckCollisions()
 	// Build a triangle representing the player ship.
 
 	FVector2D PlayerShipTriangle[3]; // tip, LR corner, LL corner.
+	FVector2D PlayerShipLineStart;
+	FVector2D PlayerShipLineEnd;
 
-	float PlayerShipH = PlayerShip->GetSize().Y;
-	float PlayerShipW = PlayerShipH * (73.0f / 95.0f);
-
-	PlayerShipTriangle[0].Set(0.0f,            -PlayerShipH / 2);
-	PlayerShipTriangle[1].Set( PlayerShipW / 2, PlayerShipH / 2);
-	PlayerShipTriangle[2].Set(-PlayerShipW / 2, PlayerShipH / 2);
-
-	// Triangle is pointing up, vertices relative to its center. We need to rotate it for its current angle.
-			 
-	auto ShipAngle = PlayerShip->GetAngle();
-
-	// Rotate and translate the triangle to match its current display space.
-
-	for(auto& Triangle : PlayerShipTriangle)
+	if(PlayerShip)
 	{
-		Triangle = UDaylonUtils::Rotate(Triangle, ShipAngle);
+		PlayerShipLineStart = PlayerShip->OldPosition;
+		PlayerShipLineEnd   = PlayerShip->UnwrappedNewPosition;
 
-		// Use the ship's old position because the current position can cause unwanted self-intersections.
-		Triangle += PlayerShip->OldPosition;
+		float PlayerShipH = PlayerShip->GetSize().Y;
+		float PlayerShipW = PlayerShipH * (73.0f / 95.0f);
+
+		PlayerShipTriangle[0].Set(0.0f,            -PlayerShipH / 2);
+		PlayerShipTriangle[1].Set( PlayerShipW / 2, PlayerShipH / 2);
+		PlayerShipTriangle[2].Set(-PlayerShipW / 2, PlayerShipH / 2);
+
+		// Triangle is pointing up, vertices relative to its center. We need to rotate it for its current angle.
+			 
+		auto ShipAngle = PlayerShip->GetAngle();
+
+		// Rotate and translate the triangle to match its current display space.
+
+		for(auto& Triangle : PlayerShipTriangle)
+		{
+			Triangle = UDaylonUtils::Rotate(Triangle, ShipAngle);
+
+			// Use the ship's old position because the current position can cause unwanted self-intersections.
+			Triangle += PlayerShip->OldPosition;
+		}
+
+		// Get the line segment for the player ship.
+		// Line segments are used to better detect collisions involving fast-moving objects.
+
+		PlayerShipLineStart = PlayerShip->OldPosition;
+		PlayerShipLineEnd   = PlayerShip->UnwrappedNewPosition;
 	}
-
-	// Get the line segment for the player ship.
-	// Line segments are used to better detect collisions involving fast-moving objects.
-
-	const FVector2D PlayerShipLineStart = PlayerShip->OldPosition;
-	const FVector2D PlayerShipLineEnd   = PlayerShip->UnwrappedNewPosition;
-
 
 	// See what the active torpedos have collided with.
 
@@ -2100,7 +1980,7 @@ void UPlayViewBase::CheckCollisions()
 			}
 		}
 		
-		if(Torpedo.IsAlive() && !Torpedo.FiredByPlayer && PlayerShip->IsVisible())
+		if(Torpedo.IsAlive() && !Torpedo.FiredByPlayer && PlayerShip && PlayerShip->IsVisible())
 		{
 			// Torpedo didn't hit a rock and the player didn't fire it, so see if it hit the player ship.
 
@@ -2151,7 +2031,7 @@ void UPlayViewBase::CheckCollisions()
 
 	// Check if player ship collided with a rock
 
-	if(PlayerShip->IsVisible())
+	if(PlayerShip && PlayerShip->IsVisible())
 	{
 		int32 AsteroidIndex = -1;
 
@@ -2178,7 +2058,7 @@ void UPlayViewBase::CheckCollisions()
 
 	// Check if enemy ship collided with the player
 
-	if(PlayerShip->IsVisible())
+	if(PlayerShip && PlayerShip->IsVisible())
 	{
 		for(int32 EnemyIndex = EnemyShips.Num() - 1; EnemyIndex >= 0; EnemyIndex--)
 		{
@@ -2202,7 +2082,7 @@ void UPlayViewBase::CheckCollisions()
 
 	// Check if player ship collided with a powerup
 
-	if(PlayerShip->IsVisible())
+	if(PlayerShip && PlayerShip->IsVisible())
 	{
 		for(int32 PowerupIndex = Powerups.Num() - 1; PowerupIndex >= 0; PowerupIndex--)
 		{
@@ -2374,7 +2254,6 @@ void UPlayViewBase::RemoveEnemyShip(int32 EnemyIndex)
 	check(NumBigEnemyShips >= 0 && NumSmallEnemyShips >= 0);
 
 	Daylon::Destroy(EnemyShips[EnemyIndex]);
-	//EnemyShip.DestroyWidget();
 
 	EnemyShips.RemoveAt(EnemyIndex);
 }
@@ -2409,7 +2288,7 @@ void UPlayViewBase::RemoveExplosions()
 {
 	while(!Explosions.IsEmpty())
 	{
-		RootCanvas->RemoveChild(Explosions.Last(0));
+		RootCanvas->GetCanvasWidget()->RemoveSlot(Explosions.Last(0).ToSharedRef());
 		Explosions.Pop();
 	}
 }

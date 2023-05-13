@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 11, 2023
+May 12, 2023
 
 
 
@@ -311,6 +311,21 @@ High scores are kept in a highscores.txt file.
 In development mode, this will be in the project's 
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
+
+
+Version 1.6.6
+-------------------------------------------------------------------------------------
+Explosion play objects are now also Slate widgets.
+
+A "shield bonk damage" constant was added that deducts its number 
+of seconds from the player ship's shields whenever the ship 
+collides with something and the shields are active. It makes 
+the game harder, and one ends up scurrying for shield powerups 
+and using shields conservatively. If you set it to zero, of course, 
+then the shields only decrease when used.
+
+Fixed a bug where the collision checker assumed the player ship 
+to exist, which wasn't true after entering the game over state.
 
 
 Version 1.6.5
