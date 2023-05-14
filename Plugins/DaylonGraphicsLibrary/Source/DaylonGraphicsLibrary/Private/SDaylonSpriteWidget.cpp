@@ -1,7 +1,6 @@
 // Copyright 2023 Daylon Graphics Ltd. All Rights Reserved.
 
 #include "SDaylonSpriteWidget.h"
-//#include "LocalUtils.h"
 
 
 #define DEBUG_MODULE      0
@@ -31,15 +30,30 @@ void SDaylonSpriteWidget::SetSize(const FVector2D& InSize)
 
 void SDaylonSpriteWidget::SetAtlas(const FDaylonSpriteAtlas& InAtlas) 
 {
-	Atlas = InAtlas; 
+	Atlas = InAtlas;
+
+	UvSize.Set(1.0 / Atlas.CelsAcross, 1.0 / Atlas.CelsDown);
+
 	Reset();
 }
 
 
 void SDaylonSpriteWidget::Reset()
 {
-	CurrentCelIndex = 0;
-	CurrentAge      = 0.0f;
+	SetCurrentCel(0);
+
+	CurrentAge = 0.0f;
+}
+
+
+void SDaylonSpriteWidget::SetCurrentCel(int32 Index)
+{
+	if(Index < 0 || Index >= Atlas.NumCels)
+	{
+		return;
+	}
+
+	CurrentCelIndex = Index;
 }
 
 
@@ -47,8 +61,10 @@ void SDaylonSpriteWidget::Update(float DeltaTime)
 {
 	const auto SecondsPerFrame = 1.0f / Atlas.FrameRate;
 
-	CurrentCelIndex = FMath::RoundToInt(CurrentAge / SecondsPerFrame);
-	CurrentCelIndex = CurrentCelIndex % Atlas.NumCels;
+	//CurrentCelIndex = FMath::RoundToInt(CurrentAge / SecondsPerFrame);
+	//CurrentCelIndex = CurrentCelIndex % Atlas.NumCels;
+
+	SetCurrentCel((FMath::RoundToInt(CurrentAge / SecondsPerFrame)) % Atlas.NumCels);
 
 	CurrentAge += DeltaTime;
 
@@ -84,22 +100,35 @@ int32 SDaylonSpriteWidget::OnPaint
 		(CurrentCelIndex % Atlas.CelsAcross) / (float)Atlas.CelsAcross,
 		(CurrentCelIndex / Atlas.CelsAcross) / (float)Atlas.CelsDown);
 
-	const FBox2D uvRegion = FBox2D(UV, UV + FVector2D(1.0f / Atlas.CelsAcross, 1.0f / Atlas.CelsDown));
+	const FBox2D uvRegion = FBox2D(UV, UV + UvSize);
 
 	if(IsValid(Atlas.AtlasBrush.GetResourceObject()))
 	{
 		Atlas.AtlasBrush.SetUVRegion(uvRegion);
 
-		const auto GeomSize = AllottedGeometry.GetAbsoluteSize();
-		const FPaintGeometry PaintGeometry(AllottedGeometry.GetAbsolutePosition(), GeomSize, 1.0f);
+		if(AllottedGeometry.HasRenderTransform())
+		{
+			FSlateDrawElement::MakeBox(
+				OutDrawElements,
+				LayerId,
+				AllottedGeometry.ToPaintGeometry(),
+				&Atlas.AtlasBrush,
+				ESlateDrawEffect::None,
+				Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
+		}
+		else
+		{
+			const auto GeomSize = AllottedGeometry.GetAbsoluteSize();
+			const FPaintGeometry PaintGeometry(AllottedGeometry.GetAbsolutePosition(), GeomSize, 1.0f);
 
-		FSlateDrawElement::MakeBox(
-			OutDrawElements,
-			LayerId,
-			PaintGeometry,
-			&Atlas.AtlasBrush,
-			ESlateDrawEffect::None,
-			Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
+			FSlateDrawElement::MakeBox(
+				OutDrawElements,
+				LayerId,
+				PaintGeometry,
+				&Atlas.AtlasBrush,
+				ESlateDrawEffect::None,
+				Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
+		}
 
 #if 0
 		{

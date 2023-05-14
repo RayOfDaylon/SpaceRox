@@ -212,7 +212,8 @@ void UPlayViewBase::InitializePlayerShipCount()
 
 void UPlayViewBase::CreatePlayerShip()
 {
-	PlayerShip = FPlayerShip::Create (PlayerShipBrush, 0.4f);
+	//PlayerShip = FPlayerShip::Create(PlayerShipBrush, 0.4f);
+	PlayerShip = FPlayerShip::Create(PlayerShipAtlas, FVector2D(32), 0.4f);
 
 	InitializePlayerShip();
 }
@@ -999,8 +1000,9 @@ void UPlayViewBase::AddPlayerShips(int32 Amount)
 		while(PlayerShipsReadout->GetChildrenCount() < NumPlayerShips)
 		{
 			UImage* Image = UDaylonUtils::MakeWidget<UImage>();
-			Image->SetBrush(PlayerShipBrush);
+			Image->SetBrush(PlayerShipAtlas->Atlas.AtlasBrush);
 			Image->Brush.SetImageSize(FVector2D(24));
+			Image->Brush.SetUVRegion(FBox2d(FVector2D(0, 0), FVector2D(0.5, 1.0)));
 			
 			PlayerShipsReadout->AddChildToHorizontalBox(Image);
 		}
@@ -1355,7 +1357,8 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 	{
 		if(bThrustStateChanged)
 		{
-			PlayerShip->SetBrush(PlayerShipThrustingBrush);
+			//PlayerShip->SetBrush(PlayerShipThrustingBrush);
+			PlayerShip->SetCurrentCel(1);
 			PlayerShipThrustSoundLoop.Start();
 		}
 		else
@@ -1382,7 +1385,8 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 	{
 		if(bThrustStateChanged)
 		{
-			PlayerShip->SetBrush(PlayerShipBrush);
+			//PlayerShip->SetBrush(PlayerShipBrush);
+			PlayerShip->SetCurrentCel(0);
 		}
 	}
 

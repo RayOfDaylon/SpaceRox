@@ -7,7 +7,9 @@
 
 
 
-// SSpriteWidget - a drawing widget with a custom Paint event.
+// SDaylonSpriteWidget - a drawing widget with a custom Paint event.
+// If your sprite is animated, call Update().
+// If you just want to switch amongst cels, call SetCurrentCel().
 
 
 USTRUCT(BlueprintType)
@@ -60,8 +62,9 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 			void SetSize    (const FVector2D& InSize);
 			void SetAtlas   (const FDaylonSpriteAtlas& InAtlas);
 
-			void Update     (float DeltaTime);
-			void Reset      ();
+			void SetCurrentCel (int32 Index);
+			void Update        (float DeltaTime);
+			void Reset         ();
 
 
 			virtual int32 OnPaint
@@ -81,6 +84,7 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 		protected:
 
 			FVector2D                    Size;
+			FVector2D                    UvSize;
 			mutable FDaylonSpriteAtlas   Atlas;
 
 			float              CurrentAge = 0.0f;

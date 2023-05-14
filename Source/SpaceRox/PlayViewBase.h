@@ -119,7 +119,7 @@ struct FPlayerShip : public Daylon::FImagePlayObject
 };
 */
 
-
+/*
 class FPlayerShip : public Daylon::ImagePlayObject2D
 {
 	public:
@@ -136,6 +136,31 @@ class FPlayerShip : public Daylon::ImagePlayObject2D
 		Daylon::FinishCreating<SImage>(Widget, RadiusFactor);
 
 		Widget->SetBrush(Brush);
+
+		return Widget;
+	}
+};
+*/
+
+
+class FPlayerShip : public Daylon::SpritePlayObject2D
+{
+	public:
+
+	bool   IsUnderThrust;
+	bool   IsSpawning;
+	int32  DoubleShotsLeft;
+	float  ShieldsLeft;
+
+	static TSharedPtr<FPlayerShip> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S, float RadiusFactor)
+	{
+		auto Widget = SNew(FPlayerShip);
+
+		Daylon::FinishCreating<SDaylonSpriteWidget>(Widget, RadiusFactor);
+
+		Widget->SetAtlas(Atlas->Atlas);
+		Widget->SetSize(S);
+		Widget->UpdateWidgetSize();
 
 		return Widget;
 	}
@@ -323,13 +348,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	TObjectPtr<USoundBase> ForwardSound;
 
 
-	// -- UImage brushes (textures) -------------------------------------------------
+	// -- Textures --------------------------------------------------------------
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	FSlateBrush PlayerShipBrush;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	FSlateBrush PlayerShipThrustingBrush;
+	UDaylonSpriteWidgetAtlas* PlayerShipAtlas;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	FSlateBrush BigEnemyBrush;
