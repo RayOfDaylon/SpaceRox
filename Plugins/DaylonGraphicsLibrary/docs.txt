@@ -2,7 +2,7 @@ Documentation for DaylonGraphicsLibrary plug-in for Unreal Engine
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox (inside Plugins folder)
-May 5, 2023
+May 13, 2023
 
 
 
@@ -28,7 +28,7 @@ containing several static functions.
 
   MakeWidget       Call this to construct a UWidget of the desired type. 
 
-  Show/Hide        Shows or hides the specified UWidget.
+  Show/Hide        Shows or hides the specified UWidget/SWidget.
 
   AngleToVector2D  Converts an angle (in degrees) to a unit vector. 
                    Angle zero corresponds to a vector of [0, -1] and 
@@ -81,35 +81,39 @@ FHighScore                    A single entry in a high score table.
 
 FHighScoreTable               A simple high score table.
 
-IPlayObject                   Abstract base class of 2D game objects (actors).
+PlayObject2D                  Template class implementing most 2D game object functionality.
+                              You should use a specific subclass such as ImagePlayObject2D though.
 
-FPlayObject                   Template class implementing most 2D game object functionality.
-                              You should use a specific subclass such as FImagePlayObject though.
-
-FImagePlayObject              An FPlayObject that uses a UImage widget. Suitable
+ImagePlayObject2D             An PlayObject2D that uses an SImage widget. Suitable
                               for game objects that have a static appearance.
 
-FSpritePlayObject             An FPlayObject that uses a UDaylonSpriteWidget.
+SpritePlayObject2D            An PlayObject2D that uses an SDaylonSpriteWidget.
                               Good for game objects that have a dynamic appearance.
-                              The SpaceRox powerups e.g. use this class.
+                              The Steller Mayhem powerups e.g. use this class.
+
+UMG widgets have been retired to an #if 0 ... #endif block. 
+The code is retained there for reference.
 
 
-UDaylonSpriteWidget
+SDaylonSpriteWidget
 -------------------------------------------------------------------------------------
-This UWidget renders a picture that can change over time. It contains a 
-UDaylonSpriteWidgetAtlas member that defines a texture atlas and frame rate.
-The texture atlas class is FDaylonSpriteAtlas. It's assumed that the cels (tiles)
-inside the atlas fill it out with an equal number of pixels per cel.
+This SWidget renders a picture that can change over time. It contains an 
+FDaylonSpriteAtlas member that defines a texture atlas and frame rate.
+It's assumed that the cels (tiles) inside the atlas fill it out with an 
+equal number of pixels per cel.
 
-Call the Tick method to animate the picture.
+Call the Update() method to animate the picture.
+
+If you are using the atlas to occasionally change the appearance of 
+the widget, call the SetCurrentCel() method instead.
 
 
-UDaylonParticlesWidget
+SDaylonParticlesWidget
 -------------------------------------------------------------------------------------
-This UWidget draws particles moving away randomly from the widget's center.
-The SpaceRox game e.g. uses it for all of its explosions.
+This SWidget draws particles moving away randomly from the widget's center.
+Steller Mayhem e.g. uses it for all of its explosions.
 
-Call the Update method to advance the animation. If it returns false, 
+Call the Update() method to advance the animation. If it returns false, 
 the animation has ended and the widget can be disposed or hidden.
 
 Call the Reset method to set the animation for another replay.

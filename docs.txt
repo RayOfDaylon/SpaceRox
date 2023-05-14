@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 12, 2023
+May 13, 2023
 
 
 
@@ -311,6 +311,22 @@ High scores are kept in a highscores.txt file.
 In development mode, this will be in the project's 
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
+
+
+Version 1.6.7
+-------------------------------------------------------------------------------------
+UMG playobject code moved to an #if 0... #endif section.
+All playobjects should use the Slate system.
+
+Player ship textures consolidated into a sprite atlas. 
+A new atlas method, SetCurrentCel(), lets the current cel 
+be set without using Update(), so the atlas can serve 
+both static and animated sprites. When alternating between 
+coasting and thrusting, the ship texture is selected by 
+cel indices 0 and 1 instead of calling SetBrush().
+
+Fixed another playership-assumed-to-exist bug that 
+caused a crash when the game ended.
 
 
 Version 1.6.6

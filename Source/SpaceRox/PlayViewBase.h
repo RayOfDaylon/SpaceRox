@@ -523,8 +523,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      CreatePlayerShip           ();
 	void      CreateTorpedos             ();
 
-	//void    SpawnPowerup               (FPowerup& Powerup, const FVector2D& P);
-
 	void      LaunchTorpedoFromEnemy     (const FEnemyShip& Shooter, bool IsBigEnemy);
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnEnemyShip             ();
@@ -557,6 +555,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      AdjustDoubleShotsLeft      (int32 Amount);
 	void      AdjustShieldsLeft          (float Amount);
 
+	bool      IsPlayerPresent            () const;
 	bool      IsWaitingToSpawnPlayer     () const;
 	bool      IsSafeToSpawnPlayer        () const;
 

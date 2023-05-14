@@ -33,8 +33,23 @@ struct DAYLONGRAPHICSLIBRARY_API FDaylonSpriteAtlas
 	UPROPERTY(EditAnywhere, BlueprintReadonly)
 	int32 NumCels = 1;
 
+	// If using the atlas to animate a sprite, set a frame rate.
 	UPROPERTY(EditAnywhere, BlueprintReadonly)
 	float FrameRate = 30.0f;
+
+	FVector2D UVSize;
+
+
+	void       InitCache        ();
+			   
+	bool       IsValidCelIndex  (int32 Index) const;
+
+	int32      CalcCelIndex     (int32 CelX, int32 CelY) const;
+			   
+	FVector2D  GetUVSize        () const;
+			   
+	FBox2d     GetUVsForCel     (int32 Index) const;
+	FBox2d     GetUVsForCel     (int32 CelX, int32 CelY) const;
 };
 
 
@@ -63,6 +78,7 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 			void SetAtlas   (const FDaylonSpriteAtlas& InAtlas);
 
 			void SetCurrentCel (int32 Index);
+			void SetCurrentCel (int32 CelX, int32 CelY);
 			void Update        (float DeltaTime);
 			void Reset         ();
 
@@ -84,10 +100,9 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 		protected:
 
 			FVector2D                    Size;
-			FVector2D                    UvSize;
 			mutable FDaylonSpriteAtlas   Atlas;
 
-			float              CurrentAge = 0.0f;
+			float              CurrentAge      = 0.0f;
 			int32              CurrentCelIndex = 0;
 
 			virtual bool ComputeVolatility() const override { return true; }

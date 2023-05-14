@@ -115,6 +115,9 @@ const float ShieldBonkDamage               = 4.0f;  // Number of seconds to take
 const float PowerupOpacity                 = 0.5f;
 const bool  PowerupsCanMove                = false;
 
+const int32 PlayerShipNormalAtlasCel       = 0;
+const int32 PlayerShipThrustingAtlasCel    = 1;
+
 
 static FVector2D WrapPositionToViewport(const FVector2D& P)
 {
@@ -304,6 +307,8 @@ void UPlayViewBase::NativeOnInitialized()
 
 	InitializeVariables    ();
 	PreloadSounds          ();
+
+	PlayerShipAtlas->Atlas.InitCache();
 
 	PlayerShipThrustSoundLoop.Set (this, ThrustSound);
 	BigEnemyShipSoundLoop.Set     (this, EnemyShipBigSound);
@@ -896,7 +901,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 		case EGameState::Active:
 
-			if(PlayerShip->IsVisible())
+			if(IsPlayerPresent())
 			{
 				UpdatePlayerRotation  (InDeltaTime);
 				UpdatePlayerShip      (InDeltaTime);
@@ -912,7 +917,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			ProcessWaveTransition     (InDeltaTime);
 
-			if(PlayerShip->IsSpawning)
+			if(PlayerShip && PlayerShip->IsSpawning)
 			{
 				ProcessPlayerShipSpawn    (InDeltaTime);
 			}
@@ -1002,7 +1007,7 @@ void UPlayViewBase::AddPlayerShips(int32 Amount)
 			UImage* Image = UDaylonUtils::MakeWidget<UImage>();
 			Image->SetBrush(PlayerShipAtlas->Atlas.AtlasBrush);
 			Image->Brush.SetImageSize(FVector2D(24));
-			Image->Brush.SetUVRegion(FBox2d(FVector2D(0, 0), FVector2D(0.5, 1.0)));
+			Image->Brush.SetUVRegion(PlayerShipAtlas->Atlas.GetUVsForCel(PlayerShipNormalAtlasCel));
 			
 			PlayerShipsReadout->AddChildToHorizontalBox(Image);
 		}
@@ -1357,8 +1362,7 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 	{
 		if(bThrustStateChanged)
 		{
-			//PlayerShip->SetBrush(PlayerShipThrustingBrush);
-			PlayerShip->SetCurrentCel(1);
+			PlayerShip->SetCurrentCel(PlayerShipThrustingAtlasCel);
 			PlayerShipThrustSoundLoop.Start();
 		}
 		else
@@ -1385,8 +1389,7 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 	{
 		if(bThrustStateChanged)
 		{
-			//PlayerShip->SetBrush(PlayerShipBrush);
-			PlayerShip->SetCurrentCel(0);
+			PlayerShip->SetCurrentCel(PlayerShipNormalAtlasCel);
 		}
 	}
 
@@ -1909,7 +1912,7 @@ void UPlayViewBase::CheckCollisions()
 	FVector2D PlayerShipLineStart;
 	FVector2D PlayerShipLineEnd;
 
-	if(PlayerShip)
+	if(IsPlayerPresent())
 	{
 		PlayerShipLineStart = PlayerShip->OldPosition;
 		PlayerShipLineEnd   = PlayerShip->UnwrappedNewPosition;
@@ -1984,7 +1987,7 @@ void UPlayViewBase::CheckCollisions()
 			}
 		}
 		
-		if(Torpedo.IsAlive() && !Torpedo.FiredByPlayer && PlayerShip && PlayerShip->IsVisible())
+		if(Torpedo.IsAlive() && !Torpedo.FiredByPlayer && IsPlayerPresent())
 		{
 			// Torpedo didn't hit a rock and the player didn't fire it, so see if it hit the player ship.
 
@@ -2035,7 +2038,7 @@ void UPlayViewBase::CheckCollisions()
 
 	// Check if player ship collided with a rock
 
-	if(PlayerShip && PlayerShip->IsVisible())
+	if(IsPlayerPresent())
 	{
 		int32 AsteroidIndex = -1;
 
@@ -2062,7 +2065,7 @@ void UPlayViewBase::CheckCollisions()
 
 	// Check if enemy ship collided with the player
 
-	if(PlayerShip && PlayerShip->IsVisible())
+	if(IsPlayerPresent())
 	{
 		for(int32 EnemyIndex = EnemyShips.Num() - 1; EnemyIndex >= 0; EnemyIndex--)
 		{
@@ -2086,7 +2089,7 @@ void UPlayViewBase::CheckCollisions()
 
 	// Check if player ship collided with a powerup
 
-	if(PlayerShip && PlayerShip->IsVisible())
+	if(IsPlayerPresent())
 	{
 		for(int32 PowerupIndex = Powerups.Num() - 1; PowerupIndex >= 0; PowerupIndex--)
 		{
@@ -2517,12 +2520,19 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 }
 
 
+bool UPlayViewBase::IsPlayerPresent() const
+{
+	return (PlayerShip && PlayerShip->IsVisible());
+}
+
+
+
 void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBigEnemy)
 {
 	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
 	// For now, just use wild and leaded.
 
-	if(!PlayerShip->IsVisible())
+	if(!IsPlayerPresent())
 	{
 		return;
 	}
@@ -2588,7 +2598,7 @@ void UPlayViewBase::OnFireTorpedo()
 {
 	// Called when the 'fire torpedo' button is pressed.
 
-	if(!PlayerShip->IsVisible())
+	if(!IsPlayerPresent())
 	{
 		return;
 	}

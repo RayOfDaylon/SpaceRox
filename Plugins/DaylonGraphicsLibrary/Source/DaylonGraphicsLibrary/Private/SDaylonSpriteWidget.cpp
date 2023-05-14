@@ -10,6 +10,53 @@
 #endif
 
 
+void FDaylonSpriteAtlas::InitCache()
+{
+	UVSize = FVector2D(1.0 / CelsAcross, 1.0 / CelsDown);
+}
+
+
+bool FDaylonSpriteAtlas::IsValidCelIndex(int32 Index) const
+{
+	return (Index >= 0 && Index < NumCels);
+}
+
+
+int32 FDaylonSpriteAtlas::CalcCelIndex(int32 CelX, int32 CelY) const
+{
+	return (CelY * CelsAcross + CelX);
+}
+
+
+FVector2D FDaylonSpriteAtlas::GetUVSize() const
+{
+	return UVSize;
+}
+
+
+FBox2d FDaylonSpriteAtlas::GetUVsForCel(int32 Index) const
+{
+	if(!IsValidCelIndex(Index))
+	{
+		return FBox2d(FVector2D(0), FVector2D(0));
+	}
+
+	return GetUVsForCel(Index % CelsAcross, Index / CelsAcross);
+}
+
+
+FBox2d FDaylonSpriteAtlas::GetUVsForCel(int32 CelX, int32 CelY) const
+{
+	//const FVector2D UV(CelX / (double)CelsAcross, CelY / (double)CelsDown);
+	const FVector2D UV(CelX * UVSize.X, CelY * UVSize.Y);
+
+	return FBox2D(UV, UV + UVSize);
+}
+
+
+// --------------------------------------------------------------------------------------
+
+
 void SDaylonSpriteWidget::Construct(const FArguments& InArgs)
 {
 	Size = InArgs._Size.Get();
@@ -32,7 +79,7 @@ void SDaylonSpriteWidget::SetAtlas(const FDaylonSpriteAtlas& InAtlas)
 {
 	Atlas = InAtlas;
 
-	UvSize.Set(1.0 / Atlas.CelsAcross, 1.0 / Atlas.CelsDown);
+	Atlas.InitCache();
 
 	Reset();
 }
@@ -48,7 +95,7 @@ void SDaylonSpriteWidget::Reset()
 
 void SDaylonSpriteWidget::SetCurrentCel(int32 Index)
 {
-	if(Index < 0 || Index >= Atlas.NumCels)
+	if(!Atlas.IsValidCelIndex(Index))
 	{
 		return;
 	}
@@ -57,12 +104,15 @@ void SDaylonSpriteWidget::SetCurrentCel(int32 Index)
 }
 
 
+void SDaylonSpriteWidget::SetCurrentCel(int32 CelX, int32 CelY)
+{
+	return SetCurrentCel(Atlas.CalcCelIndex(CelX, CelY));
+}
+
+
 void SDaylonSpriteWidget::Update(float DeltaTime)
 {
 	const auto SecondsPerFrame = 1.0f / Atlas.FrameRate;
-
-	//CurrentCelIndex = FMath::RoundToInt(CurrentAge / SecondsPerFrame);
-	//CurrentCelIndex = CurrentCelIndex % Atlas.NumCels;
 
 	SetCurrentCel((FMath::RoundToInt(CurrentAge / SecondsPerFrame)) % Atlas.NumCels);
 
@@ -95,12 +145,7 @@ int32 SDaylonSpriteWidget::OnPaint
 		return LayerId;
 	}
 
-	// Get upper left UV coordinate of current cel.
-	const FVector2D UV(
-		(CurrentCelIndex % Atlas.CelsAcross) / (float)Atlas.CelsAcross,
-		(CurrentCelIndex / Atlas.CelsAcross) / (float)Atlas.CelsDown);
-
-	const FBox2D uvRegion = FBox2D(UV, UV + UvSize);
+	const FBox2D uvRegion = Atlas.GetUVsForCel(CurrentCelIndex);
 
 	if(IsValid(Atlas.AtlasBrush.GetResourceObject()))
 	{
