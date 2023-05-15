@@ -313,6 +313,13 @@ Saved folder. In packaged Shipping builds, the
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
 
+
+Version 1.7.1
+-------------------------------------------------------------------------------------
+Fixed bug where scavengers exiting the screen with powerups 
+didn't remove the powerups from the scenegraph.
+
+
 Version 1.7
 -------------------------------------------------------------------------------------
 Scavenger enemies now appear every several seconds, looking 
@@ -328,13 +335,6 @@ and disappear, taking all of its powerups with it.
 
 If the scavenger is destroyed, it will drop all of the 
 powerups it has picked up.
-
-
-
-Version 1.7.1
--------------------------------------------------------------------------------------
-Fixed bug where scavengers exiting the screen with powerups 
-didn't remove the powerups from the scenegraph.
 
 
 Version 1.6.7
