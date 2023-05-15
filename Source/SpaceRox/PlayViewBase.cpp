@@ -2416,6 +2416,11 @@ void UPlayViewBase::RemoveScavenger(int32 ScavengerIndex)
 
 	auto& Scavenger = *Scavengers[ScavengerIndex].Get();
 
+	for(auto PowerupPtr : Scavenger.AcquiredPowerups)
+	{
+		Daylon::Destroy(PowerupPtr);
+	}
+
 	Daylon::Destroy(Scavengers[ScavengerIndex]);
 
 	Scavengers.RemoveAt(ScavengerIndex);

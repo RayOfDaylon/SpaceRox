@@ -13,7 +13,7 @@ to match its look and feel, but coded using Unreal Engine (UE 5.1, specifically)
 
 Its goals are a) to provide an educational reference for people interested in how 
 this type of game works and how it can be made in UE, and b) to see if such a game 
-using only UMG widgets would be performant enough (it is -- on my nVidia GTX 1050 TI
+using only UMG or Slate widgets would be performant enough (it is -- on my nVidia GTX 1050 TI
 it gets between 60 and 120 fps). Another benefit (fwiw) is helping preserve the legacy of 
 a classic arcade game.
 
@@ -43,8 +43,8 @@ Content
 Plugins
     DaylonGraphicsLibrary      Reusable code for widget-based 2D games
         DaylonUtils.*              Library routines and types
-        *ParticlesWidget.*         A widget used to efficiently draw explosions
-        *SpriteWidget.*            A widget used to draw animated textures
+        SDaylonParticlesWidget.*   A widget used to efficiently draw explosions
+        SDaylonSpriteWidget.*      A widget used to draw animated textures
 
 Source
     SpaceRox
@@ -330,6 +330,11 @@ If the scavenger is destroyed, it will drop all of the
 powerups it has picked up.
 
 
+
+Version 1.7.1
+-------------------------------------------------------------------------------------
+Fixed bug where scavengers exiting the screen with powerups 
+didn't remove the powerups from the scenegraph.
 
 
 Version 1.6.7
