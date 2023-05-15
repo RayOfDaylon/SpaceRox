@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 13, 2023
+May 15, 2023
 
 
 
@@ -311,6 +311,25 @@ High scores are kept in a highscores.txt file.
 In development mode, this will be in the project's 
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
+
+
+Version 1.7
+-------------------------------------------------------------------------------------
+Scavenger enemies now appear every several seconds, looking 
+for powerups that have been freed from asteroids but not yet 
+picked up by the player. Only one scavenger is present at a time.
+
+The scavenger will spawn on the left edge at a random Y position, 
+and if a powerup is available, will move directly towards it. 
+If it acquires the powerup (by colliding with it), it will 
+target any next available powerup, and so on at which point 
+it will move horizontally towards the right edge of the screen 
+and disappear, taking all of its powerups with it.
+
+If the scavenger is destroyed, it will drop all of the 
+powerups it has picked up.
+
+
 
 
 Version 1.6.7

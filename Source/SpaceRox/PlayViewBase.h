@@ -82,14 +82,6 @@ enum class EGameState : uint8
 
 
 
-/*
-struct FTorpedo : public Daylon::FImagePlayObject
-{
-	bool FiredByPlayer;
-};
-*/
-
-
 class FTorpedo : public Daylon::ImagePlayObject2D
 {
 	public:
@@ -107,40 +99,6 @@ class FTorpedo : public Daylon::ImagePlayObject2D
 		return Widget;
 	}
 };
-
-
-/*
-struct FPlayerShip : public Daylon::FImagePlayObject
-{
-	bool  IsUnderThrust;
-	bool  IsSpawning;
-	int32 DoubleShotsLeft;
-	float ShieldsLeft;
-};
-*/
-
-/*
-class FPlayerShip : public Daylon::ImagePlayObject2D
-{
-	public:
-
-	bool   IsUnderThrust;
-	bool   IsSpawning;
-	int32  DoubleShotsLeft;
-	float  ShieldsLeft;
-
-	static TSharedPtr<FPlayerShip> Create(FSlateBrush& Brush, float RadiusFactor)
-	{
-		auto Widget = SNew(FPlayerShip);
-
-		Daylon::FinishCreating<SImage>(Widget, RadiusFactor);
-
-		Widget->SetBrush(Brush);
-
-		return Widget;
-	}
-};
-*/
 
 
 class FPlayerShip : public Daylon::SpritePlayObject2D
@@ -167,19 +125,6 @@ class FPlayerShip : public Daylon::SpritePlayObject2D
 };
 
 
-/*struct FPowerup : public Daylon::FSpritePlayObject
-{
-	EPowerup Kind = EPowerup::Nothing;
-
-
-	virtual void Tick(float DeltaTime) override
-	{
-		if(Widget != nullptr)
-		{
-			Widget->Tick(DeltaTime);
-		}
-	}
-};*/
 
 
 class FPowerup : public Daylon::SpritePlayObject2D
@@ -192,14 +137,6 @@ class FPowerup : public Daylon::SpritePlayObject2D
 
 	virtual void Update(float DeltaTime) override { Daylon::SpritePlayObject2D::Update(DeltaTime); }
 };
-
-
-/*struct FAsteroid : public Daylon::FImagePlayObject
-{
-	FPowerup Powerup;
-
-	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
-};*/
 
 
 class FAsteroid : public Daylon::ImagePlayObject2D
@@ -228,17 +165,13 @@ class FScavenger : public Daylon::SpritePlayObject2D
 {
 	public:
 
+	TArray<TSharedPtr<FPowerup>> AcquiredPowerups;
+
+	TWeakPtr<FPowerup> CurrentTarget;
+
+
 	static TSharedPtr<FScavenger> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S);
 };
-
-
-/*
-struct FEnemyShip : public Daylon::FImagePlayObject
-{
-	float TimeRemainingToNextShot = 0.0f;
-	float TimeRemainingToNextMove = 0.0f;
-};
-*/
 
 
 class FEnemyShip : public Daylon::ImagePlayObject2D
@@ -411,6 +344,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Testing)
 	int32 NumAsteroidsOverride = 0;
 
+	// Number of powerups to spawn at wave start (use zero to not override)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Testing)
+	int32 NumPowerupsOverride = 0;
+
 	// Make player omnipotent
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Testing)
 	bool bGodMode = false;
@@ -543,6 +480,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	void      KillAsteroid               (int32 AsteroidIndex, bool KilledByPlayer);
 	void      KillEnemyShip              (int32 EnemyIndex);
+	void      KillScavenger              (int32 ScavengerIndex);
 	void      KillPowerup                (int32 PowerupIndex);
 	void      KillPlayerShip             ();
 
@@ -592,22 +530,14 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	Daylon::FLoopedSound            BigEnemyShipSoundLoop;
 	Daylon::FLoopedSound            SmallEnemyShipSoundLoop;
 
-	//FPlayerShip                   PlayerShip;
-	//Daylon::FImagePlayObject      PlayerShield;
-	//TArray<FAsteroid>             Asteroids;
-	//TArray<FEnemyShip>            EnemyShips;
-	//TArray<FPowerup>              Powerups;
-	//TArray<FTorpedo>              Torpedos;
-	//TArray<UDaylonParticlesWidget*> Explosions;
-
-	TSharedPtr<FPlayerShip>                 PlayerShip;
-	TSharedPtr<Daylon::ImagePlayObject2D>   PlayerShield;
+	TSharedPtr<FPlayerShip>                    PlayerShip;
+	TSharedPtr<Daylon::ImagePlayObject2D>      PlayerShield;
 
 	TArray<TSharedPtr<FAsteroid>>              Asteroids;
 	TArray<TSharedPtr<FEnemyShip>>             EnemyShips;
 	TArray<TSharedPtr<FScavenger>>             Scavengers;
 	TArray<TSharedPtr<FTorpedo>>               Torpedos;
-	TArray<TSharedPtr<FPowerup>>               Powerups;
+	TArray<TSharedPtr<FPowerup>>               Powerups; // Not including those inside asteroids
 	TArray<TSharedPtr<SDaylonParticlesWidget>> Explosions; 
 
 	Daylon::FHighScoreTable         HighScores;
@@ -638,3 +568,79 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	float        TimeUntilNextScavenger;
 };
+
+
+// -- Old UWidget-based play object subclasses ------------------------
+
+/*
+struct FTorpedo : public Daylon::FImagePlayObject
+{
+	bool FiredByPlayer;
+};
+*/
+
+
+/*
+struct FPlayerShip : public Daylon::FImagePlayObject
+{
+	bool  IsUnderThrust;
+	bool  IsSpawning;
+	int32 DoubleShotsLeft;
+	float ShieldsLeft;
+};
+*/
+
+/*
+class FPlayerShip : public Daylon::ImagePlayObject2D
+{
+	public:
+
+	bool   IsUnderThrust;
+	bool   IsSpawning;
+	int32  DoubleShotsLeft;
+	float  ShieldsLeft;
+
+	static TSharedPtr<FPlayerShip> Create(FSlateBrush& Brush, float RadiusFactor)
+	{
+		auto Widget = SNew(FPlayerShip);
+
+		Daylon::FinishCreating<SImage>(Widget, RadiusFactor);
+
+		Widget->SetBrush(Brush);
+
+		return Widget;
+	}
+};
+*/
+
+
+/*struct FPowerup : public Daylon::FSpritePlayObject
+{
+	EPowerup Kind = EPowerup::Nothing;
+
+
+	virtual void Tick(float DeltaTime) override
+	{
+		if(Widget != nullptr)
+		{
+			Widget->Tick(DeltaTime);
+		}
+	}
+};*/
+
+
+/*struct FAsteroid : public Daylon::FImagePlayObject
+{
+	FPowerup Powerup;
+
+	bool HasPowerup() const { return (Powerup.Kind != EPowerup::Nothing); }
+};*/
+
+
+/*
+struct FEnemyShip : public Daylon::FImagePlayObject
+{
+	float TimeRemainingToNextShot = 0.0f;
+	float TimeRemainingToNextMove = 0.0f;
+};
+*/

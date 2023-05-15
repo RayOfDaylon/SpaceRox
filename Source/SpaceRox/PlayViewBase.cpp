@@ -39,7 +39,7 @@ DEFINE_LOG_CATEGORY(LogGame)
 
 #define FEATURE_MULTIPLE_ENEMIES    1
 
-#define FEATURE_SCAVENGERS          0
+#define FEATURE_SCAVENGERS          1
 
 
 #if(DEBUG_MODULE == 1)
@@ -104,7 +104,7 @@ const float SmallEnemyTorpedoSpeed         = BigEnemyTorpedoSpeed * 1.1f;
 const float SmallEnemyReloadTime           = 1.0f;
 const float SmallEnemySpeed                = 300.0f;
 
-const float MaxTimeUntilNextScavenger      = 10.0f;
+const float MaxTimeUntilNextScavenger      = 7.0f;
 const float MaxScavengerSpeed              = 200.0f;
 
 const float ShieldPowerupIncrease          = 20.0f; // Number of seconds of shield life given when shield powerup gained.
@@ -771,49 +771,6 @@ void UPlayViewBase::TransitionToState(EGameState State)
 }
 
 
-void UPlayViewBase::SpawnExplosion
-(
-	const FVector2D& P,
-	float MinParticleSize,
-	float MaxParticleSize,
-	float MinParticleVelocity,
-	float MaxParticleVelocity,
-	float MinParticleLifetime,
-	float MaxParticleLifetime,
-	float FinalOpacity,
-	int32 NumParticles
-)
-{
-	auto Explosion = SNew(SDaylonParticlesWidget)
-		.MinParticleSize      (MinParticleSize)
-		.MaxParticleSize      (MaxParticleSize)
-		.MinParticleVelocity  (MinParticleVelocity)
-		.MaxParticleVelocity  (MaxParticleVelocity)
-		.MinParticleLifetime  (MinParticleLifetime)
-		.MaxParticleLifetime  (MaxParticleLifetime)
-		.FinalOpacity         (FinalOpacity)
-		.NumParticles         (NumParticles);
-
-	Explosion->SetVisibility(EVisibility::HitTestInvisible);
-	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
-
-	Explosion->SetParticleBrush(TorpedoBrush);
-
-	auto SlotArgs = RootCanvas->GetCanvasWidget()->AddSlot();
-
-	SlotArgs[Explosion];
-	SlotArgs.AutoSize(true);
-	SlotArgs.Alignment(FVector2D(0.5));
-
-	auto Margin = SlotArgs.GetSlot()->GetOffset();
-	Margin.Left = P.X;
-	Margin.Top  = P.Y;
-
-	SlotArgs.GetSlot()->SetOffset(Margin);
-
-	Explosions.Add(Explosion);
-}
-
 
 void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
@@ -1324,6 +1281,22 @@ void UPlayViewBase::StartWave()
 	SpawnAsteroids(NumAsteroids);
 
 	TimeUntilNextEnemyShip = MaxTimeUntilNextEnemyShip; 
+
+	
+	// Spawn extra powerups if requested.
+
+	int32 NumExtraPowerups = NumPowerupsOverride - Powerups.Num();
+
+	// Spawn extra powerups in a centered 1/2 box 
+	FBox2d Box(FVector2D(ViewportSize.X * 0.25, ViewportSize.Y * 0.25), 
+	           FVector2D(ViewportSize.X * 0.75, ViewportSize.Y * 0.75));
+
+	while(NumExtraPowerups-- > 0)
+	{
+		TSharedPtr<FPowerup> PowerupPtr;
+		SpawnPowerup(PowerupPtr, FVector2D(FMath::FRandRange(Box.Min.X, Box.Max.X), FMath::FRandRange(Box.Min.Y, Box.Max.Y)));
+		Powerups.Add(PowerupPtr);
+	}
 }
 
 
@@ -1441,6 +1414,56 @@ void UPlayViewBase::UpdatePowerups(float DeltaTime)
 }
 
 
+void UPlayViewBase::SpawnExplosion
+(
+	const FVector2D& P,
+	float MinParticleSize,
+	float MaxParticleSize,
+	float MinParticleVelocity,
+	float MaxParticleVelocity,
+	float MinParticleLifetime,
+	float MaxParticleLifetime,
+	float FinalOpacity,
+	int32 NumParticles
+)
+{
+	auto Explosion = SNew(SDaylonParticlesWidget)
+		.MinParticleSize      (MinParticleSize)
+		.MaxParticleSize      (MaxParticleSize)
+		.MinParticleVelocity  (MinParticleVelocity)
+		.MaxParticleVelocity  (MaxParticleVelocity)
+		.MinParticleLifetime  (MinParticleLifetime)
+		.MaxParticleLifetime  (MaxParticleLifetime)
+		.FinalOpacity         (FinalOpacity)
+		.NumParticles         (NumParticles);
+
+	Explosion->SetVisibility(EVisibility::HitTestInvisible);
+	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
+
+	Explosion->SetParticleBrush(TorpedoBrush);
+
+	auto SlotArgs = RootCanvas->GetCanvasWidget()->AddSlot();
+
+	SlotArgs[Explosion];
+	SlotArgs.AutoSize(true);
+	SlotArgs.Alignment(FVector2D(0.5));
+
+	auto Margin = SlotArgs.GetSlot()->GetOffset();
+	Margin.Left = P.X;
+	Margin.Top  = P.Y;
+
+	SlotArgs.GetSlot()->SetOffset(Margin);
+
+	Explosions.Add(Explosion);
+}
+
+
+void UPlayViewBase::SpawnExplosion(const FVector2D& P)
+{
+	SpawnExplosion(P, 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40);
+}
+
+
 void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 {
 	SpawnExplosion(P, 
@@ -1484,12 +1507,6 @@ void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
 	};
 
 	ScheduledTasks.Add(Task);
-}
-
-
-void UPlayViewBase::SpawnExplosion(const FVector2D& P)
-{
-	SpawnExplosion(P, 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40);
 }
 
 
@@ -1798,6 +1815,40 @@ void UPlayViewBase::KillEnemyShip(int32 EnemyIndex)
 }
 
 
+void UPlayViewBase::KillScavenger(int32 ScavengerIndex)
+{
+	if(!Scavengers.IsValidIndex(ScavengerIndex))
+	{
+		UE_LOG(LogGame, Error, TEXT("Invalid scavenger index %d"), ScavengerIndex);
+		return;
+	}
+
+	auto& Scavenger = *Scavengers[ScavengerIndex].Get();
+
+	// Have scavenger drop any powerups it was carrying.
+
+	// For now, place them in a line trailing away from the scavenger.
+	FVector2D Direction = Scavenger.Inertia;
+	Direction.Normalize();
+	Direction *= -1; // Start from the scavenger's position and work backwards.
+
+	for(int32 Index = 0; Index < Scavenger.AcquiredPowerups.Num(); Index++)
+	{
+		auto DroppedPowerupPtr = Scavenger.AcquiredPowerups[Index];
+		DroppedPowerupPtr->Show();
+		DroppedPowerupPtr->SetPosition(WrapPositionToViewport(Scavenger.GetPosition() + (Direction * DroppedPowerupPtr->GetRadius() * 2.5f * Index)));
+		Powerups.Add(DroppedPowerupPtr);
+	}
+	Scavenger.AcquiredPowerups.Empty();
+
+	SpawnExplosion(Scavenger.GetPosition());
+
+	// todo: have scavenger explosion sound
+	PlaySound(ExplosionSounds[0]);
+	RemoveScavenger(ScavengerIndex);
+}
+
+
 void UPlayViewBase::KillPowerup(int32 PowerupIndex)
 {
 	if(!Powerups.IsValidIndex(PowerupIndex))
@@ -2027,13 +2078,42 @@ void UPlayViewBase::CheckCollisions()
 				{
 					Torpedo.Kill();
 					IncreasePlayerScoreBy(Scavenger.Value);
-					SpawnExplosion(Scavenger.GetPosition());
-					PlaySound(ExplosionSounds[0]); // todo: maybe have scavenger explosion sound
-					RemoveScavenger(ScavengerIndex);
+					KillScavenger(ScavengerIndex);
 				}
 			}
 		}
 	} // next torpedo
+
+
+	for(int32 ScavengerIndex = Scavengers.Num() - 1; ScavengerIndex >= 0; ScavengerIndex--)
+	{
+		// Did a scavenger collide with a powerup?
+
+		auto& Scavenger = *Scavengers[ScavengerIndex].Get();
+
+		int32 PowerupIndex = 0;
+
+		for(auto PowerupPtr : Powerups)
+		{
+			const auto Distance = FVector2D::Distance(Scavenger.GetPosition(), PowerupPtr.Get()->GetPosition());
+					
+			if(Distance < Scavenger.GetRadius() + PowerupPtr.Get()->GetRadius())
+			{
+				// Collision occurred; acquire the powerup.
+				
+				PlaySound(GainDoubleGunPowerupSound);  // todo: play a scavenger-specific sound.
+
+				PowerupPtr.Get()->Hide();
+				Scavenger.AcquiredPowerups.Add(PowerupPtr);
+				Powerups.RemoveAt(PowerupIndex);
+
+				Scavenger.CurrentTarget.Reset();
+
+				break;
+			}
+			PowerupIndex++;
+		}
+	}
 
 
 	// Check if player ship collided with a rock
@@ -2078,6 +2158,27 @@ void UPlayViewBase::CheckCollisions()
 
 				IncreasePlayerScoreBy(EnemyShip.Value);
 				KillEnemyShip(EnemyIndex);
+
+				ProcessPlayerCollision();
+
+				break;
+			}
+		}
+	}
+
+	if(IsPlayerPresent())
+	{
+		for(int32 ScavengerIndex = Scavengers.Num() - 1; ScavengerIndex >= 0; ScavengerIndex--)
+		{
+			auto& Scavenger = *Scavengers[ScavengerIndex].Get();
+
+			if (UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Scavenger.OldPosition, Scavenger.GetRadius())
+				|| FVector2D::Distance(PlayerShip->UnwrappedNewPosition, Scavenger.UnwrappedNewPosition) < Scavenger.GetRadius() + PlayerShip->GetRadius())
+			{
+				// Enemy ship collided with player ship.
+
+				IncreasePlayerScoreBy(Scavenger.Value);
+				KillScavenger(ScavengerIndex);
 
 				ProcessPlayerCollision();
 
@@ -2134,11 +2235,11 @@ void UPlayViewBase::CheckCollisions()
 
 		int32 AsteroidIndex = -1; 
 
-		for(auto& Elem : Asteroids)
+		for(auto& AsteroidPtr : Asteroids)
 		{
 			AsteroidIndex++;
 
-			auto& Asteroid = *Elem.Get();
+			auto& Asteroid = *AsteroidPtr.Get();
 
 			if(UDaylonUtils::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, EnemyShip.GetPosition(), EnemyShip.GetRadius())
 				|| FVector2D::Distance(WrapPositionToViewport(EnemyShip.UnwrappedNewPosition), Asteroid.OldPosition) < Asteroid.GetRadius() + EnemyShip.GetRadius())
@@ -2146,6 +2247,31 @@ void UPlayViewBase::CheckCollisions()
 				// Enemy ship collided with a rock.
 
 				KillEnemyShip(EnemyIndex);
+				KillAsteroid(AsteroidIndex, DontCreditPlayerForKill);
+
+				break;
+			}
+		}
+	}
+
+	for(int32 ScavengerIndex = Scavengers.Num() - 1; ScavengerIndex >= 0; ScavengerIndex--)
+	{
+		auto& Scavenger = *Scavengers[ScavengerIndex].Get();
+
+		int32 AsteroidIndex = -1; 
+
+		for(auto& AsteroidPtr : Asteroids)
+		{
+			AsteroidIndex++;
+
+			auto& Asteroid = *AsteroidPtr.Get();
+
+			if(UDaylonUtils::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, Scavenger.GetPosition(), Scavenger.GetRadius())
+				|| FVector2D::Distance(WrapPositionToViewport(Scavenger.UnwrappedNewPosition), Asteroid.OldPosition) < Asteroid.GetRadius() + Scavenger.GetRadius())
+			{
+				// Scavenger collided with a rock.
+
+				KillScavenger(ScavengerIndex);
 				KillAsteroid(AsteroidIndex, DontCreditPlayerForKill);
 
 				break;
@@ -2271,6 +2397,11 @@ void UPlayViewBase::RemoveEnemyShips()
 	while(!EnemyShips.IsEmpty())
 	{
 		RemoveEnemyShip(0);
+	}
+
+	while(!Scavengers.IsEmpty())
+	{
+		RemoveScavenger(0);
 	}
 }
 
@@ -2476,6 +2607,7 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 		SmallEnemyShipSoundLoop.Tick(DeltaTime);
 	}
 
+
 #if(FEATURE_SCAVENGERS == 1)
 	
 	for(int32 ScavengerIndex = Scavengers.Num() - 1; ScavengerIndex >= 0; ScavengerIndex--)
@@ -2484,20 +2616,70 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 
 		Scavenger.Update(DeltaTime);
 
-		// todo: Scavengers go after powerups. For now, just glide across the screen.
 
-		Scavenger.Move(DeltaTime, WrapPositionToViewport);
-
-		// If we've reached the opposite side of the viewport, remove us.
-		const auto P2 = WrapPositionToViewport(Scavenger.UnwrappedNewPosition);
-
-		if(P2.X != Scavenger.UnwrappedNewPosition.X)
+		if(Scavenger.CurrentTarget.IsValid())
 		{
-			// Ship tried to wrap around horizontally.
-			RemoveScavenger(ScavengerIndex);
-			continue;
+			// Keep moving toward target.
+			Scavenger.Move(DeltaTime, WrapPositionToViewport);
 		}
-	}
+		else
+		{
+			// No current target.
+
+			if(!Powerups.IsEmpty())
+			{
+				// Powerups exist, assign ourselves one as a target.
+				// Pick the one closest to us.
+				// Note that we don't care if multiple scavengers target the same powerup.
+
+				double ShortestDistance = 1.0e7;
+				int32 NearestPowerupIndex = 0;
+				int32 Index = 0;
+
+				for(auto PowerupPtr : Powerups)
+				{
+					const auto Distance = FVector2D::Distance(Scavenger.GetPosition(), PowerupPtr.Get()->GetPosition());
+					
+					if(Distance < ShortestDistance)
+					{
+						ShortestDistance = Distance;
+						NearestPowerupIndex = Index;
+					}
+					Index++;
+				}
+
+				Scavenger.CurrentTarget = Powerups[NearestPowerupIndex];
+
+				// Point the scavenger at the powerup.
+				Scavenger.Inertia = (Powerups[NearestPowerupIndex].Get()->GetPosition() - Scavenger.GetPosition());
+				Scavenger.Inertia.Normalize();
+				Scavenger.Inertia *= MaxScavengerSpeed;
+				Scavenger.SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger.Inertia));
+			}
+			else
+			{
+				// No target exists and none are available. Just move flat towards edge of sector.
+				if(Scavenger.Inertia.Y != 0)
+				{
+					Scavenger.Inertia = FVector2D(1, 0) * MaxScavengerSpeed;
+					Scavenger.SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger.Inertia));
+				}
+
+				Scavenger.Move(DeltaTime, WrapPositionToViewport);
+
+				// If we've reached the opposite side of the viewport, remove us.
+				const auto P2 = WrapPositionToViewport(Scavenger.UnwrappedNewPosition);
+
+				if(P2.X != Scavenger.UnwrappedNewPosition.X)
+				{
+					RemoveScavenger(ScavengerIndex);
+				}
+			}
+		}
+	} // for all scavengers
+
+
+	// If there are no scavengers, spawn one if enough time has passed.
 
 	if(Scavengers.IsEmpty())
 	{
@@ -2509,8 +2691,9 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 
 			auto Scavenger = FScavenger::Create(ScavengerAtlas, FVector2D(32));
 
-			Scavenger->SetPosition(FVector2D(0, FMath::RandRange(100, 600)));
+			Scavenger->SetPosition(FVector2D(0, FMath::FRandRange(ViewportSize.Y * 0.1, ViewportSize.Y * 0.9)));
 			Scavenger->Inertia.Set(MaxScavengerSpeed, 0);
+			Scavenger->SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger->Inertia));
 
 			Scavengers.Add(Scavenger);
 		}
