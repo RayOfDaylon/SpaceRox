@@ -2,7 +2,7 @@ Documentation for DaylonGraphicsLibrary plug-in for Unreal Engine
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox (inside Plugins folder)
-May 13, 2023
+May 16, 2023
 
 
 
@@ -49,6 +49,9 @@ containing several static functions.
                           and a target inertia, returns the projectile inertia that will 
                           make it intersect the target.
 
+  RandomPtWithinBox       Given an FBox2d, returns an FVector2D that is a random 
+                          point within it.
+
   GetWidgetDirectionVector    Returns the unit direction vector for a widget's rotation.
                               The rotation is encoded in the widget's render transform.
 
@@ -57,6 +60,7 @@ containing several static functions.
   DoesLineSegmentIntersectTriangle    Returns true if a line intersects a triangle.
 
   DoesTriangleIntersectTriangle       Returns true if two triangles intersect.
+
 
 
 

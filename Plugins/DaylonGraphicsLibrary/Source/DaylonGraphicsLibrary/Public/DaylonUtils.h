@@ -62,6 +62,7 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary
 	static bool        DoesLineSegmentIntersectCircle       (const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R);
 	static bool        DoesLineSegmentIntersectTriangle     (const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3]);
 	static bool        DoesTriangleIntersectTriangle        (const FVector2D TriA[3], const FVector2D TriB[3]);
+	static FVector2D   RandomPtWithinBox                    (const FBox2d& Box);
 
 	static FVector2D   GetWidgetDirectionVector             (const UWidget* Widget);
 	static void        Show                                 (UWidget*, bool Visible = true);

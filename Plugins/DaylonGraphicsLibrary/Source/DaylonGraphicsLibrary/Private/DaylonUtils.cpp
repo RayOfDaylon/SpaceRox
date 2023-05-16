@@ -240,6 +240,12 @@ FVector2D UDaylonUtils::ComputeFiringSolution(const FVector2D& LaunchP, float To
 }
 
 
+FVector2D UDaylonUtils::RandomPtWithinBox(const FBox2d& Box)
+{
+	return FVector2D(FMath::FRandRange(Box.Min.X, Box.Max.X), FMath::FRandRange(Box.Min.Y, Box.Max.Y));
+}
+
+
 FVector2D UDaylonUtils::GetWidgetDirectionVector(const UWidget* Widget)
 {
 	if (Widget == nullptr)
@@ -249,6 +255,9 @@ FVector2D UDaylonUtils::GetWidgetDirectionVector(const UWidget* Widget)
 
 	return UDaylonUtils::AngleToVector2D(Widget->GetRenderTransformAngle());
 }
+
+
+
 
 
 void UDaylonUtils::Show(UWidget* Widget, bool Visible)

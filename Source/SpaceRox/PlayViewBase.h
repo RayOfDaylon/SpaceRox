@@ -42,7 +42,8 @@ enum class EPowerup : uint8
 {
 	Nothing     = 0,
 	DoubleGuns,
-	Shields
+	Shields,
+	Invincibility
 };
 
 
@@ -109,6 +110,7 @@ class FPlayerShip : public Daylon::SpritePlayObject2D
 	bool   IsSpawning;
 	int32  DoubleShotsLeft;
 	float  ShieldsLeft;
+	float  InvincibilityLeft;
 
 	static TSharedPtr<FPlayerShip> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S, float RadiusFactor)
 	{
@@ -319,6 +321,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* ShieldPowerupAtlas;
 
+	// The animation flipbook for the asteroids' invincibility powerup badge 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	UDaylonSpriteWidgetAtlas* InvincibilityPowerupAtlas;
+
 	// The animation flipbook for the scavenger enemy 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* ScavengerAtlas;
@@ -399,6 +405,12 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UImage* DoubleGunLabel;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UTextBlock* InvincibilityReadout;
+
+	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	UImage* InvincibilityLabel;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UVerticalBox* HighScoresContent;
@@ -492,6 +504,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      UpdatePowerupReadout       (EPowerup PowerupKind);
 	void      AdjustDoubleShotsLeft      (int32 Amount);
 	void      AdjustShieldsLeft          (float Amount);
+	void      AdjustInvincibilityLeft    (float Amount);
 
 	bool      IsPlayerPresent            () const;
 	bool      IsWaitingToSpawnPlayer     () const;

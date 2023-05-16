@@ -109,6 +109,7 @@ const float MaxScavengerSpeed              = 200.0f;
 
 const float ShieldPowerupIncrease          = 20.0f; // Number of seconds of shield life given when shield powerup gained.
 const int32 DoubleGunsPowerupIncrease      = 100;   // Number of double shots given when double guns powerup gained.
+const float MaxInvincibilityTime           = 30.0f; // Number of seconds player ship is invincible after powerup gained.       
 
 const float ShieldBonkDamage               = 4.0f;  // Number of seconds to take from shield life when shields impact something.
 
@@ -224,10 +225,11 @@ void UPlayViewBase::CreatePlayerShip()
 
 void UPlayViewBase::InitializePlayerShip()
 {
-	PlayerShip->IsUnderThrust   = false;
-	PlayerShip->IsSpawning      = false;
-	PlayerShip->DoubleShotsLeft = bGodMode ? 10000 : 0;
-	PlayerShip->ShieldsLeft     = 0.0f;
+	PlayerShip->IsUnderThrust      = false;
+	PlayerShip->IsSpawning         = false;
+	PlayerShip->DoubleShotsLeft    = bGodMode ? 10000 : 0;
+	PlayerShip->ShieldsLeft        = 0.0f;
+	PlayerShip->InvincibilityLeft  = 0.0f;
 
 	PlayerShip->Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
 	PlayerShip->Hide   ();
@@ -665,6 +667,8 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			UpdatePowerupReadout(EPowerup::DoubleGuns);
 			UpdatePowerupReadout(EPowerup::Shields);
+			UpdatePowerupReadout(EPowerup::Invincibility);
+
 
 			PlayerShip->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
 
@@ -801,42 +805,41 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			// Fade in the title graphic and version number while explosions rage
 
-			if(TimeUntilIntroStateEnds > 0.0f)
 			{
-				TitleGraphic->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 1.5f) / MaxIntroStateLifetime));
+				static FBox2d Box(FVector2D(480, 300), FVector2D(1500, 550));
 
-				VersionReadout->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 3.0f) / MaxIntroStateLifetime));
-
-				ExploCountAge -= InDeltaTime;
-				
-				if(ExploCountAge <= 0.0f)
+				if(TimeUntilIntroStateEnds > 0.0f)
 				{
-					ExploCountAge = 0.1f;
+					TitleGraphic->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 1.5f) / MaxIntroStateLifetime));
 
-					const FVector2D P(
-						FMath::FRandRange(480.0, 1500.0),
-						FMath::FRandRange(300.0, 550.0)
-					);
+					VersionReadout->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 3.0f) / MaxIntroStateLifetime));
 
-					SpawnExplosion(
-						P,
-						4.5f,   // MinParticleSize
-						9.0f,   // MaxParticleSize
-						45.0f,  // MinParticleVelocity
-						240.0f, // MaxParticleVelocity
-						0.5f,   // MinParticleLifetime
-						4.0f,   // MaxParticleLifetime
-						0.25f,  // FinalOpacity
-						80      // NumParticles
-						);
-
-					if(FMath::RandRange(0, 5) == 0)
+					ExploCountAge -= InDeltaTime;
+				
+					if(ExploCountAge <= 0.0f)
 					{
-						PlaySound(PlayerShipDestroyedSound);
-					}
-					else
-					{
-						PlaySound(ExplosionSounds[FMath::RandRange(0, ExplosionSounds.Num() - 1)]);
+						ExploCountAge = 0.1f;
+
+						SpawnExplosion(
+							UDaylonUtils::RandomPtWithinBox(Box),
+							4.5f,   // MinParticleSize
+							9.0f,   // MaxParticleSize
+							45.0f,  // MinParticleVelocity
+							240.0f, // MaxParticleVelocity
+							0.5f,   // MinParticleLifetime
+							4.0f,   // MaxParticleLifetime
+							0.25f,  // FinalOpacity
+							80      // NumParticles
+							);
+
+						if(FMath::RandRange(0, 5) == 0)
+						{
+							PlaySound(PlayerShipDestroyedSound);
+						}
+						else
+						{
+							PlaySound(ExplosionSounds[FMath::RandRange(0, ExplosionSounds.Num() - 1)]);
+						}
 					}
 				}
 			}
@@ -860,8 +863,13 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			if(IsPlayerPresent())
 			{
-				UpdatePlayerRotation  (InDeltaTime);
-				UpdatePlayerShip      (InDeltaTime);
+				UpdatePlayerRotation    (InDeltaTime);
+				UpdatePlayerShip        (InDeltaTime);
+
+				if(PlayerShip->InvincibilityLeft > 0.0f)
+				{
+					AdjustInvincibilityLeft(-InDeltaTime);
+				}
 			}
 
 			UpdateEnemyShips          (InDeltaTime);
@@ -1157,14 +1165,16 @@ void UPlayViewBase::RemoveAsteroids()
 
 void UPlayViewBase::SpawnPowerup(TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P)
 {
-	auto PowerupKind = FMath::RandBool() ? EPowerup::DoubleGuns : EPowerup::Shields;
+	auto PowerupKind = (EPowerup)FMath::RandRange(1, 3);
 
 	UDaylonSpriteWidgetAtlas* Atlas = nullptr;
 
 	switch(PowerupKind)
 	{
-		case EPowerup::DoubleGuns: Atlas = DoubleGunsPowerupAtlas; break;
-		case EPowerup::Shields:    Atlas = ShieldPowerupAtlas;     break;
+		case EPowerup::DoubleGuns:    Atlas = DoubleGunsPowerupAtlas;    break;
+		case EPowerup::Shields:       Atlas = ShieldPowerupAtlas;        break;
+		// todo: this powerup is special and should be scarcer, even available only after a certain score or wave reached.
+		case EPowerup::Invincibility: Atlas = InvincibilityPowerupAtlas; break;
 	}
 
 	check(Atlas);
@@ -1294,7 +1304,9 @@ void UPlayViewBase::StartWave()
 	while(NumExtraPowerups-- > 0)
 	{
 		TSharedPtr<FPowerup> PowerupPtr;
-		SpawnPowerup(PowerupPtr, FVector2D(FMath::FRandRange(Box.Min.X, Box.Max.X), FMath::FRandRange(Box.Min.Y, Box.Max.Y)));
+
+		SpawnPowerup(PowerupPtr, UDaylonUtils::RandomPtWithinBox(Box));
+
 		Powerups.Add(PowerupPtr);
 	}
 }
@@ -1914,6 +1926,11 @@ void UPlayViewBase::UpdatePowerupReadout(EPowerup PowerupKind)
 			Str = FString::Printf(TEXT("%d"), FMath::RoundToInt(PlayerShip->ShieldsLeft));
 			PlayerShieldReadout->SetText(FText::FromString(Str));
 			break;
+
+		case EPowerup::Invincibility:
+			Str = FString::Printf(TEXT("%d"), FMath::RoundToInt(PlayerShip->InvincibilityLeft));
+			InvincibilityReadout->SetText(FText::FromString(Str));
+			break;
 	}
 }
 
@@ -1937,21 +1954,36 @@ void UPlayViewBase::AdjustShieldsLeft(float Amount)
 }
 
 
+void UPlayViewBase::AdjustInvincibilityLeft(float Amount)
+{
+	if(PlayerShip->InvincibilityLeft < 0.0f)
+	{
+		PlayerShip->InvincibilityLeft = 0.0f;
+	}
+
+	PlayerShip->InvincibilityLeft = FMath::Max(0.0f, PlayerShip->InvincibilityLeft + Amount);
+	UpdatePowerupReadout(EPowerup::Invincibility);
+}
+
+
 void UPlayViewBase::ProcessPlayerCollision()
 {
-	if(PlayerShield->IsVisible() || bGodMode)
+	check(PlayerShip);
+
+	if(bGodMode || PlayerShip->InvincibilityLeft > 0.0f)
 	{
 		PlaySound(ShieldBonkSound);
+		return;
+	}
 
-		if(PlayerShield->IsVisible())
-		{
-			AdjustShieldsLeft(-ShieldBonkDamage);
-		}
-	}
-	else 
+	if(PlayerShield->IsVisible())
 	{
-		KillPlayerShip();
+		AdjustShieldsLeft(-ShieldBonkDamage);
+		PlaySound(ShieldBonkSound);
+		return;
 	}
+
+	KillPlayerShip();
 }
 
 
@@ -2217,6 +2249,13 @@ void UPlayViewBase::CheckCollisions()
 						PlaySound(GainShieldPowerupSound);
 						PlayAnimation(ShieldReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
 						break;
+
+					case EPowerup::Invincibility:
+						PlaySound(GainShieldPowerupSound); // todo: specific sound
+						AdjustInvincibilityLeft(MaxInvincibilityTime);
+						// todo: flash the invincibility readout
+						//PlayAnimation(InvincibilityReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
+						break;
 				}
 				
 				KillPowerup(PowerupIndex);
@@ -2355,11 +2394,7 @@ void UPlayViewBase::RemovePowerup(int32 PowerupIndex)
 		return;
 	}
 
-	//auto& Powerup = Powerups[PowerupIndex];
-
 	Daylon::Destroy(Powerups[PowerupIndex]);
-
-	//Powerup.DestroyWidget();
 
 	Powerups.RemoveAt(PowerupIndex);
 }
