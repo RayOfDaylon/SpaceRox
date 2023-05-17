@@ -576,10 +576,13 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (MenuContent);
 			UDaylonUtils::Hide (PlayerScoreReadout);
 			UDaylonUtils::Hide (PlayerShipsReadout);
-			UDaylonUtils::Hide (PlayerShieldReadout);
-			UDaylonUtils::Hide (ShieldLabel);
-			UDaylonUtils::Hide (DoubleGunReadout);
-			UDaylonUtils::Hide (DoubleGunLabel);
+			UDaylonUtils::Hide (PowerupReadouts);
+			//UDaylonUtils::Hide (PlayerShieldReadout);
+			//UDaylonUtils::Hide (InvincibilityReadout);
+			//UDaylonUtils::Hide (InvincibilityLabel);
+			//UDaylonUtils::Hide (ShieldLabel);
+			//UDaylonUtils::Hide (DoubleGunReadout);
+			//UDaylonUtils::Hide (DoubleGunLabel);
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Show (IntroContent, InitialDelay == 0.0f);
 
@@ -601,10 +604,13 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (HighScoresContent);
 			UDaylonUtils::Hide (PlayerScoreReadout);
 			UDaylonUtils::Hide (PlayerShipsReadout);
-			UDaylonUtils::Hide (PlayerShieldReadout);
-			UDaylonUtils::Hide (ShieldLabel);
-			UDaylonUtils::Hide (DoubleGunReadout);
-			UDaylonUtils::Hide (DoubleGunLabel);
+			UDaylonUtils::Hide (PowerupReadouts);
+			//UDaylonUtils::Hide (PlayerShieldReadout);
+			//UDaylonUtils::Hide (InvincibilityReadout);
+			//UDaylonUtils::Hide (InvincibilityLabel);
+			//UDaylonUtils::Hide (ShieldLabel);
+			//UDaylonUtils::Hide (DoubleGunReadout);
+			//UDaylonUtils::Hide (DoubleGunLabel);
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Hide (HighScoreEntryContent);
 			
@@ -660,10 +666,13 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			UDaylonUtils::Show  (PlayerScoreReadout);
 			UDaylonUtils::Show  (PlayerShipsReadout);
-			UDaylonUtils::Show  (PlayerShieldReadout);
-			UDaylonUtils::Show  (ShieldLabel);
-			UDaylonUtils::Show  (DoubleGunReadout);
-			UDaylonUtils::Show  (DoubleGunLabel);
+			UDaylonUtils::Show  (PowerupReadouts);
+			//UDaylonUtils::Show  (PlayerShieldReadout);
+			//UDaylonUtils::Show  (InvincibilityReadout);
+			//UDaylonUtils::Show  (InvincibilityLabel);
+			//UDaylonUtils::Show  (ShieldLabel);
+			//UDaylonUtils::Show  (DoubleGunReadout);
+			//UDaylonUtils::Show  (DoubleGunLabel);
 
 			UpdatePowerupReadout(EPowerup::DoubleGuns);
 			UpdatePowerupReadout(EPowerup::Shields);
@@ -1233,29 +1242,34 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 		const auto Inertia = UDaylonUtils::RandVector2D() * FMath::Lerp(MinAsteroidSpeed, MaxAsteroidSpeed, FMath::FRand());
 #endif
 
-		FSlateBrush AsteroidBrush;
+		//FSlateBrush AsteroidBrush;
+		UDaylonSpriteWidgetAtlas* AsteroidAtlas = nullptr;
 		int32 AsteroidValue = 0;
 
 		switch(AsteroidSize)
 		{
 			case 0:
-				AsteroidBrush = BigRockBrushes[FMath::RandRange(0, 3)]; 
+				//AsteroidBrush = BigRockBrushes[FMath::RandRange(0, 3)]; 
+				AsteroidAtlas = LargeRockAtlas;
 				AsteroidValue = ValueBigAsteroid;
 
 				break;
 
 			case 1: 
-				AsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
+				//AsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
+				AsteroidAtlas = MediumRockAtlas;
 				AsteroidValue = ValueMediumAsteroid;
 				break;
 
 			case 2: 
-				AsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
+				//AsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
+				AsteroidAtlas = SmallRockAtlas;
 				AsteroidValue = ValueSmallAsteroid;
 				break;
 		}
 
-		auto Asteroid = FAsteroid::Create(AsteroidBrush);
+		//auto Asteroid = FAsteroid::Create(AsteroidBrush);
+		auto Asteroid = FAsteroid::Create(AsteroidAtlas);
 		Asteroid->Value = AsteroidValue;
 		Asteroid->LifeRemaining = 1.0f;
 		Asteroid->SpinSpeed = FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
@@ -1562,131 +1576,6 @@ void UPlayViewBase::KillPlayerShip()
 	// ProcessPlayerShipSpawn() will handle the wait til next spawn and transition to game over, if needed. 
 }
 
-#if 0
-void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
-{
-	// Kill the rock. Split it if isn't a small rock.
-
-	if(!Asteroids.IsValidIndex(AsteroidIndex))
-	{
-		return;
-	}
-
-	auto& Asteroid = *Asteroids[AsteroidIndex].Get();
-
-	if(KilledByPlayer)
-	{
-		IncreasePlayerScoreBy(Asteroid.Value);
-	}
-
-	SpawnExplosion(Asteroid.UnwrappedNewPosition);
-
-	int32 SoundIndex = 0;
-	
-	if(Asteroid.Value == ValueMediumAsteroid)
-	{
-		SoundIndex = 1;
-	}
-	else if(Asteroid.Value == ValueSmallAsteroid)
-	{
-		SoundIndex = 2;
-	}
-
-	if(ExplosionSounds.IsValidIndex(SoundIndex))
-	{
-		PlaySound(ExplosionSounds[SoundIndex]);
-	}
-
-
-	// If asteroid was small, just delete it.
-	if(Asteroid.Value == ValueSmallAsteroid)
-	{
-		// Release any powerup the asteroid was holding.
-
-		if(Asteroid.HasPowerup())
-		{
-			auto PowerupIndex = Powerups.Add(Asteroid.Powerup);
-			Asteroid.Powerup.Kind = EPowerup::Nothing;
-			if(PowerupsCanMove)
-			{
-				Powerups[PowerupIndex].Inertia = Asteroid.Inertia;
-			}
-		}
-
-		RemoveAsteroid(AsteroidIndex);
-
-		return;
-	}
-
-	// Asteroid was not small, so split it up.
-	// Apparently we always split into two children.
-	// For efficiency, we reformulate the parent rock into one of the kids.
-	// For the new inertias, we want the kids to generally be faster but 
-	// once in a while, one of the kids can be slower.
-
-	FAsteroid NewAsteroid;
-
-	const bool BothKidsFast = FMath::RandRange(0, 10) < 9;
-
-	NewAsteroid.Inertia = MakeInertia(Asteroid.Inertia, MinAsteroidSplitAngle, MaxAsteroidSplitAngle);
-	NewAsteroid.Inertia *= FMath::RandRange(1.2f, 3.0f);
-
-	NewAsteroid.LifeRemaining = 1.0f;
-	NewAsteroid.SpinSpeed     = Asteroid.SpinSpeed * AsteroidSpinScale;// FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
-
-
-	//NewAsteroid.Widget = UDaylonUtils::MakeWidget<UImage>();
-	//NewAsteroid.Widget->SetVisibility(ESlateVisibility::HitTestInvisible);
-	//NewAsteroid.Widget->SetRenderTransformPivot(FVector2D(0.5f));
-
-	Asteroid.LifeRemaining = 1.0f;
-	Asteroid.Inertia = MakeInertia(Asteroid.Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
-
-	if(BothKidsFast)
-	{
-		Asteroid.Inertia *= FMath::RandRange(1.2f, 3.0f);
-	}
-	else
-	{
-		Asteroid.Inertia *= FMath::RandRange(0.25f, 1.0f);
-	}
-
-	FSlateBrush NewAsteroidBrush;
-
-	switch(Asteroid.Value)
-	{
-		case ValueBigAsteroid:
-			NewAsteroid.Value = ValueMediumAsteroid;
-			NewAsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
-			Asteroid.Value = ValueMediumAsteroid;
-			Asteroid.SetBrush(MediumRockBrushes[FMath::RandRange(0, 3)]); 
-			break;
-
-		case ValueMediumAsteroid:
-			NewAsteroid.Value = ValueSmallAsteroid;
-			NewAsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
-			Asteroid.Value = ValueSmallAsteroid;
-			Asteroid.SetBrush(SmallRockBrushes[FMath::RandRange(0, 3)]); 
-			break;
-	}
-
-	// Update size of existing rock.
-	Asteroid.UpdateWidgetSize();
-
-	Asteroid.SpinSpeed *= AsteroidSpinScale;
-
-	NewAsteroid.Create(NewAsteroidBrush, 0.5f);
-	NewAsteroid.Show();
-
-	NewAsteroid.OldPosition = 
-	NewAsteroid.UnwrappedNewPosition = Asteroid.UnwrappedNewPosition;
-	NewAsteroid.SetPosition(NewAsteroid.UnwrappedNewPosition);
-
-	// Do this last since the play object is copied.
-	Asteroids.Add(NewAsteroid);
-}
-#endif
-
 
 void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 {
@@ -1751,24 +1640,34 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	// For the new inertias, we want the kids to generally be faster but 
 	// once in a while, one of the kids can be slower.
 
-	FSlateBrush NewAsteroidBrush;
+	//FSlateBrush NewAsteroidBrush;
+	UDaylonSpriteWidgetAtlas* NewAsteroidAtlas = nullptr;
 
 	switch(Asteroid.Value)
 	{
 		case ValueBigAsteroid:
-			NewAsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
+			//NewAsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
+			NewAsteroidAtlas = MediumRockAtlas;
 			Asteroid.Value = ValueMediumAsteroid;
-			Asteroid.SetBrush(MediumRockBrushes[FMath::RandRange(0, 3)]); 
+			//Asteroid.SetBrush(MediumRockBrushes[FMath::RandRange(0, 3)]); 
+			Asteroid.SetAtlas(MediumRockAtlas->Atlas);
 			break;
 
 		case ValueMediumAsteroid:
-			NewAsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
+			//NewAsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
+			NewAsteroidAtlas = SmallRockAtlas;
 			Asteroid.Value = ValueSmallAsteroid;
-			Asteroid.SetBrush(SmallRockBrushes[FMath::RandRange(0, 3)]); 
+			//Asteroid.SetBrush(SmallRockBrushes[FMath::RandRange(0, 3)]); 
+			Asteroid.SetAtlas(SmallRockAtlas->Atlas);
 			break;
 	}
 
-	auto NewAsteroidPtr = FAsteroid::Create(NewAsteroidBrush);
+	Asteroid.SetSize(Asteroid.GetSize() / 2);
+	Asteroid.SetCurrentCel(FMath::RandRange(0, NewAsteroidAtlas->Atlas.NumCels - 1));
+
+
+	//auto NewAsteroidPtr = FAsteroid::Create(NewAsteroidBrush);
+	auto NewAsteroidPtr = FAsteroid::Create(NewAsteroidAtlas);
 	auto& NewAsteroid   = *NewAsteroidPtr.Get();
 
 	NewAsteroid.Value = Asteroid.Value;
@@ -2253,8 +2152,7 @@ void UPlayViewBase::CheckCollisions()
 					case EPowerup::Invincibility:
 						PlaySound(GainShieldPowerupSound); // todo: specific sound
 						AdjustInvincibilityLeft(MaxInvincibilityTime);
-						// todo: flash the invincibility readout
-						//PlayAnimation(InvincibilityReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
+						PlayAnimation(InvincibilityReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
 						break;
 				}
 				

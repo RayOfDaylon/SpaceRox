@@ -127,8 +127,6 @@ class FPlayerShip : public Daylon::SpritePlayObject2D
 };
 
 
-
-
 class FPowerup : public Daylon::SpritePlayObject2D
 {
 	public:
@@ -141,22 +139,24 @@ class FPowerup : public Daylon::SpritePlayObject2D
 };
 
 
-class FAsteroid : public Daylon::ImagePlayObject2D
+class FAsteroid : public Daylon::SpritePlayObject2D
 {
 	public:
 
-	//FPowerup Powerup;
 	TSharedPtr<FPowerup> Powerup;
 
 	bool HasPowerup() const { return (Powerup && Powerup->Kind != EPowerup::Nothing); }
 
-	static TSharedPtr<FAsteroid> Create(FSlateBrush& Brush)
+	static TSharedPtr<FAsteroid> Create(UDaylonSpriteWidgetAtlas* Atlas)
 	{
 		auto Widget = SNew(FAsteroid);
 
-		Daylon::FinishCreating<SImage>(Widget, 0.5f);
+		Daylon::FinishCreating<SDaylonSpriteWidget>(Widget, 0.5f);
 
-		Widget->SetBrush(Brush);
+		Widget->SetAtlas(Atlas->Atlas);
+		Widget->SetSize(Atlas->Atlas.AtlasBrush.GetImageSize() / 2);
+		Widget->UpdateWidgetSize();
+		Widget->SetCurrentCel(FMath::RandRange(0, Atlas->Atlas.NumCels - 1));
 
 		return Widget;
 	}
@@ -301,14 +301,15 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	FSlateBrush ShieldBrush;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	TArray<FSlateBrush> BigRockBrushes;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	TArray<FSlateBrush> MediumRockBrushes;
+	UDaylonSpriteWidgetAtlas* SmallRockAtlas;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	TArray<FSlateBrush> SmallRockBrushes;
+	UDaylonSpriteWidgetAtlas* MediumRockAtlas;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	UDaylonSpriteWidgetAtlas* LargeRockAtlas;
 
 
 	// -- USpriteWidgetAtlas animated textures -------------------------------------
@@ -395,22 +396,16 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UHorizontalBox* PlayerShipsReadout;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UTextBlock* PlayerShieldReadout;
+	UVerticalBox* PowerupReadouts;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UImage* ShieldLabel;
+	UTextBlock* PlayerShieldReadout;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UTextBlock* DoubleGunReadout;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UImage* DoubleGunLabel;
-
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UTextBlock* InvincibilityReadout;
-
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UImage* InvincibilityLabel;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UVerticalBox* HighScoresContent;
@@ -441,6 +436,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	UWidgetAnimation* DoubleGunReadoutFlash;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* InvincibilityReadoutFlash;
 
 
 	// -- Blueprint accessible properties --------------------------------------------------
@@ -545,6 +543,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	TSharedPtr<FPlayerShip>                    PlayerShip;
 	TSharedPtr<Daylon::ImagePlayObject2D>      PlayerShield;
+	TSharedPtr<Daylon::ImagePlayObject2D>      PlayerInvincibilityShield; // todo: implement
 
 	TArray<TSharedPtr<FAsteroid>>              Asteroids;
 	TArray<TSharedPtr<FEnemyShip>>             EnemyShips;
