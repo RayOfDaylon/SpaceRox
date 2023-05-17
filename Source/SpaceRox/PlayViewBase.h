@@ -301,6 +301,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	FSlateBrush ShieldBrush;
 
+	// The way the player ship looks when invincible
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	FSlateBrush InvincibilityShieldBrush;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* SmallRockAtlas;
@@ -466,7 +470,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      InitializePlayerShipCount  ();
 	void      InitializeVariables        ();
 	void      InitializePlayerShip       ();
-	void      InitializePlayerShield     ();
+	void      InitializePlayerDefenses   ();
 	void      CreatePlayerShip           ();
 	void      CreateTorpedos             ();
 

@@ -236,7 +236,7 @@ void UPlayViewBase::InitializePlayerShip()
 }
 
 
-void UPlayViewBase::InitializePlayerShield()
+void UPlayViewBase::InitializePlayerDefenses()
 {
 	PlayerShield = SNew(Daylon::ImagePlayObject2D);
 
@@ -247,6 +247,16 @@ void UPlayViewBase::InitializePlayerShield()
 
 	PlayerShield->Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
 	PlayerShield->Hide   ();
+
+
+	PlayerInvincibilityShield = SNew(Daylon::ImagePlayObject2D);
+
+	Daylon::FinishCreating<SImage>(PlayerInvincibilityShield, 0.5f);
+
+	PlayerInvincibilityShield->SetBrush(InvincibilityShieldBrush);
+	PlayerInvincibilityShield->UpdateWidgetSize();
+	PlayerInvincibilityShield->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
+	PlayerInvincibilityShield->Hide();
 }
 
 
@@ -391,6 +401,12 @@ void UPlayViewBase::OnAbortButtonPressed()
 	{
 		Daylon::Destroy(PlayerShield);
 		PlayerShield.Reset();
+	}
+
+	if(PlayerInvincibilityShield)
+	{
+		Daylon::Destroy(PlayerInvincibilityShield);
+		PlayerInvincibilityShield.Reset();
 	}
 
 	TransitionToState(EGameState::MainMenu);
@@ -577,12 +593,6 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (PlayerScoreReadout);
 			UDaylonUtils::Hide (PlayerShipsReadout);
 			UDaylonUtils::Hide (PowerupReadouts);
-			//UDaylonUtils::Hide (PlayerShieldReadout);
-			//UDaylonUtils::Hide (InvincibilityReadout);
-			//UDaylonUtils::Hide (InvincibilityLabel);
-			//UDaylonUtils::Hide (ShieldLabel);
-			//UDaylonUtils::Hide (DoubleGunReadout);
-			//UDaylonUtils::Hide (DoubleGunLabel);
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Show (IntroContent, InitialDelay == 0.0f);
 
@@ -605,12 +615,6 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (PlayerScoreReadout);
 			UDaylonUtils::Hide (PlayerShipsReadout);
 			UDaylonUtils::Hide (PowerupReadouts);
-			//UDaylonUtils::Hide (PlayerShieldReadout);
-			//UDaylonUtils::Hide (InvincibilityReadout);
-			//UDaylonUtils::Hide (InvincibilityLabel);
-			//UDaylonUtils::Hide (ShieldLabel);
-			//UDaylonUtils::Hide (DoubleGunReadout);
-			//UDaylonUtils::Hide (DoubleGunLabel);
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Hide (HighScoreEntryContent);
 			
@@ -645,8 +649,8 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			if(!PlayerShip)
 			{
-				CreatePlayerShip       ();
-				InitializePlayerShield ();
+				CreatePlayerShip         ();
+				InitializePlayerDefenses ();
 			}
 
 			if(Torpedos.IsEmpty())
@@ -667,12 +671,6 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Show  (PlayerScoreReadout);
 			UDaylonUtils::Show  (PlayerShipsReadout);
 			UDaylonUtils::Show  (PowerupReadouts);
-			//UDaylonUtils::Show  (PlayerShieldReadout);
-			//UDaylonUtils::Show  (InvincibilityReadout);
-			//UDaylonUtils::Show  (InvincibilityLabel);
-			//UDaylonUtils::Show  (ShieldLabel);
-			//UDaylonUtils::Show  (DoubleGunReadout);
-			//UDaylonUtils::Show  (DoubleGunLabel);
 
 			UpdatePowerupReadout(EPowerup::DoubleGuns);
 			UpdatePowerupReadout(EPowerup::Shields);
@@ -696,6 +694,9 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			Daylon::Destroy(PlayerShield);
 			PlayerShield.Reset();
+
+			Daylon::Destroy(PlayerInvincibilityShield);
+			PlayerInvincibilityShield.Reset();
 
 			UDaylonUtils::Show(GameOverMessage);
 
@@ -874,11 +875,6 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			{
 				UpdatePlayerRotation    (InDeltaTime);
 				UpdatePlayerShip        (InDeltaTime);
-
-				if(PlayerShip->InvincibilityLeft > 0.0f)
-				{
-					AdjustInvincibilityLeft(-InDeltaTime);
-				}
 			}
 
 			UpdateEnemyShips          (InDeltaTime);
@@ -1249,26 +1245,22 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 		switch(AsteroidSize)
 		{
 			case 0:
-				//AsteroidBrush = BigRockBrushes[FMath::RandRange(0, 3)]; 
 				AsteroidAtlas = LargeRockAtlas;
 				AsteroidValue = ValueBigAsteroid;
 
 				break;
 
 			case 1: 
-				//AsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
 				AsteroidAtlas = MediumRockAtlas;
 				AsteroidValue = ValueMediumAsteroid;
 				break;
 
 			case 2: 
-				//AsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
 				AsteroidAtlas = SmallRockAtlas;
 				AsteroidValue = ValueSmallAsteroid;
 				break;
 		}
 
-		//auto Asteroid = FAsteroid::Create(AsteroidBrush);
 		auto Asteroid = FAsteroid::Create(AsteroidAtlas);
 		Asteroid->Value = AsteroidValue;
 		Asteroid->LifeRemaining = 1.0f;
@@ -1402,6 +1394,16 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 		// We have to budge the shield texture by two px to look nicely centered around the player ship.
 		PlayerShield->SetPosition(PlayerShip->GetPosition() + UDaylonUtils::Rotate(FVector2D(0, 2), PlayerShip->GetAngle()));
 		AdjustShieldsLeft(-DeltaTime);
+	}
+
+
+	PlayerInvincibilityShield->Show(PlayerShip->InvincibilityLeft > 0.0f);
+
+	if(PlayerInvincibilityShield->IsVisible())
+	{
+		PlayerInvincibilityShield->SetAngle(PlayerShip->GetAngle());
+		PlayerInvincibilityShield->SetPosition(PlayerShip->GetPosition() + UDaylonUtils::Rotate(FVector2D(0, -2), PlayerShip->GetAngle()));
+		AdjustInvincibilityLeft(-DeltaTime);
 	}
 }
 
@@ -1640,33 +1642,29 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	// For the new inertias, we want the kids to generally be faster but 
 	// once in a while, one of the kids can be slower.
 
-	//FSlateBrush NewAsteroidBrush;
 	UDaylonSpriteWidgetAtlas* NewAsteroidAtlas = nullptr;
 
 	switch(Asteroid.Value)
 	{
 		case ValueBigAsteroid:
-			//NewAsteroidBrush = MediumRockBrushes[FMath::RandRange(0, 3)]; 
 			NewAsteroidAtlas = MediumRockAtlas;
 			Asteroid.Value = ValueMediumAsteroid;
-			//Asteroid.SetBrush(MediumRockBrushes[FMath::RandRange(0, 3)]); 
 			Asteroid.SetAtlas(MediumRockAtlas->Atlas);
 			break;
 
 		case ValueMediumAsteroid:
-			//NewAsteroidBrush = SmallRockBrushes[FMath::RandRange(0, 3)]; 
 			NewAsteroidAtlas = SmallRockAtlas;
 			Asteroid.Value = ValueSmallAsteroid;
-			//Asteroid.SetBrush(SmallRockBrushes[FMath::RandRange(0, 3)]); 
 			Asteroid.SetAtlas(SmallRockAtlas->Atlas);
 			break;
 	}
 
-	Asteroid.SetSize(Asteroid.GetSize() / 2);
+	Asteroid.SetSize(NewAsteroidAtlas->Atlas.AtlasBrush.GetImageSize() / 2);
+	Asteroid.UpdateWidgetSize();
+
 	Asteroid.SetCurrentCel(FMath::RandRange(0, NewAsteroidAtlas->Atlas.NumCels - 1));
 
 
-	//auto NewAsteroidPtr = FAsteroid::Create(NewAsteroidBrush);
 	auto NewAsteroidPtr = FAsteroid::Create(NewAsteroidAtlas);
 	auto& NewAsteroid   = *NewAsteroidPtr.Get();
 
