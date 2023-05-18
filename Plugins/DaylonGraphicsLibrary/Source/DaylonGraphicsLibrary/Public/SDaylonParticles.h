@@ -19,10 +19,10 @@ struct DAYLONGRAPHICSLIBRARY_API FDaylonParticle
 };
 
 
-class DAYLONGRAPHICSLIBRARY_API SDaylonParticlesWidget : public SLeafWidget
+class DAYLONGRAPHICSLIBRARY_API SDaylonParticles : public SLeafWidget
 {
 	public:
-		SLATE_BEGIN_ARGS(SDaylonParticlesWidget)
+		SLATE_BEGIN_ARGS(SDaylonParticles)
 			: 
 			  _Size                (FVector2D(4))
 			, _MinParticleSize     (1.0f)
@@ -49,9 +49,9 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonParticlesWidget : public SLeafWidget
 
 			SLATE_END_ARGS()
 
-			SDaylonParticlesWidget() {}
+			SDaylonParticles() {}
 
-			~SDaylonParticlesWidget() {}
+			~SDaylonParticles() {}
 
 			void Construct(const FArguments& InArgs);
 

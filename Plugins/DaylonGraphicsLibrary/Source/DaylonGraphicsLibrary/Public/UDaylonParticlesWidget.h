@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Runtime/UMG/Public/Components/Widget.h"
 
-#include "SDaylonParticlesWidget.h"
+#include "SDaylonParticles.h"
 #include "UDaylonParticlesWidget.generated.h"
 
 // Warning: do NOT use this widget at design time.
@@ -39,5 +39,5 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonParticlesWidget : public UWidget
 
 		virtual TSharedRef<SWidget> RebuildWidget() override;
 
-		TSharedPtr<SDaylonParticlesWidget> MyParticlesWidget;
+		TSharedPtr<SDaylonParticles> MyParticlesWidget;
 };

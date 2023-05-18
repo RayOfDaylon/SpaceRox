@@ -22,7 +22,6 @@
 
 
 
-
 UENUM()
 enum class EMenuItem : uint8
 {
@@ -82,7 +81,7 @@ enum class EGameState : uint8
 };
 
 
-
+/*
 class FTorpedo : public Daylon::ImagePlayObject2D
 {
 	public:
@@ -100,7 +99,7 @@ class FTorpedo : public Daylon::ImagePlayObject2D
 		return Widget;
 	}
 };
-
+*/
 
 class FPlayerShip : public Daylon::SpritePlayObject2D
 {
@@ -116,7 +115,7 @@ class FPlayerShip : public Daylon::SpritePlayObject2D
 	{
 		auto Widget = SNew(FPlayerShip);
 
-		Daylon::FinishCreating<SDaylonSpriteWidget>(Widget, RadiusFactor);
+		Daylon::FinishCreating<SDaylonSprite>(Widget, RadiusFactor);
 
 		Widget->SetAtlas(Atlas->Atlas);
 		Widget->SetSize(S);
@@ -151,7 +150,7 @@ class FAsteroid : public Daylon::SpritePlayObject2D
 	{
 		auto Widget = SNew(FAsteroid);
 
-		Daylon::FinishCreating<SDaylonSpriteWidget>(Widget, 0.5f);
+		Daylon::FinishCreating<SDaylonSprite>(Widget, 0.5f);
 
 		Widget->SetAtlas(Atlas->Atlas);
 		Widget->SetSize(Atlas->Atlas.AtlasBrush.GetImageSize() / 2);
@@ -176,7 +175,7 @@ class FScavenger : public Daylon::SpritePlayObject2D
 };
 
 
-class FEnemyShip : public Daylon::ImagePlayObject2D
+class FEnemyShip : public Daylon::SpritePlayObject2D
 {
 	public:
 
@@ -184,15 +183,40 @@ class FEnemyShip : public Daylon::ImagePlayObject2D
 	float TimeRemainingToNextMove = 0.0f;
 
 
-	static TSharedPtr<FEnemyShip> Create(FSlateBrush& Brush, int Value, float RadiusFactor)
+	static TSharedPtr<FEnemyShip> Create(UDaylonSpriteWidgetAtlas* Atlas, int Value, float RadiusFactor)
 	{
 		auto Widget = SNew(FEnemyShip);
 
-		Daylon::FinishCreating<SImage>(Widget, RadiusFactor);
+		Daylon::FinishCreating<SDaylonSprite>(Widget, RadiusFactor);
 
-		Widget->SetBrush(Brush);
+		Widget->SetAtlas(Atlas->Atlas);
+		Widget->SetCurrentCel(0);
+		Widget->SetSize(Atlas->Atlas.GetCelPixelSize());
+		Widget->UpdateWidgetSize();
 
 		Widget->Value = Value;
+
+		return Widget;
+	}
+};
+
+
+class FTorpedo : public Daylon::SpritePlayObject2D
+{
+	public:
+
+	bool FiredByPlayer;
+
+	static TSharedPtr<FTorpedo> Create(UDaylonSpriteWidgetAtlas* Atlas, float RadiusFactor)
+	{
+		auto Widget = SNew(FTorpedo);
+
+		Daylon::FinishCreating<SDaylonSprite>(Widget, RadiusFactor);
+
+		Widget->SetAtlas(Atlas->Atlas);
+		Widget->SetCurrentCel(0);
+		Widget->SetSize(Atlas->Atlas.GetCelPixelSize());
+		Widget->UpdateWidgetSize();
 
 		return Widget;
 	}
@@ -289,21 +313,13 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UDaylonSpriteWidgetAtlas* PlayerShipAtlas;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	FSlateBrush BigEnemyBrush;
+	UDaylonSpriteWidgetAtlas* DefensesAtlas;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	FSlateBrush SmallEnemyBrush;
+	UDaylonSpriteWidgetAtlas* BigEnemyAtlas;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	FSlateBrush TorpedoBrush;
-
-	// The way the player ship looks when shielded
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	FSlateBrush ShieldBrush;
-
-	// The way the player ship looks when invincible
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	FSlateBrush InvincibilityShieldBrush;
+	UDaylonSpriteWidgetAtlas* SmallEnemyAtlas;
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
@@ -314,6 +330,13 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* LargeRockAtlas;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	UDaylonSpriteWidgetAtlas* TorpedoAtlas;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	FSlateBrush TorpedoBrush;
 
 
 	// -- USpriteWidgetAtlas animated textures -------------------------------------
@@ -471,6 +494,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      InitializeVariables        ();
 	void      InitializePlayerShip       ();
 	void      InitializePlayerDefenses   ();
+	void      InitializeAtlases          ();
+	void      InitializeSoundLoops       ();
 	void      CreatePlayerShip           ();
 	void      CreateTorpedos             ();
 
@@ -546,15 +571,15 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	Daylon::FLoopedSound            SmallEnemyShipSoundLoop;
 
 	TSharedPtr<FPlayerShip>                    PlayerShip;
-	TSharedPtr<Daylon::ImagePlayObject2D>      PlayerShield;
-	TSharedPtr<Daylon::ImagePlayObject2D>      PlayerInvincibilityShield; // todo: implement
+	TSharedPtr<Daylon::SpritePlayObject2D>     PlayerShield;
+	TSharedPtr<Daylon::SpritePlayObject2D>     PlayerInvincibilityShield;
 
 	TArray<TSharedPtr<FAsteroid>>              Asteroids;
 	TArray<TSharedPtr<FEnemyShip>>             EnemyShips;
 	TArray<TSharedPtr<FScavenger>>             Scavengers;
 	TArray<TSharedPtr<FTorpedo>>               Torpedos;
 	TArray<TSharedPtr<FPowerup>>               Powerups; // Not including those inside asteroids
-	TArray<TSharedPtr<SDaylonParticlesWidget>> Explosions; 
+	TArray<TSharedPtr<SDaylonParticles>>       Explosions; 
 
 	Daylon::FHighScoreTable         HighScores;
 	Daylon::FHighScore              MostRecentHighScore;

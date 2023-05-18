@@ -1,6 +1,6 @@
 // Copyright 2023 Daylon Graphics Ltd. All Rights Reserved.
 
-#include "SDaylonSpriteWidget.h"
+#include "SDaylonSprite.h"
 
 
 #define DEBUG_MODULE      0
@@ -12,7 +12,8 @@
 
 void FDaylonSpriteAtlas::InitCache()
 {
-	UVSize = FVector2D(1.0 / CelsAcross, 1.0 / CelsDown);
+	UVSize       = FVector2D(1.0 / CelsAcross, 1.0 / CelsDown);
+	CelPixelSize = AtlasBrush.GetImageSize() * UVSize;
 }
 
 
@@ -25,6 +26,12 @@ bool FDaylonSpriteAtlas::IsValidCelIndex(int32 Index) const
 int32 FDaylonSpriteAtlas::CalcCelIndex(int32 CelX, int32 CelY) const
 {
 	return (CelY * CelsAcross + CelX);
+}
+
+
+FVector2D FDaylonSpriteAtlas::GetCelPixelSize() const
+{
+	return CelPixelSize;
 }
 
 
@@ -57,25 +64,25 @@ FBox2d FDaylonSpriteAtlas::GetUVsForCel(int32 CelX, int32 CelY) const
 // --------------------------------------------------------------------------------------
 
 
-void SDaylonSpriteWidget::Construct(const FArguments& InArgs)
+void SDaylonSprite::Construct(const FArguments& InArgs)
 {
 	Size = InArgs._Size.Get();
 }
 
 
-FVector2D SDaylonSpriteWidget::ComputeDesiredSize(float) const 
+FVector2D SDaylonSprite::ComputeDesiredSize(float) const 
 {
 	return Size; 
 }
 
 
-void SDaylonSpriteWidget::SetSize(const FVector2D& InSize)
+void SDaylonSprite::SetSize(const FVector2D& InSize)
 {
 	Size = InSize; 
 }
 
 
-void SDaylonSpriteWidget::SetAtlas(const FDaylonSpriteAtlas& InAtlas) 
+void SDaylonSprite::SetAtlas(const FDaylonSpriteAtlas& InAtlas) 
 {
 	Atlas = InAtlas;
 
@@ -85,7 +92,7 @@ void SDaylonSpriteWidget::SetAtlas(const FDaylonSpriteAtlas& InAtlas)
 }
 
 
-void SDaylonSpriteWidget::Reset()
+void SDaylonSprite::Reset()
 {
 	SetCurrentCel(0);
 
@@ -93,7 +100,7 @@ void SDaylonSpriteWidget::Reset()
 }
 
 
-void SDaylonSpriteWidget::SetCurrentCel(int32 Index)
+void SDaylonSprite::SetCurrentCel(int32 Index)
 {
 	if(!Atlas.IsValidCelIndex(Index))
 	{
@@ -104,13 +111,13 @@ void SDaylonSpriteWidget::SetCurrentCel(int32 Index)
 }
 
 
-void SDaylonSpriteWidget::SetCurrentCel(int32 CelX, int32 CelY)
+void SDaylonSprite::SetCurrentCel(int32 CelX, int32 CelY)
 {
 	return SetCurrentCel(Atlas.CalcCelIndex(CelX, CelY));
 }
 
 
-void SDaylonSpriteWidget::Update(float DeltaTime)
+void SDaylonSprite::Update(float DeltaTime)
 {
 	const auto SecondsPerFrame = 1.0f / Atlas.FrameRate;
 
@@ -129,7 +136,7 @@ void SDaylonSpriteWidget::Update(float DeltaTime)
 }
 
 
-int32 SDaylonSpriteWidget::OnPaint
+int32 SDaylonSprite::OnPaint
 (
 	const FPaintArgs&          Args,
 	const FGeometry&           AllottedGeometry,

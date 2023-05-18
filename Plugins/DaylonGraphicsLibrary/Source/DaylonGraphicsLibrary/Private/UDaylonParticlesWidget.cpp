@@ -11,7 +11,7 @@ UDaylonParticlesWidget::UDaylonParticlesWidget(const FObjectInitializer& ObjectI
 
 TSharedRef<SWidget> UDaylonParticlesWidget::RebuildWidget()
 {
-	MyParticlesWidget = SNew(SDaylonParticlesWidget);
+	MyParticlesWidget = SNew(SDaylonParticles);
 
 	return MyParticlesWidget.ToSharedRef();
 }

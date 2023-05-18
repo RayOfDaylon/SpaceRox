@@ -472,13 +472,13 @@ namespace Daylon
 	};
 
 
-	class SpritePlayObject2D : public PlayObject2D<SDaylonSpriteWidget>
+	class SpritePlayObject2D : public PlayObject2D<SDaylonSprite>
 	{
 		public:
 
 		virtual FVector2D GetActualSize() const override { return Size; }
 
-		virtual void Update(float DeltaTime) override { SDaylonSpriteWidget::Update(DeltaTime); }
+		virtual void Update(float DeltaTime) override { SDaylonSprite::Update(DeltaTime); }
 
 	};
 

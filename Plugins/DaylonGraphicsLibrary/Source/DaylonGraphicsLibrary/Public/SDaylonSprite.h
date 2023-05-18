@@ -3,7 +3,7 @@
 #pragma once
 
 #include "SlateCore/Public/Widgets/SLeafWidget.h"
-#include "SDaylonSpriteWidget.generated.h"
+#include "SDaylonSprite.generated.h"
 
 
 
@@ -37,6 +37,7 @@ struct DAYLONGRAPHICSLIBRARY_API FDaylonSpriteAtlas
 	UPROPERTY(EditAnywhere, BlueprintReadonly)
 	float FrameRate = 30.0f;
 
+	FVector2D CelPixelSize;
 	FVector2D UVSize;
 
 
@@ -46,6 +47,7 @@ struct DAYLONGRAPHICSLIBRARY_API FDaylonSpriteAtlas
 
 	int32      CalcCelIndex     (int32 CelX, int32 CelY) const;
 			   
+	FVector2D  GetCelPixelSize  () const;
 	FVector2D  GetUVSize        () const;
 			   
 	FBox2d     GetUVsForCel     (int32 Index) const;
@@ -53,10 +55,10 @@ struct DAYLONGRAPHICSLIBRARY_API FDaylonSpriteAtlas
 };
 
 
-class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
+class DAYLONGRAPHICSLIBRARY_API SDaylonSprite : public SLeafWidget
 {
 	public:
-		SLATE_BEGIN_ARGS(SDaylonSpriteWidget)
+		SLATE_BEGIN_ARGS(SDaylonSprite)
 			: 
 			  _Size                (FVector2D(16))
 			{
@@ -67,9 +69,9 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 
 			SLATE_END_ARGS()
 
-			SDaylonSpriteWidget() {}
+			SDaylonSprite() {}
 
-			~SDaylonSpriteWidget() {}
+			~SDaylonSprite() {}
 
 			void Construct(const FArguments& InArgs);
 
@@ -102,8 +104,8 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSpriteWidget : public SLeafWidget
 			FVector2D                    Size;
 			mutable FDaylonSpriteAtlas   Atlas;
 
-			float              CurrentAge      = 0.0f;
-			int32              CurrentCelIndex = 0;
+			float                        CurrentAge      = 0.0f;
+			int32                        CurrentCelIndex = 0;
 
 			virtual bool ComputeVolatility() const override { return true; }
 

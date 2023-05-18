@@ -1,10 +1,10 @@
 // Copyright 2023 Daylon Graphics Ltd. All Rights Reserved.
 
-#include "SDaylonParticlesWidget.h"
+#include "SDaylonParticles.h"
 #include "DaylonUtils.h"
 
 
-void SDaylonParticlesWidget::Construct(const FArguments& InArgs)
+void SDaylonParticles::Construct(const FArguments& InArgs)
 {
 	Size = InArgs._Size.Get();
 	MinParticleSize     = InArgs._MinParticleSize.Get();
@@ -19,24 +19,24 @@ void SDaylonParticlesWidget::Construct(const FArguments& InArgs)
 }
 
 
-FVector2D SDaylonParticlesWidget::ComputeDesiredSize(float) const 
+FVector2D SDaylonParticles::ComputeDesiredSize(float) const 
 {
 	return Size; 
 }
 
 
-void SDaylonParticlesWidget::SetSize                  (const FVector2D& InSize)    { Size = InSize; }
-void SDaylonParticlesWidget::SetParticleBrush         (const FSlateBrush& InBrush) { ParticleBrush = InBrush; }
-void SDaylonParticlesWidget::SetMinParticleSize       (float InSize)               { MinParticleSize = InSize; }
-void SDaylonParticlesWidget::SetMaxParticleSize       (float InSize)               { MaxParticleSize = InSize; }
-void SDaylonParticlesWidget::SetMinParticleVelocity   (float Velocity)             { MinParticleVelocity = Velocity; }
-void SDaylonParticlesWidget::SetMaxParticleVelocity   (float Velocity)             { MaxParticleVelocity = Velocity; }
-void SDaylonParticlesWidget::SetMinParticleLifetime   (float Lifetime)             { MinParticleLifetime = Lifetime; }
-void SDaylonParticlesWidget::SetMaxParticleLifetime   (float Lifetime)             { MaxParticleLifetime = Lifetime; }
-void SDaylonParticlesWidget::SetFinalOpacity          (float Opacity)              { FinalOpacity = Opacity; }
+void SDaylonParticles::SetSize                  (const FVector2D& InSize)    { Size = InSize; }
+void SDaylonParticles::SetParticleBrush         (const FSlateBrush& InBrush) { ParticleBrush = InBrush; }
+void SDaylonParticles::SetMinParticleSize       (float InSize)               { MinParticleSize = InSize; }
+void SDaylonParticles::SetMaxParticleSize       (float InSize)               { MaxParticleSize = InSize; }
+void SDaylonParticles::SetMinParticleVelocity   (float Velocity)             { MinParticleVelocity = Velocity; }
+void SDaylonParticles::SetMaxParticleVelocity   (float Velocity)             { MaxParticleVelocity = Velocity; }
+void SDaylonParticles::SetMinParticleLifetime   (float Lifetime)             { MinParticleLifetime = Lifetime; }
+void SDaylonParticles::SetMaxParticleLifetime   (float Lifetime)             { MaxParticleLifetime = Lifetime; }
+void SDaylonParticles::SetFinalOpacity          (float Opacity)              { FinalOpacity = Opacity; }
 
 
-void SDaylonParticlesWidget::SetNumParticles          (int32 Count)             
+void SDaylonParticles::SetNumParticles          (int32 Count)             
 {
 	check(Count > 0);
 	Particles.SetNum(Count);
@@ -44,7 +44,7 @@ void SDaylonParticlesWidget::SetNumParticles          (int32 Count)
 }
 
 
-void SDaylonParticlesWidget::Reset()
+void SDaylonParticles::Reset()
 {
 	for(auto& Particle : Particles)
 	{
@@ -56,7 +56,7 @@ void SDaylonParticlesWidget::Reset()
 }
 
 
-bool SDaylonParticlesWidget::Update(float DeltaTime)
+bool SDaylonParticles::Update(float DeltaTime)
 {
 	bool Alive = false;
 
@@ -71,7 +71,7 @@ bool SDaylonParticlesWidget::Update(float DeltaTime)
 }
 
 
-int32 SDaylonParticlesWidget::OnPaint
+int32 SDaylonParticles::OnPaint
 (
 	const FPaintArgs&          Args,
 	const FGeometry&           AllottedGeometry,

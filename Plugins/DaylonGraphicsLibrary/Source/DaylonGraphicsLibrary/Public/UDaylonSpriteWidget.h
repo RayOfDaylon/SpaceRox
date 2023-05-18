@@ -6,7 +6,7 @@
 #include "Runtime/UMG/Public/Components/Widget.h"
 #include "Runtime/Engine/Classes/Engine/DataAsset.h"
 
-#include "SDaylonSpriteWidget.h"
+#include "SDaylonSprite.h"
 #include "UDaylonSpriteWidget.generated.h"
 
 // Warning: do NOT use this widget at design time.
@@ -47,5 +47,5 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonSpriteWidget : public UWidget
 
 		virtual TSharedRef<SWidget> RebuildWidget() override;
 
-		TSharedPtr<SDaylonSpriteWidget> MySprite;
+		TSharedPtr<SDaylonSprite> MySprite;
 };

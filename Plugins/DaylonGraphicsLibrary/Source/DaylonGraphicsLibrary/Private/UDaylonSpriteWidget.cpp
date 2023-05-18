@@ -11,7 +11,7 @@ UDaylonSpriteWidget::UDaylonSpriteWidget(const FObjectInitializer& ObjectInitial
 
 TSharedRef<SWidget> UDaylonSpriteWidget::RebuildWidget()
 {
-	MySprite = SNew(SDaylonSpriteWidget);
+	MySprite = SNew(SDaylonSprite);
 
 	return MySprite.ToSharedRef();
 }

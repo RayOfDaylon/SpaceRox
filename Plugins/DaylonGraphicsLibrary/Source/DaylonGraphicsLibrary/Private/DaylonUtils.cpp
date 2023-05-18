@@ -392,7 +392,7 @@ TSharedPtr<Daylon::SpritePlayObject2D> Daylon::CreateSpritePlayObject2D(const FD
 {
 	auto PlayObj = SNew(SpritePlayObject2D);
 
-	Daylon::FinishCreating<SDaylonSpriteWidget>(PlayObj, Radius);
+	Daylon::FinishCreating<SDaylonSprite>(PlayObj, Radius);
 
 	PlayObj->SetAtlas(Atlas);
 	PlayObj->SetSize(S);

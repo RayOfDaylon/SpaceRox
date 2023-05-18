@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 17, 2023
+May 18, 2023
 
 
 
@@ -43,8 +43,9 @@ Content
 Plugins
     DaylonGraphicsLibrary      Reusable code for widget-based 2D games
         DaylonUtils.*              Library routines and types
-        SDaylonParticlesWidget.*   A widget used to efficiently draw explosions
-        SDaylonSpriteWidget.*      A widget used to draw animated textures
+        SDaylonParticles.*         A widget used to efficiently draw explosions
+        SDaylonSprite.*            A widget used to draw animated textures
+        docs.txt                   Plugin-specific documentation
 
 Source
     SpaceRox
@@ -312,6 +313,19 @@ In development mode, this will be in the project's
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
+
+
+Version 1.7.3
+-------------------------------------------------------------------------------------
+Made all game objects use SpritePlayObject2D; ImagePlayObject2D is unnecessary
+because the former can imitate it. This will let us have a base PlayObject class 
+that is not a template and can be polymorphic using virtual methods. Another 
+approach is delegate members, which has the added flexibility that if we 
+want different behaviors within e.g. the same enemy class, that would be easy.
+
+The suffix 'Widget' was dropped from the SDaylonXXX classnames because 
+the 'S' prefix already indicates that, and it's more in keeping with 
+the UE coding style.
 
 
 Version 1.7.2

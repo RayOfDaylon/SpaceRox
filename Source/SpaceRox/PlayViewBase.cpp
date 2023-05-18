@@ -30,7 +30,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogGame, Log, All);
 
 DEFINE_LOG_CATEGORY(LogGame)
 
-#define DEBUG_MODULE      0
+// Set to 1 to enable debugging
+#define DEBUG_MODULE                0
 
 // Make wave start with three rocks (big/medium/small) at rest.
 #define TEST_ASTEROIDS              0
@@ -118,6 +119,9 @@ const bool  PowerupsCanMove                = false;
 
 const int32 PlayerShipNormalAtlasCel       = 0;
 const int32 PlayerShipThrustingAtlasCel    = 1;
+const int32 ShieldDefenseAtlasCel          = 0;
+const int32 InvincibilityDefenseAtlasCel   = 1;
+
 
 
 static FVector2D WrapPositionToViewport(const FVector2D& P)
@@ -138,7 +142,7 @@ TSharedPtr<FScavenger> FScavenger::Create(UDaylonSpriteWidgetAtlas* Atlas, const
 {
 	auto Widget = SNew(FScavenger);
 
-	Daylon::FinishCreating<SDaylonSpriteWidget>(Widget, 0.5f);
+	Daylon::FinishCreating<SDaylonSprite>(Widget, 0.5f);
 
 	Widget->SetAtlas(Atlas->Atlas);
 	Widget->SetSize(S);
@@ -154,7 +158,7 @@ TSharedPtr<FPowerup> FPowerup::Create(UDaylonSpriteWidgetAtlas* Atlas, const FVe
 {
 	auto Widget = SNew(FPowerup);
 
-	Daylon::FinishCreating<SDaylonSpriteWidget>(Widget, 0.5f);
+	Daylon::FinishCreating<SDaylonSprite>(Widget, 0.5f);
 
 	Widget->SetAtlas(Atlas->Atlas);
 	Widget->SetSize(S);
@@ -238,22 +242,27 @@ void UPlayViewBase::InitializePlayerShip()
 
 void UPlayViewBase::InitializePlayerDefenses()
 {
-	PlayerShield = SNew(Daylon::ImagePlayObject2D);
+	//PlayerShield = SNew(Daylon::ImagePlayObject2D);
+	PlayerShield = SNew(Daylon::SpritePlayObject2D);
 
-	Daylon::FinishCreating<SImage>(PlayerShield, 0.5f);
+	Daylon::FinishCreating<SDaylonSprite>(PlayerShield, 0.5f);
 
-	PlayerShield->SetBrush(ShieldBrush);
+	PlayerShield->SetAtlas(DefensesAtlas->Atlas);
+	PlayerShield->SetCurrentCel(ShieldDefenseAtlasCel);
+	PlayerShield->SetSize(DefensesAtlas->Atlas.GetCelPixelSize());
 	PlayerShield->UpdateWidgetSize();
 
 	PlayerShield->Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
 	PlayerShield->Hide   ();
 
 
-	PlayerInvincibilityShield = SNew(Daylon::ImagePlayObject2D);
+	PlayerInvincibilityShield = SNew(Daylon::SpritePlayObject2D);
 
-	Daylon::FinishCreating<SImage>(PlayerInvincibilityShield, 0.5f);
+	Daylon::FinishCreating<SDaylonSprite>(PlayerInvincibilityShield, 0.5f);
 
-	PlayerInvincibilityShield->SetBrush(InvincibilityShieldBrush);
+	PlayerInvincibilityShield->SetAtlas(DefensesAtlas->Atlas);
+	PlayerInvincibilityShield->SetCurrentCel(InvincibilityDefenseAtlasCel);
+	PlayerInvincibilityShield->SetSize(DefensesAtlas->Atlas.GetCelPixelSize());
 	PlayerInvincibilityShield->UpdateWidgetSize();
 	PlayerInvincibilityShield->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
 	PlayerInvincibilityShield->Hide();
@@ -264,7 +273,8 @@ void UPlayViewBase::CreateTorpedos()
 {
 	for(int32 Index = 0; Index < TorpedoCount; Index++)
 	{
-		auto TorpedoPtr = FTorpedo::Create(TorpedoBrush, 0.5f);
+		//auto TorpedoPtr = FTorpedo::Create(TorpedoBrush, 0.5f);
+		auto TorpedoPtr = FTorpedo::Create(TorpedoAtlas, 0.5f);
 
 		TorpedoPtr->Inertia = FVector2D(0);
 		TorpedoPtr->LifeRemaining = 0.0f;
@@ -300,6 +310,31 @@ void UPlayViewBase::InitializeVariables()
 }
 
 
+void UPlayViewBase::InitializeAtlases()
+{
+	PlayerShipAtlas           -> Atlas.InitCache();
+	LargeRockAtlas            -> Atlas.InitCache();
+	MediumRockAtlas           -> Atlas.InitCache();
+	SmallRockAtlas            -> Atlas.InitCache();
+	BigEnemyAtlas             -> Atlas.InitCache();
+	SmallEnemyAtlas           -> Atlas.InitCache();
+	DefensesAtlas             -> Atlas.InitCache();
+	DoubleGunsPowerupAtlas    -> Atlas.InitCache();
+	ShieldPowerupAtlas        -> Atlas.InitCache();
+	InvincibilityPowerupAtlas -> Atlas.InitCache();
+	ScavengerAtlas            -> Atlas.InitCache();
+	TorpedoAtlas              -> Atlas.InitCache();
+}
+
+
+void UPlayViewBase::InitializeSoundLoops()
+{
+	PlayerShipThrustSoundLoop.Set (this, ThrustSound);
+	BigEnemyShipSoundLoop.Set     (this, EnemyShipBigSound);
+	SmallEnemyShipSoundLoop.Set   (this, EnemyShipSmallSound);
+}
+
+
 void UPlayViewBase::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
@@ -317,14 +352,12 @@ void UPlayViewBase::NativeOnInitialized()
 
 	// Note: UMG Canvas will not have its SConstraintCanvas member populated until later.
 
-	InitializeVariables    ();
 	PreloadSounds          ();
 
-	PlayerShipAtlas->Atlas.InitCache();
+	InitializeVariables    ();
+	InitializeAtlases      ();
+	InitializeSoundLoops   ();
 
-	PlayerShipThrustSoundLoop.Set (this, ThrustSound);
-	BigEnemyShipSoundLoop.Set     (this, EnemyShipBigSound);
-	SmallEnemyShipSoundLoop.Set   (this, EnemyShipSmallSound);
 
 	Asteroids.Reserve(MaxInitialAsteroids * 4);
 
@@ -1455,7 +1488,7 @@ void UPlayViewBase::SpawnExplosion
 	int32 NumParticles
 )
 {
-	auto Explosion = SNew(SDaylonParticlesWidget)
+	auto Explosion = SNew(SDaylonParticles)
 		.MinParticleSize      (MinParticleSize)
 		.MaxParticleSize      (MaxParticleSize)
 		.MinParticleVelocity  (MinParticleVelocity)
@@ -1659,7 +1692,7 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 			break;
 	}
 
-	Asteroid.SetSize(NewAsteroidAtlas->Atlas.AtlasBrush.GetImageSize() / 2);
+	Asteroid.SetSize(NewAsteroidAtlas->Atlas.GetCelPixelSize());
 	Asteroid.UpdateWidgetSize();
 
 	Asteroid.SetCurrentCel(FMath::RandRange(0, NewAsteroidAtlas->Atlas.NumCels - 1));
@@ -2401,8 +2434,13 @@ void UPlayViewBase::SpawnEnemyShip()
 	const bool IsBigEnemy = (FMath::FRand() <= BigEnemyProbability);
 
 			
-	auto EnemyShipPtr = FEnemyShip::Create(
+	/*auto EnemyShipPtr = FEnemyShip::Create(
 		IsBigEnemy ? BigEnemyBrush : SmallEnemyBrush, 
+		IsBigEnemy ? ValueBigEnemy : ValueSmallEnemy,
+		0.375f);*/
+
+	auto EnemyShipPtr = FEnemyShip::Create(
+		IsBigEnemy ? BigEnemyAtlas : SmallEnemyAtlas, 
 		IsBigEnemy ? ValueBigEnemy : ValueSmallEnemy,
 		0.375f);
 
