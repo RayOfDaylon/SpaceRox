@@ -81,27 +81,14 @@ enum class EGameState : uint8
 };
 
 
-/*
-class FTorpedo : public Daylon::ImagePlayObject2D
+
+class FPlayObject : public Daylon::SpritePlayObject2D
 {
-	public:
-
-	bool FiredByPlayer;
-
-	static TSharedPtr<FTorpedo> Create(FSlateBrush& Brush, float RadiusFactor)
-	{
-		auto Widget = SNew(FTorpedo);
-
-		Daylon::FinishCreating<SImage>(Widget, RadiusFactor);
-
-		Widget->SetBrush(Brush);
-
-		return Widget;
-	}
+	// Base class of all non-trivial game play objects.
 };
-*/
 
-class FPlayerShip : public Daylon::SpritePlayObject2D
+
+class FPlayerShip : public FPlayObject
 {
 	public:
 
@@ -126,7 +113,7 @@ class FPlayerShip : public Daylon::SpritePlayObject2D
 };
 
 
-class FPowerup : public Daylon::SpritePlayObject2D
+class FPowerup : public FPlayObject
 {
 	public:
 
@@ -134,11 +121,11 @@ class FPowerup : public Daylon::SpritePlayObject2D
 
 	static TSharedPtr<FPowerup> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S);
 
-	virtual void Update(float DeltaTime) override { Daylon::SpritePlayObject2D::Update(DeltaTime); }
+	virtual void Update(float DeltaTime) override { FPlayObject::Update(DeltaTime); }
 };
 
 
-class FAsteroid : public Daylon::SpritePlayObject2D
+class FAsteroid : public FPlayObject
 {
 	public:
 
@@ -162,7 +149,7 @@ class FAsteroid : public Daylon::SpritePlayObject2D
 };
 
 
-class FScavenger : public Daylon::SpritePlayObject2D
+class FScavenger : public FPlayObject
 {
 	public:
 
@@ -175,7 +162,7 @@ class FScavenger : public Daylon::SpritePlayObject2D
 };
 
 
-class FEnemyShip : public Daylon::SpritePlayObject2D
+class FEnemyShip : public FPlayObject
 {
 	public:
 
@@ -201,7 +188,7 @@ class FEnemyShip : public Daylon::SpritePlayObject2D
 };
 
 
-class FTorpedo : public Daylon::SpritePlayObject2D
+class FTorpedo : public FPlayObject
 {
 	public:
 
