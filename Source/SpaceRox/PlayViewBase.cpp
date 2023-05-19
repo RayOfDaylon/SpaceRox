@@ -6,6 +6,7 @@
 #include "PlayViewBase.h"
 #include "DaylonUtils.h"
 #include "UDaylonParticlesWidget.h"
+#include "Constants.h"
 
 #include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
@@ -47,87 +48,6 @@ DEFINE_LOG_CATEGORY(LogGame)
 #pragma optimize("", off)
 #endif
 
-// Constants.
-// todo: put them where they can be easily modded at design time.
-
-const FVector2D ViewportSize               = FVector2D(1920, 1080);
-								           
-const bool  CreditPlayerForKill            = true;
-const bool  DontCreditPlayerForKill        = !CreditPlayerForKill;
-const bool  ReasonIsFatal                  = true;
-
-const int32 MaxPlayerScore                 = 9'999'990;
-const int32 ExpertPlayerScore              = 100'000;  // The score at which e.g. enemy ships will respawn fastest.
-const int32 InitialPlayerShipCount         =  3;
-const int32 PlayerShipBonusAt              = 10000;
-const int32 MaxPlayerShipsDisplayable      = 10;      // We don't want the player ships readout to be impractically wide.
-const float MaxTimeUntilNextPlayerShip     =  4.0f;   // Actual time may be longer because of asteroid intersection avoidance.
-							           
-const float MaxPlayerShipSpeed             = 1000.0f; // px/sec
-const float PlayerThrustForce              = 650.0f;
-const float PlayerRotationSpeed            = 300.0f;  // degrees per second
-								           
-const float MaxTorpedoSpeed                = 600.0f;  // px per second
-const float MaxTorpedoLifeTime             =   1.5f;  // seconds
-const int32 TorpedoCount                   =  30;     // make room for player and enemy torpedos which are in the same array
-								           
-const int32 MaxInitialAsteroids            =  24;
-const float MinAsteroidSpeed               =  50.0f;  // px per second
-const float MaxAsteroidSpeed               = 100.0f;  // px per second
-const float MinAsteroidSpinSpeed           = -20.0f;  // degrees per second
-const float MaxAsteroidSpinSpeed           =  20.0f;  // degrees per second
-const float AsteroidSpinScale              =   2.0f;  // Child asteroids spin this much faster than their parent
-const float MinAsteroidSplitAngle          =  5.0f;   // Children of rock death move away deviating from parent inertia at least this much.
-const float MaxAsteroidSplitAngle          = 35.0f;   // Ditto, but this is the max angular deviation, in degrees.
-const float MinAsteroidSplitInertia        =  0.1f;   // Child rock could have as little as this much of parent's inertia.
-const float MaxAsteroidSplitInertia        =  3.0f;   // Ditto, max as much as this.
-								           
-const int32 ValueBigAsteroid               =    20;
-const int32 ValueMediumAsteroid            =    50;
-const int32 ValueSmallAsteroid             =   100;
-const int32 ValueBigEnemy                  =   200;
-const int32 ValueSmallEnemy                =  1000;
-const int32 ValueScavenger                 =   500;
-							           
-const float MaxIntroStateLifetime          =  5.0f;  // How long the initial intro screen is visible before the main menu appears.
-const float TimeBetweenWaves               =  3.0f;  // Number of seconds between each wave.
-const float MaxTimeUntilGameOverStateEnds  =  5.0f;  // Time to wait between game over screen and idle screen.
-
-const float MaxTimeUntilNextEnemyShip      = 20.0f;  // Let each wave start with a breather.
-const float MaxTimeUntilEnemyRespawn       = 10.0f;  // Longest delay between successive enemy ship spawns. Favored when player score is low.
-const float MinTimeUntilEnemyRespawn       =  2.0f;  // Shortest delay between successive enemy ship spawns. Favored more as player score increases.
-
-const float BigEnemyTorpedoSpeed           = MaxTorpedoSpeed;
-const float BigEnemyReloadTime             =   1.25f;
-const float BigEnemySpeed                  = 200.0f;
-
-const float SmallEnemyTorpedoSpeed         = BigEnemyTorpedoSpeed * 1.1f;
-const float SmallEnemyReloadTime           = 1.0f;
-const float SmallEnemySpeed                = 300.0f;
-
-const float MaxTimeUntilNextScavenger      = 7.0f;
-const float MaxScavengerSpeed              = 200.0f;
-
-const float ShieldPowerupIncrease          = 20.0f; // Number of seconds of shield life given when shield powerup gained.
-const int32 DoubleGunsPowerupIncrease      = 100;   // Number of double shots given when double guns powerup gained.
-const float MaxInvincibilityTime           = 30.0f; // Number of seconds player ship is invincible after powerup gained.       
-
-const float ShieldBonkDamage               = 4.0f;  // Number of seconds to take from shield life when shields impact something.
-
-const float PowerupOpacity                 = 0.5f;
-const bool  PowerupsCanMove                = false;
-
-const int32 PlayerShipNormalAtlasCel       = 0;
-const int32 PlayerShipThrustingAtlasCel    = 1;
-const int32 ShieldDefenseAtlasCel          = 0;
-const int32 InvincibilityDefenseAtlasCel   = 1;
-
-
-
-static FVector2D WrapPositionToViewport(const FVector2D& P)
-{
-	return FVector2D(UKismetMathLibrary::FWrap(P.X, 0.0, ViewportSize.X), UKismetMathLibrary::FWrap(P.Y, 0.0, ViewportSize.Y));
-}
 
 
 static FVector2D MakeInertia(const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation)
@@ -138,33 +58,9 @@ static FVector2D MakeInertia(const FVector2D& InertiaOld, float MinDeviation, fl
 }
 
 
-TSharedPtr<FScavenger> FScavenger::Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S)
+FVector2D UPlayViewBase::WrapPositionToViewport(const FVector2D& P)
 {
-	auto Widget = SNew(FScavenger);
-
-	Daylon::FinishCreating<SDaylonSprite>(Widget, 0.5f);
-
-	Widget->SetAtlas(Atlas->Atlas);
-	Widget->SetSize(S);
-	Widget->UpdateWidgetSize();
-
-	Widget->Value = ValueScavenger;
-
-	return Widget;
-}
-
-
-TSharedPtr<FPowerup> FPowerup::Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S)
-{
-	auto Widget = SNew(FPowerup);
-
-	Daylon::FinishCreating<SDaylonSprite>(Widget, 0.5f);
-
-	Widget->SetAtlas(Atlas->Atlas);
-	Widget->SetSize(S);
-	Widget->UpdateWidgetSize();
-
-	return Widget;
+	return FVector2D(UKismetMathLibrary::FWrap(P.X, 0.0, ViewportSize.X), UKismetMathLibrary::FWrap(P.Y, 0.0, ViewportSize.Y));
 }
 
 
@@ -220,7 +116,6 @@ void UPlayViewBase::InitializePlayerShipCount()
 
 void UPlayViewBase::CreatePlayerShip()
 {
-	//PlayerShip = FPlayerShip::Create(PlayerShipBrush, 0.4f);
 	PlayerShip = FPlayerShip::Create(PlayerShipAtlas, FVector2D(32), 0.4f);
 
 	InitializePlayerShip();
@@ -242,7 +137,6 @@ void UPlayViewBase::InitializePlayerShip()
 
 void UPlayViewBase::InitializePlayerDefenses()
 {
-	//PlayerShield = SNew(Daylon::ImagePlayObject2D);
 	PlayerShield = SNew(Daylon::SpritePlayObject2D);
 
 	Daylon::FinishCreating<SDaylonSprite>(PlayerShield, 0.5f);
@@ -620,7 +514,6 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			TimeUntilIntroStateEnds = MaxIntroStateLifetime;
 			RemoveAsteroids();
-			//PlayerShip->Hide();
 
 			UDaylonUtils::Hide (MenuContent);
 			UDaylonUtils::Hide (PlayerScoreReadout);
@@ -1430,12 +1323,35 @@ void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
 	}
 
 
-	PlayerInvincibilityShield->Show(PlayerShip->InvincibilityLeft > 0.0f);
+	if(PlayerShip->InvincibilityLeft <= 0.0f)
+	{
+		PlayerInvincibilityShield->Hide();
+	}
+	else if(PlayerShip->InvincibilityLeft <= 5.0f) // todo: use constant
+	{
+		// Flash the invincibility shield to indicate that it has only a few seconds of power left.
+		TimeUntilNextInvincibilityWarnFlash -= DeltaTime;
+
+		if(TimeUntilNextInvincibilityWarnFlash <= 0.0f)
+		{
+			TimeUntilNextInvincibilityWarnFlash = MaxInvincibilityWarnTime;	
+		}
+		PlayerInvincibilityShield->Show(TimeUntilNextInvincibilityWarnFlash < MaxInvincibilityWarnTime * 0.5f);
+	}
+	else
+	{
+		PlayerInvincibilityShield->Show();
+	}
+
 
 	if(PlayerInvincibilityShield->IsVisible())
 	{
 		PlayerInvincibilityShield->SetAngle(PlayerShip->GetAngle());
 		PlayerInvincibilityShield->SetPosition(PlayerShip->GetPosition() + UDaylonUtils::Rotate(FVector2D(0, -2), PlayerShip->GetAngle()));
+	}
+
+	if(PlayerShip->InvincibilityLeft > 0.0f)
+	{
 		AdjustInvincibilityLeft(-DeltaTime);
 	}
 }
@@ -1892,6 +1808,7 @@ void UPlayViewBase::AdjustInvincibilityLeft(float Amount)
 	}
 
 	PlayerShip->InvincibilityLeft = FMath::Max(0.0f, PlayerShip->InvincibilityLeft + Amount);
+
 	UpdatePowerupReadout(EPowerup::Invincibility);
 }
 
@@ -2183,6 +2100,7 @@ void UPlayViewBase::CheckCollisions()
 					case EPowerup::Invincibility:
 						PlaySound(GainShieldPowerupSound); // todo: specific sound
 						AdjustInvincibilityLeft(MaxInvincibilityTime);
+						TimeUntilNextInvincibilityWarnFlash = MaxInvincibilityWarnTime;
 						PlayAnimation(InvincibilityReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
 						break;
 				}
@@ -2433,19 +2351,11 @@ void UPlayViewBase::SpawnEnemyShip()
 
 	const bool IsBigEnemy = (FMath::FRand() <= BigEnemyProbability);
 
-			
-	/*auto EnemyShipPtr = FEnemyShip::Create(
-		IsBigEnemy ? BigEnemyBrush : SmallEnemyBrush, 
-		IsBigEnemy ? ValueBigEnemy : ValueSmallEnemy,
-		0.375f);*/
 
 	auto EnemyShipPtr = FEnemyShip::Create(
 		IsBigEnemy ? BigEnemyAtlas : SmallEnemyAtlas, 
 		IsBigEnemy ? ValueBigEnemy : ValueSmallEnemy,
 		0.375f);
-
-	EnemyShipPtr->TimeRemainingToNextShot = (IsBigEnemy ? BigEnemyReloadTime : SmallEnemyReloadTime);
-	EnemyShipPtr->TimeRemainingToNextMove = 3.0f;
 
 
 	// Choose a random Y-pos to appear at. Leave room to avoid ship appearing clipped.
@@ -2498,53 +2408,16 @@ void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
 	{
 		auto& EnemyShip = *EnemyShips[ShipIndex].Get();
 
-		const bool IsBigEnemy = (EnemyShip.Value == ValueBigEnemy);
-
-		EnemyShip.Move(DeltaTime, WrapPositionToViewport);
-
 		// If we've reached the opposite side of the viewport, remove us.
 		const auto P2 = WrapPositionToViewport(EnemyShip.UnwrappedNewPosition);
 
 		if(P2.X != EnemyShip.UnwrappedNewPosition.X)
 		{
-			// Ship tried to wrap around horizontally.
 			RemoveEnemyShip(ShipIndex);
 			continue;
 		}
 
-		// Fire a torpedo if we've finished reloading.
-
-		EnemyShip.TimeRemainingToNextShot -= DeltaTime;
-
-		if(EnemyShip.TimeRemainingToNextShot <= 0.0f)
-		{
-			EnemyShip.TimeRemainingToNextShot = (IsBigEnemy ? BigEnemyReloadTime : SmallEnemyReloadTime);
-			LaunchTorpedoFromEnemy(EnemyShip, IsBigEnemy);
-		}
-
-		EnemyShip.TimeRemainingToNextMove -= DeltaTime;
-
-		if(EnemyShip.TimeRemainingToNextMove <= 0.0f)
-		{
-			EnemyShip.TimeRemainingToNextMove = 3.0f; // todo: use global constant instead of 3.0
-
-			// Change heading (or stay on current heading).
-
-			const FVector2D Headings[] = 
-			{
-				{ 1, 0 },
-				{ 1, 1 },
-				{ 1, -1 }
-			};
-
-			FVector2D NewHeading = Headings[FMath::RandRange(0, 2)];
-
-			NewHeading.Normalize();
-
-			const auto Facing = FMath::Sign(EnemyShip.Inertia.X);
-			EnemyShip.Inertia = NewHeading * EnemyShip.Inertia.Length();
-			EnemyShip.Inertia.X *= Facing;
-		}
+		EnemyShip.Perform(*this, DeltaTime);
 	}
 
 #if(FEATURE_MULTIPLE_ENEMIES == 0)
@@ -2683,7 +2556,7 @@ bool UPlayViewBase::IsPlayerPresent() const
 }
 
 
-
+#if 0
 void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBigEnemy)
 {
 	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
@@ -2749,6 +2622,8 @@ void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBig
 
 	PlaySound(TorpedoSound);
 }
+#endif
+
 
 
 void UPlayViewBase::OnFireTorpedo()

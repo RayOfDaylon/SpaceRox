@@ -315,6 +315,15 @@ file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
 
 
+Version 1.7.4
+-------------------------------------------------------------------------------------
+Added "low power" warning flash to invincibility shield when its time 
+remaining is just a few seconds.
+
+Refactoring of play object classes started; some code broken out from 
+PlayViewBase to new .h and .cpp files.
+
+
 Version 1.7.3
 -------------------------------------------------------------------------------------
 Made all game objects use SpritePlayObject2D; ImagePlayObject2D is unnecessary

@@ -17,6 +17,10 @@
 #include "UDaylonParticlesWidget.h"
 #include "UDaylonSpriteWidget.h"
 #include "DaylonUtils.h"
+#include "PlayObject.h"
+#include "Powerup.h"
+#include "EnemyShip.h"
+#include "Scavenger.h"
 #include "PlayViewBase.generated.h"
 
 
@@ -32,17 +36,6 @@ enum class EMenuItem : uint8
 	Exit,
 
 	Count
-};
-
-
-
-UENUM()
-enum class EPowerup : uint8
-{
-	Nothing     = 0,
-	DoubleGuns,
-	Shields,
-	Invincibility
 };
 
 
@@ -82,12 +75,6 @@ enum class EGameState : uint8
 
 
 
-class FPlayObject : public Daylon::SpritePlayObject2D
-{
-	// Base class of all non-trivial game play objects.
-};
-
-
 class FPlayerShip : public FPlayObject
 {
 	public:
@@ -113,18 +100,6 @@ class FPlayerShip : public FPlayObject
 };
 
 
-class FPowerup : public FPlayObject
-{
-	public:
-
-	EPowerup Kind = EPowerup::Nothing;
-
-	static TSharedPtr<FPowerup> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S);
-
-	virtual void Update(float DeltaTime) override { FPlayObject::Update(DeltaTime); }
-};
-
-
 class FAsteroid : public FPlayObject
 {
 	public:
@@ -143,45 +118,6 @@ class FAsteroid : public FPlayObject
 		Widget->SetSize(Atlas->Atlas.AtlasBrush.GetImageSize() / 2);
 		Widget->UpdateWidgetSize();
 		Widget->SetCurrentCel(FMath::RandRange(0, Atlas->Atlas.NumCels - 1));
-
-		return Widget;
-	}
-};
-
-
-class FScavenger : public FPlayObject
-{
-	public:
-
-	TArray<TSharedPtr<FPowerup>> AcquiredPowerups;
-
-	TWeakPtr<FPowerup> CurrentTarget;
-
-
-	static TSharedPtr<FScavenger> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S);
-};
-
-
-class FEnemyShip : public FPlayObject
-{
-	public:
-
-	float TimeRemainingToNextShot = 0.0f;
-	float TimeRemainingToNextMove = 0.0f;
-
-
-	static TSharedPtr<FEnemyShip> Create(UDaylonSpriteWidgetAtlas* Atlas, int Value, float RadiusFactor)
-	{
-		auto Widget = SNew(FEnemyShip);
-
-		Daylon::FinishCreating<SDaylonSprite>(Widget, RadiusFactor);
-
-		Widget->SetAtlas(Atlas->Atlas);
-		Widget->SetCurrentCel(0);
-		Widget->SetSize(Atlas->Atlas.GetCelPixelSize());
-		Widget->UpdateWidgetSize();
-
-		Widget->Value = Value;
 
 		return Widget;
 	}
@@ -264,9 +200,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	TArray<TObjectPtr<USoundBase>> ExplosionSounds;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
-	TObjectPtr<USoundBase> TorpedoSound;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> DoubleTorpedoSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
@@ -293,6 +226,14 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> ForwardSound;
 
+
+	public:
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
+	TObjectPtr<USoundBase> TorpedoSound;
+
+
+	protected:
 
 	// -- Textures --------------------------------------------------------------
 
@@ -474,7 +415,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	void      PreloadSounds              ();
 	void      PreloadSound               (USoundBase* Sound);
-	void      PlaySound                  (USoundBase* Sound, float VolumeScale = 1.0f);
 
 	void      InitializeScore            ();
 	void      InitializePlayerShipCount  ();
@@ -486,7 +426,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      CreatePlayerShip           ();
 	void      CreateTorpedos             ();
 
-	void      LaunchTorpedoFromEnemy     (const FEnemyShip& Shooter, bool IsBigEnemy);
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnEnemyShip             ();
 	void      SpawnPowerup               (TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P);
@@ -510,7 +449,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      KillPowerup                (int32 PowerupIndex);
 	void      KillPlayerShip             ();
 
-	int32     GetAvailableTorpedo        () const;
 	void      IncreasePlayerScoreBy      (int32 Amount);
 	void      StartWave                  ();
 	void      AddPlayerShips             (int32 Amount);
@@ -520,7 +458,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      AdjustShieldsLeft          (float Amount);
 	void      AdjustInvincibilityLeft    (float Amount);
 
-	bool      IsPlayerPresent            () const;
 	bool      IsWaitingToSpawnPlayer     () const;
 	bool      IsSafeToSpawnPlayer        () const;
 
@@ -533,6 +470,20 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      NavigateMenu               (Daylon::EListNavigationDirection Direction);
 
 
+	public:
+
+	static FVector2D WrapPositionToViewport(const FVector2D& P);
+
+	bool      IsPlayerPresent            () const;
+	int32     GetAvailableTorpedo        () const;
+	void      PlaySound                  (USoundBase* Sound, float VolumeScale = 1.0f);
+
+	TSharedPtr<FPlayerShip>                    PlayerShip;
+	TArray<TSharedPtr<FTorpedo>>               Torpedos;
+	TArray<TSharedPtr<FAsteroid>>              Asteroids;
+
+
+	protected:
 	// -- Called every frame -----------------------------------------------------------
 
 	void ProcessWaveTransition     (float DeltaTime);
@@ -557,14 +508,11 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	Daylon::FLoopedSound            BigEnemyShipSoundLoop;
 	Daylon::FLoopedSound            SmallEnemyShipSoundLoop;
 
-	TSharedPtr<FPlayerShip>                    PlayerShip;
 	TSharedPtr<Daylon::SpritePlayObject2D>     PlayerShield;
 	TSharedPtr<Daylon::SpritePlayObject2D>     PlayerInvincibilityShield;
 
-	TArray<TSharedPtr<FAsteroid>>              Asteroids;
 	TArray<TSharedPtr<FEnemyShip>>             EnemyShips;
 	TArray<TSharedPtr<FScavenger>>             Scavengers;
-	TArray<TSharedPtr<FTorpedo>>               Torpedos;
 	TArray<TSharedPtr<FPowerup>>               Powerups; // Not including those inside asteroids
 	TArray<TSharedPtr<SDaylonParticles>>       Explosions; 
 
@@ -595,6 +543,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	bool         bHighScoreWasEntered;
 
 	float        TimeUntilNextScavenger;
+	float        TimeUntilNextInvincibilityWarnFlash;
 };
 
 
