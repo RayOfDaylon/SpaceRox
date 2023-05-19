@@ -7,20 +7,17 @@
 
 #include "CoreMinimal.h"
 #include "PlayObject.h"
-#include "Powerup.h"
 
 
 class UPlayViewBase;
 
 
-class FScavenger : public FPlayObject
+class FTorpedo : public FPlayObject
 {
 	public:
 
-	TArray<TSharedPtr<FPowerup>> AcquiredPowerups;
+	bool FiredByPlayer;
 
-	TWeakPtr<FPowerup> CurrentTarget;
-
-
-	static TSharedPtr<FScavenger> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S);
+	static TSharedPtr<FTorpedo> Create(UDaylonSpriteWidgetAtlas* Atlas, float RadiusFactor);
 };
+

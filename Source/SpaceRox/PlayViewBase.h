@@ -19,8 +19,11 @@
 #include "DaylonUtils.h"
 #include "PlayObject.h"
 #include "Powerup.h"
+#include "PlayerShip.h"
 #include "EnemyShip.h"
 #include "Scavenger.h"
+#include "Asteroid.h"
+#include "Torpedo.h"
 #include "PlayViewBase.generated.h"
 
 
@@ -73,77 +76,6 @@ enum class EGameState : uint8
 	*/
 };
 
-
-
-class FPlayerShip : public FPlayObject
-{
-	public:
-
-	bool   IsUnderThrust;
-	bool   IsSpawning;
-	int32  DoubleShotsLeft;
-	float  ShieldsLeft;
-	float  InvincibilityLeft;
-
-	static TSharedPtr<FPlayerShip> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S, float RadiusFactor)
-	{
-		auto Widget = SNew(FPlayerShip);
-
-		Daylon::FinishCreating<SDaylonSprite>(Widget, RadiusFactor);
-
-		Widget->SetAtlas(Atlas->Atlas);
-		Widget->SetSize(S);
-		Widget->UpdateWidgetSize();
-
-		return Widget;
-	}
-};
-
-
-class FAsteroid : public FPlayObject
-{
-	public:
-
-	TSharedPtr<FPowerup> Powerup;
-
-	bool HasPowerup() const { return (Powerup && Powerup->Kind != EPowerup::Nothing); }
-
-	static TSharedPtr<FAsteroid> Create(UDaylonSpriteWidgetAtlas* Atlas)
-	{
-		auto Widget = SNew(FAsteroid);
-
-		Daylon::FinishCreating<SDaylonSprite>(Widget, 0.5f);
-
-		Widget->SetAtlas(Atlas->Atlas);
-		Widget->SetSize(Atlas->Atlas.AtlasBrush.GetImageSize() / 2);
-		Widget->UpdateWidgetSize();
-		Widget->SetCurrentCel(FMath::RandRange(0, Atlas->Atlas.NumCels - 1));
-
-		return Widget;
-	}
-};
-
-
-class FTorpedo : public FPlayObject
-{
-	public:
-
-	bool FiredByPlayer;
-
-	static TSharedPtr<FTorpedo> Create(UDaylonSpriteWidgetAtlas* Atlas, float RadiusFactor)
-	{
-		auto Widget = SNew(FTorpedo);
-
-		Daylon::FinishCreating<SDaylonSprite>(Widget, RadiusFactor);
-
-		Widget->SetAtlas(Atlas->Atlas);
-		Widget->SetCurrentCel(0);
-		Widget->SetSize(Atlas->Atlas.GetCelPixelSize());
-		Widget->UpdateWidgetSize();
-
-		return Widget;
-	}
-};
 
 
 // Base view class of the SpaceRox game arena.
@@ -218,9 +150,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	TObjectPtr<USoundBase> GainShieldPowerupSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
-	TObjectPtr<USoundBase> ShieldBonkSound;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> MenuItemSound;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
@@ -230,6 +159,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
+	TObjectPtr<USoundBase> ShieldBonkSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> TorpedoSound;
 
 
@@ -237,11 +169,22 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// -- Textures --------------------------------------------------------------
 
+	public:
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	UDaylonSpriteWidgetAtlas* PlayerShipAtlas;
+	UDaylonSpriteWidgetAtlas* SmallRockAtlas;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	UDaylonSpriteWidgetAtlas* MediumRockAtlas;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* DefensesAtlas;
+
+
+	protected:
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	UDaylonSpriteWidgetAtlas* PlayerShipAtlas;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* BigEnemyAtlas;
@@ -250,11 +193,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UDaylonSpriteWidgetAtlas* SmallEnemyAtlas;
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	UDaylonSpriteWidgetAtlas* SmallRockAtlas;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
-	UDaylonSpriteWidgetAtlas* MediumRockAtlas;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* LargeRockAtlas;
@@ -310,10 +248,12 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Testing)
 	int32 NumPowerupsOverride = 0;
 
+	public:
 	// Make player omnipotent
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Testing)
 	bool bGodMode = false;
 
+	protected:
 	
 	// -- Design-time widgets -----------------------------------------------------------
 
@@ -398,6 +338,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// -- Blueprint accessible properties --------------------------------------------------
 
+	public:
+
 	UPROPERTY(Transient, BlueprintReadWrite)
 	float RotationForce = 0.0f;
 
@@ -406,6 +348,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	UPROPERTY(Transient, BlueprintReadWrite)
 	bool bShieldActive = false;
+
+	protected:
 
 
 	// -- Class methods --------------------------------------------------
@@ -419,8 +363,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      InitializeScore            ();
 	void      InitializePlayerShipCount  ();
 	void      InitializeVariables        ();
-	void      InitializePlayerShip       ();
-	void      InitializePlayerDefenses   ();
 	void      InitializeAtlases          ();
 	void      InitializeSoundLoops       ();
 	void      CreatePlayerShip           ();
@@ -429,10 +371,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnEnemyShip             ();
 	void      SpawnPowerup               (TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P);
-	void      SpawnExplosion             (const FVector2D& P, float MinParticleSize, float MaxParticleSize, float MinParticleVelocity, float MaxParticleVelocity,
-                                          float MinParticleLifetime, float MaxParticleLifetime, float FinalOpacity, int32 NumParticles);
 	void      SpawnExplosion             (const FVector2D& P);
-	void      SpawnPlayerShipExplosion   (const FVector2D& P);
+	
 	void      RemoveAsteroid             (int32 Index);
 	void      RemoveAsteroids            ();
 	void      RemoveEnemyShip            (int32 EnemyIndex);
@@ -453,10 +393,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      StartWave                  ();
 	void      AddPlayerShips             (int32 Amount);
 	void      UpdatePlayerScoreReadout   ();
-	void      UpdatePowerupReadout       (EPowerup PowerupKind);
 	void      AdjustDoubleShotsLeft      (int32 Amount);
-	void      AdjustShieldsLeft          (float Amount);
-	void      AdjustInvincibilityLeft    (float Amount);
 
 	bool      IsWaitingToSpawnPlayer     () const;
 	bool      IsSafeToSpawnPlayer        () const;
@@ -472,11 +409,17 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	public:
 
-	static FVector2D WrapPositionToViewport(const FVector2D& P);
+	static FVector2D WrapPositionToViewport  (const FVector2D& P);
+	static FVector2D MakeInertia             (const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation);
 
+	void      AdjustInvincibilityLeft    (float Amount);
 	bool      IsPlayerPresent            () const;
 	int32     GetAvailableTorpedo        () const;
 	void      PlaySound                  (USoundBase* Sound, float VolumeScale = 1.0f);
+	void      UpdatePowerupReadout       (EPowerup PowerupKind);
+
+	void      SpawnExplosion             (const FVector2D& P, float MinParticleSize, float MaxParticleSize, float MinParticleVelocity, float MaxParticleVelocity,
+                                          float MinParticleLifetime, float MaxParticleLifetime, float FinalOpacity, int32 NumParticles);
 
 	TSharedPtr<FPlayerShip>                    PlayerShip;
 	TArray<TSharedPtr<FTorpedo>>               Torpedos;
@@ -492,8 +435,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void CheckCollisions           ();
 	void ProcessPlayerCollision    ();
 
-	void UpdatePlayerRotation      (float DeltaTime);
-	void UpdatePlayerShip          (float DeltaTime);
 	void UpdateEnemyShips          (float DeltaTime);
 	void UpdateAsteroids           (float DeltaTime);
 	void UpdateTorpedos            (float DeltaTime);
@@ -504,12 +445,16 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	// -- Member variables -----------------------------------------------------------
 
+	public:
 	Daylon::FLoopedSound            PlayerShipThrustSoundLoop;
+	EGameState                      GameState;
+	TArray<Daylon::FScheduledTask>  ScheduledTasks;
+	TArray<Daylon::FDurationTask>   DurationTasks;
+
+	protected:
 	Daylon::FLoopedSound            BigEnemyShipSoundLoop;
 	Daylon::FLoopedSound            SmallEnemyShipSoundLoop;
 
-	TSharedPtr<Daylon::SpritePlayObject2D>     PlayerShield;
-	TSharedPtr<Daylon::SpritePlayObject2D>     PlayerInvincibilityShield;
 
 	TArray<TSharedPtr<FEnemyShip>>             EnemyShips;
 	TArray<TSharedPtr<FScavenger>>             Scavengers;
@@ -520,10 +465,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	Daylon::FHighScore              MostRecentHighScore;
 	UTextBlock*                     MostRecentHighScoreTextBlock[2];
 
-	TArray<Daylon::FScheduledTask>  ScheduledTasks;
-	TArray<Daylon::FDurationTask>   DurationTasks;
 
-	EGameState   GameState;
 	EMenuItem    SelectedMenuItem;
 	int32        NumPlayerShips;
 	int32        PlayerScore;
@@ -539,11 +481,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	float        TimeUntilGameOverStateEnds;
 	float        MruHighScoreAnimationAge;
 	bool         IsInitialized;
-	bool         bEnemyShootsAtPlayer;
 	bool         bHighScoreWasEntered;
 
 	float        TimeUntilNextScavenger;
-	float        TimeUntilNextInvincibilityWarnFlash;
 };
 
 

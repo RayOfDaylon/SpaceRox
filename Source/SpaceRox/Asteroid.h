@@ -13,14 +13,15 @@
 class UPlayViewBase;
 
 
-class FScavenger : public FPlayObject
+class FAsteroid : public FPlayObject
 {
 	public:
 
-	TArray<TSharedPtr<FPowerup>> AcquiredPowerups;
+		TSharedPtr<FPowerup> Powerup;
 
-	TWeakPtr<FPowerup> CurrentTarget;
+		bool HasPowerup() const;
 
-
-	static TSharedPtr<FScavenger> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S);
+		static TSharedPtr<FAsteroid> Create(UDaylonSpriteWidgetAtlas* Atlas);
+	
+		TSharedPtr<FAsteroid> Split(UPlayViewBase& Arena);
 };

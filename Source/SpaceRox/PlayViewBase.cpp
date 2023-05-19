@@ -50,11 +50,9 @@ DEFINE_LOG_CATEGORY(LogGame)
 
 
 
-static FVector2D MakeInertia(const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation)
+FVector2D UPlayViewBase::MakeInertia(const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation)
 {
-	FVector2D NewInertia = UDaylonUtils::Rotate(InertiaOld, FMath::RandRange(MinDeviation, MaxDeviation));
-
-	return NewInertia;
+	return UDaylonUtils::Rotate(InertiaOld, FMath::RandRange(MinDeviation, MaxDeviation));
 }
 
 
@@ -118,49 +116,10 @@ void UPlayViewBase::CreatePlayerShip()
 {
 	PlayerShip = FPlayerShip::Create(PlayerShipAtlas, FVector2D(32), 0.4f);
 
-	InitializePlayerShip();
+	PlayerShip->Initialize(*this);
 }
 
 
-void UPlayViewBase::InitializePlayerShip()
-{
-	PlayerShip->IsUnderThrust      = false;
-	PlayerShip->IsSpawning         = false;
-	PlayerShip->DoubleShotsLeft    = bGodMode ? 10000 : 0;
-	PlayerShip->ShieldsLeft        = 0.0f;
-	PlayerShip->InvincibilityLeft  = 0.0f;
-
-	PlayerShip->Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
-	PlayerShip->Hide   ();
-}
-
-
-void UPlayViewBase::InitializePlayerDefenses()
-{
-	PlayerShield = SNew(Daylon::SpritePlayObject2D);
-
-	Daylon::FinishCreating<SDaylonSprite>(PlayerShield, 0.5f);
-
-	PlayerShield->SetAtlas(DefensesAtlas->Atlas);
-	PlayerShield->SetCurrentCel(ShieldDefenseAtlasCel);
-	PlayerShield->SetSize(DefensesAtlas->Atlas.GetCelPixelSize());
-	PlayerShield->UpdateWidgetSize();
-
-	PlayerShield->Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
-	PlayerShield->Hide   ();
-
-
-	PlayerInvincibilityShield = SNew(Daylon::SpritePlayObject2D);
-
-	Daylon::FinishCreating<SDaylonSprite>(PlayerInvincibilityShield, 0.5f);
-
-	PlayerInvincibilityShield->SetAtlas(DefensesAtlas->Atlas);
-	PlayerInvincibilityShield->SetCurrentCel(InvincibilityDefenseAtlasCel);
-	PlayerInvincibilityShield->SetSize(DefensesAtlas->Atlas.GetCelPixelSize());
-	PlayerInvincibilityShield->UpdateWidgetSize();
-	PlayerInvincibilityShield->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
-	PlayerInvincibilityShield->Hide();
-}
 
 
 void UPlayViewBase::CreateTorpedos()
@@ -181,7 +140,6 @@ void UPlayViewBase::CreateTorpedos()
 
 void UPlayViewBase::InitializeVariables()
 {
-	bEnemyShootsAtPlayer          = false;
 	bHighScoreWasEntered          = false;
 
 	PlayerScore                   = 0;
@@ -320,20 +278,9 @@ void UPlayViewBase::OnAbortButtonPressed()
 {
 	if(PlayerShip)
 	{
+		PlayerShip->ReleaseResources(*this);
 		Daylon::Destroy(PlayerShip);
 		PlayerShip.Reset();
-	}
-
-	if(PlayerShield)
-	{
-		Daylon::Destroy(PlayerShield);
-		PlayerShield.Reset();
-	}
-
-	if(PlayerInvincibilityShield)
-	{
-		Daylon::Destroy(PlayerInvincibilityShield);
-		PlayerInvincibilityShield.Reset();
 	}
 
 	TransitionToState(EGameState::MainMenu);
@@ -575,8 +522,8 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			if(!PlayerShip)
 			{
-				CreatePlayerShip         ();
-				InitializePlayerDefenses ();
+				CreatePlayerShip               ();
+				PlayerShip->InitializeDefenses (*this);
 			}
 
 			if(Torpedos.IsEmpty())
@@ -586,7 +533,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			InitializeScore           ();
 			InitializePlayerShipCount ();
-			InitializePlayerShip      ();
+			PlayerShip->Initialize    (*this);
 
 			RemoveAsteroids           ();
 			RemoveEnemyShips          ();
@@ -615,14 +562,10 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering game over state"), (int32)PreviousState);
 			}
 
+			PlayerShip->ReleaseResources(*this);
 			Daylon::Destroy(PlayerShip);
 			PlayerShip.Reset();
 
-			Daylon::Destroy(PlayerShield);
-			PlayerShield.Reset();
-
-			Daylon::Destroy(PlayerInvincibilityShield);
-			PlayerInvincibilityShield.Reset();
 
 			UDaylonUtils::Show(GameOverMessage);
 
@@ -799,8 +742,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			if(IsPlayerPresent())
 			{
-				UpdatePlayerRotation    (InDeltaTime);
-				UpdatePlayerShip        (InDeltaTime);
+				PlayerShip->Perform     (*this, InDeltaTime);
 			}
 
 			UpdateEnemyShips          (InDeltaTime);
@@ -813,7 +755,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			ProcessWaveTransition     (InDeltaTime);
 
-			if(PlayerShip && PlayerShip->IsSpawning)
+			if(IsPlayerPresent() && PlayerShip->IsSpawning)
 			{
 				ProcessPlayerShipSpawn    (InDeltaTime);
 			}
@@ -1244,119 +1186,6 @@ void UPlayViewBase::StartWave()
 }
 
 
-void UPlayViewBase::UpdatePlayerRotation(float DeltaTime)
-{
-	// Uses a 1D axis value instead of action buttons
-
-	if(!PlayerShip->IsValid())
-	{
-		UE_LOG(LogGame, Error, TEXT("Invalid player ship"));
-		return;
-	}
-
-	const float Amt = PlayerRotationSpeed * DeltaTime;
-
-	//UE_LOG(LogGame, Log, TEXT("Rotation force: %.5f"), RotationForce);
-
-	PlayerShip->SetAngle(UDaylonUtils::WrapAngle(PlayerShip->GetAngle() + Amt * RotationForce));
-}
-
-
-void UPlayViewBase::UpdatePlayerShip(float DeltaTime)
-{
-	if(!PlayerShip->IsValid())
-	{
-		UE_LOG(LogGame, Error, TEXT("Invalid player ship"));
-		return;
-	}
-
-	// Change widget brush only if the thrust state actually changed.
-	const bool bThrustStateChanged = (PlayerShip->IsUnderThrust != bThrustActive);
-
-	PlayerShip->IsUnderThrust = bThrustActive;
-
-	if (bThrustActive)
-	{
-		if(bThrustStateChanged)
-		{
-			PlayerShip->SetCurrentCel(PlayerShipThrustingAtlasCel);
-			PlayerShipThrustSoundLoop.Start();
-		}
-		else
-		{
-			// Still thrusting.
-			PlayerShipThrustSoundLoop.Tick(DeltaTime);
-		}
-
-		const float Thrust = PlayerThrustForce * DeltaTime;
-
-		const FVector2D Force = PlayerShip->GetDirectionVector() * Thrust;
-
-		PlayerShip->Inertia += Force;
-
-		// Limit speed to avoid breaking collision detector.
-
-		if(PlayerShip->Inertia.Length() > MaxPlayerShipSpeed)
-		{
-			PlayerShip->Inertia.Normalize();
-			PlayerShip->Inertia *= MaxPlayerShipSpeed;
-		}
-	}
-	else
-	{
-		if(bThrustStateChanged)
-		{
-			PlayerShip->SetCurrentCel(PlayerShipNormalAtlasCel);
-		}
-	}
-
-	PlayerShip->Move(DeltaTime, WrapPositionToViewport);
-
-
-	PlayerShield->Show(bShieldActive && PlayerShip->ShieldsLeft > 0.0f);
-
-	if(PlayerShield->IsVisible())
-	{
-		// We have to budge the shield texture by two px to look nicely centered around the player ship.
-		PlayerShield->SetPosition(PlayerShip->GetPosition() + UDaylonUtils::Rotate(FVector2D(0, 2), PlayerShip->GetAngle()));
-		AdjustShieldsLeft(-DeltaTime);
-	}
-
-
-	if(PlayerShip->InvincibilityLeft <= 0.0f)
-	{
-		PlayerInvincibilityShield->Hide();
-	}
-	else if(PlayerShip->InvincibilityLeft <= 5.0f) // todo: use constant
-	{
-		// Flash the invincibility shield to indicate that it has only a few seconds of power left.
-		TimeUntilNextInvincibilityWarnFlash -= DeltaTime;
-
-		if(TimeUntilNextInvincibilityWarnFlash <= 0.0f)
-		{
-			TimeUntilNextInvincibilityWarnFlash = MaxInvincibilityWarnTime;	
-		}
-		PlayerInvincibilityShield->Show(TimeUntilNextInvincibilityWarnFlash < MaxInvincibilityWarnTime * 0.5f);
-	}
-	else
-	{
-		PlayerInvincibilityShield->Show();
-	}
-
-
-	if(PlayerInvincibilityShield->IsVisible())
-	{
-		PlayerInvincibilityShield->SetAngle(PlayerShip->GetAngle());
-		PlayerInvincibilityShield->SetPosition(PlayerShip->GetPosition() + UDaylonUtils::Rotate(FVector2D(0, -2), PlayerShip->GetAngle()));
-	}
-
-	if(PlayerShip->InvincibilityLeft > 0.0f)
-	{
-		AdjustInvincibilityLeft(-DeltaTime);
-	}
-}
-
-
 void UPlayViewBase::UpdateAsteroids(float DeltaTime)
 {
 	for (auto& Elem : Asteroids)
@@ -1441,52 +1270,6 @@ void UPlayViewBase::SpawnExplosion(const FVector2D& P)
 }
 
 
-void UPlayViewBase::SpawnPlayerShipExplosion(const FVector2D& P)
-{
-	SpawnExplosion(P, 
-		3.0f,
-		6.0f,
-		30.0f,
-		160.0f,
-		0.5f,
-		3.0f,
-		0.25f,
-		80);
-
-
-	// Set up second explosion event for 3/4 second later
-
-	Daylon::FScheduledTask Task;
-
-	Task.When = 0.66f;
-
-	Task.What = [P, This=TWeakObjectPtr<UPlayViewBase>(this)]()
-	{
-		if(!This.IsValid())
-		{
-			return;
-		}
-
-		if(This->GameState != EGameState::Active)
-		{
-			return;
-		}
-
-		This->SpawnExplosion(P, 
-			4.5f,
-			9.0f,
-			45.0f,
-			240.0f,
-			0.5f,
-			4.0f,
-			0.25f,
-			80);
-	};
-
-	ScheduledTasks.Add(Task);
-}
-
-
 void UPlayViewBase::UpdateExplosions(float DeltaTime)
 {
 	if(Explosions.IsEmpty())
@@ -1513,7 +1296,7 @@ void UPlayViewBase::PlaySound(USoundBase* Sound, float VolumeScale)
 
 void UPlayViewBase::KillPlayerShip()
 {
-	SpawnPlayerShipExplosion(PlayerShip->UnwrappedNewPosition);
+	PlayerShip->SpawnExplosion(*this);
 
 	PlaySound(PlayerShipDestroyedSound);
 
@@ -1586,74 +1369,8 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 	}
 
 	// Asteroid was not small, so split it up.
-	// Apparently we always split into two children.
-	// For efficiency, we reformulate the parent rock into one of the kids.
-	// For the new inertias, we want the kids to generally be faster but 
-	// once in a while, one of the kids can be slower.
 
-	UDaylonSpriteWidgetAtlas* NewAsteroidAtlas = nullptr;
-
-	switch(Asteroid.Value)
-	{
-		case ValueBigAsteroid:
-			NewAsteroidAtlas = MediumRockAtlas;
-			Asteroid.Value = ValueMediumAsteroid;
-			Asteroid.SetAtlas(MediumRockAtlas->Atlas);
-			break;
-
-		case ValueMediumAsteroid:
-			NewAsteroidAtlas = SmallRockAtlas;
-			Asteroid.Value = ValueSmallAsteroid;
-			Asteroid.SetAtlas(SmallRockAtlas->Atlas);
-			break;
-	}
-
-	Asteroid.SetSize(NewAsteroidAtlas->Atlas.GetCelPixelSize());
-	Asteroid.UpdateWidgetSize();
-
-	Asteroid.SetCurrentCel(FMath::RandRange(0, NewAsteroidAtlas->Atlas.NumCels - 1));
-
-
-	auto NewAsteroidPtr = FAsteroid::Create(NewAsteroidAtlas);
-	auto& NewAsteroid   = *NewAsteroidPtr.Get();
-
-	NewAsteroid.Value = Asteroid.Value;
-
-
-	const bool BothKidsFast = FMath::RandRange(0, 10) < 9;
-
-	NewAsteroid.Inertia = MakeInertia(Asteroid.Inertia, MinAsteroidSplitAngle, MaxAsteroidSplitAngle);
-	NewAsteroid.Inertia *= FMath::RandRange(1.2f, 3.0f);
-
-	NewAsteroid.LifeRemaining = 1.0f;
-	NewAsteroid.SpinSpeed     = Asteroid.SpinSpeed * AsteroidSpinScale;// FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
-
-	Asteroid.Inertia = MakeInertia(Asteroid.Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
-
-	if(BothKidsFast)
-	{
-		Asteroid.Inertia *= FMath::RandRange(1.2f, 3.0f);
-	}
-	else
-	{
-		Asteroid.Inertia *= FMath::RandRange(0.25f, 1.0f);
-	}
-
-
-	// Update size of existing rock.
-	//Asteroid.UpdateWidgetSize();
-
-	Asteroid.SpinSpeed *= AsteroidSpinScale;
-
-	//NewAsteroid.Create(NewAsteroidBrush, 0.5f);
-	NewAsteroid.Show();
-
-	NewAsteroid.OldPosition = 
-	NewAsteroid.UnwrappedNewPosition = Asteroid.UnwrappedNewPosition;
-	NewAsteroid.SetPosition(NewAsteroid.UnwrappedNewPosition);
-
-	// Do this last since the play object is copied.
-	Asteroids.Add(NewAsteroidPtr);
+	Asteroids.Add(Asteroid.Split(*this));
 }
 
 
@@ -1788,18 +1505,6 @@ void UPlayViewBase::AdjustDoubleShotsLeft(int32 Amount)
 }
 
 
-void UPlayViewBase::AdjustShieldsLeft(float Amount)
-{
-	if(PlayerShip->ShieldsLeft < 0.0f)
-	{
-		PlayerShip->ShieldsLeft = 0.0f;
-	}
-
-	PlayerShip->ShieldsLeft = FMath::Max(0.0f, PlayerShip->ShieldsLeft + Amount);
-	UpdatePowerupReadout(EPowerup::Shields);
-}
-
-
 void UPlayViewBase::AdjustInvincibilityLeft(float Amount)
 {
 	if(PlayerShip->InvincibilityLeft < 0.0f)
@@ -1817,20 +1522,10 @@ void UPlayViewBase::ProcessPlayerCollision()
 {
 	check(PlayerShip);
 
-	if(bGodMode || PlayerShip->InvincibilityLeft > 0.0f)
+	if(!PlayerShip->ProcessCollision(*this))
 	{
-		PlaySound(ShieldBonkSound);
-		return;
+		KillPlayerShip();
 	}
-
-	if(PlayerShield->IsVisible())
-	{
-		AdjustShieldsLeft(-ShieldBonkDamage);
-		PlaySound(ShieldBonkSound);
-		return;
-	}
-
-	KillPlayerShip();
 }
 
 
@@ -2092,7 +1787,7 @@ void UPlayViewBase::CheckCollisions()
 
 					case EPowerup::Shields:
 
-						AdjustShieldsLeft(ShieldPowerupIncrease);
+						PlayerShip->AdjustShieldsLeft(*this, ShieldPowerupIncrease);
 						PlaySound(GainShieldPowerupSound);
 						PlayAnimation(ShieldReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
 						break;
@@ -2100,7 +1795,7 @@ void UPlayViewBase::CheckCollisions()
 					case EPowerup::Invincibility:
 						PlaySound(GainShieldPowerupSound); // todo: specific sound
 						AdjustInvincibilityLeft(MaxInvincibilityTime);
-						TimeUntilNextInvincibilityWarnFlash = MaxInvincibilityWarnTime;
+						PlayerShip->TimeUntilNextInvincibilityWarnFlash = MaxInvincibilityWarnTime;
 						PlayAnimation(InvincibilityReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
 						break;
 				}
@@ -2554,76 +2249,6 @@ bool UPlayViewBase::IsPlayerPresent() const
 {
 	return (PlayerShip && PlayerShip->IsVisible());
 }
-
-
-#if 0
-void UPlayViewBase::LaunchTorpedoFromEnemy(const FEnemyShip& Shooter, bool IsBigEnemy)
-{
-	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
-	// For now, just use wild and leaded.
-
-	if(!IsPlayerPresent())
-	{
-		return;
-	}
-
-	const int32 TorpedoIdx = GetAvailableTorpedo();
-
-	if(TorpedoIdx == INDEX_NONE)
-	{
-		return;
-	}
-
-	auto& Torpedo = *Torpedos[TorpedoIdx].Get();
-
-	Torpedo.FiredByPlayer = false;
-
-	FVector2D Direction;
-	float     Speed;
-
-	// Position torpedo a little outside the ship.
-	auto LaunchP = Shooter.OldPosition;
-
-	if(IsBigEnemy)
-	{
-		// Shot vector is random.
-		Direction = UDaylonUtils::RandVector2D();
-		LaunchP += Direction * (Shooter.GetSize().X / 2 + 2);
-		LaunchP = WrapPositionToViewport(LaunchP);
-
-		Speed = BigEnemyTorpedoSpeed;
-	}
-	else
-	{
-		// Small enemy.
-		// Shots switch between shooting at an available asteroid or the player.
-
-		Speed = SmallEnemyTorpedoSpeed;
-
-		FVector2D TargetP(-1);
-		//const float Time = FMath::RandRange(0.75f, 1.25f);
-
-
-		bEnemyShootsAtPlayer = !bEnemyShootsAtPlayer;
-
-		if(bEnemyShootsAtPlayer || Asteroids.IsEmpty())
-		{
-			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, PlayerShip->GetPosition(), PlayerShip->Inertia);
-		}
-		else
-		{
-			// Shoot at an asteroid.
-			const auto& Asteroid = *Asteroids[FMath::RandRange(0, Asteroids.Num() - 1)].Get();
-			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Asteroid.GetPosition(), Asteroid.Inertia);
-		}
-	}
-
-	Torpedo.Spawn(LaunchP, Direction * Speed, MaxTorpedoLifeTime);
-
-	PlaySound(TorpedoSound);
-}
-#endif
-
 
 
 void UPlayViewBase::OnFireTorpedo()
