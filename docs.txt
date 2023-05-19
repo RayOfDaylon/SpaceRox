@@ -49,8 +49,15 @@ Plugins
 
 Source
     SpaceRox
-        PlayViewBase.*         The specific game logic
-
+        Constants.h            Global constant values
+        PlayViewBase.*         The overall game logic
+        PlayObject.h           Base play object class (SDaylonSprite widget)
+        Asteroid.*             Handles asteroids
+        EnemyShip.*            Enemy ship class (classic big and small enemies)
+        PlayerShip.*           The player's ship (technically a singleton)
+        Powerup.*              Powerup class
+        Scavenger.*            The scavenger enemy
+        Torpedo.*              The bullets fired by all shooters
 
 
 Setting Up
