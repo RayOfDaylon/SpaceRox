@@ -198,6 +198,77 @@ namespace Daylon
 	};
 
 
+	// A type that acts like a given type except that when the value is modified,
+	// it invokes a delegate.
+	template <typename T>
+	class TBindableValue
+	{
+		protected:
+
+			T                             Value;
+			TFunction<void(const T& Val)> Delegate;
+
+
+		public:
+
+			TBindableValue()
+			{
+			}
+
+
+			TBindableValue(const T& Val, TFunction<void(const T& Val)> Del) : Value(Val), Delegate(Del) 
+			{
+			}
+
+
+			operator T& () { return Value; }
+			operator const T& () const { return Value; }
+
+			// Some calls to operator T& won't compile e.g. as variadic args, but these should work.
+			T& GetValue() { return (T&)*this; }
+			const T& GetValue() const { return (T&)*this; }
+
+			void Bind(TFunction<void(const T& Val)> Del)
+			{
+				Delegate = Del;
+
+				if(Delegate)
+				{
+					Delegate(Value);
+				}
+			}
+
+
+
+			TBindableValue& operator = (const T& Val)
+			{
+				if(Value != Val)
+				{
+					Value = Val;
+
+					if(Delegate)
+					{
+						Delegate(Value);
+					}
+				}
+
+				return *this;
+			}
+
+			TBindableValue& operator += (const T& Val) { *this = *this + Val; return *this;	 }
+			TBindableValue& operator -= (const T& Val) { *this = *this - Val; return *this;	 }
+			TBindableValue& operator *= (const T& Val) { *this = *this * Val; return *this;	 }
+			TBindableValue& operator /= (const T& Val) { *this = *this / Val; return *this; }
+
+			bool operator <  (const T& Val) const { return (Value < Val); }
+			bool operator <= (const T& Val) const { return (Value <= Val); }
+			bool operator == (const T& Val) const { return (Value == Val); }
+			bool operator >= (const T& Val) const { return (Value >= Val); }
+			bool operator >  (const T& Val) const { return (Value > Val); }
+			bool operator != (const T& Val) const { return (Value != Val); }
+	};
+
+
 	struct DAYLONGRAPHICSLIBRARY_API FHighScore
 	{
 	

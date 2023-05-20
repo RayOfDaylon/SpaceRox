@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 19, 2023
+May 20, 2023
 
 
 
@@ -54,6 +54,7 @@ Source
         PlayObject.h           Base play object class (SDaylonSprite widget)
         Asteroid.*             Handles asteroids
         EnemyShip.*            Enemy ship class (classic big and small enemies)
+        EnemyShips.*           Handles all the enemy ships (including scavengers)
         PlayerShip.*           The player's ship (technically a singleton)
         Powerup.*              Powerup class
         Scavenger.*            The scavenger enemy
@@ -320,6 +321,20 @@ In development mode, this will be in the project's
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
+
+
+Version 1.7.6
+-------------------------------------------------------------------------------------
+Enemy ship explosions made more dramatic.
+
+More refactoring: New FEnemyShips class manages all the enemy ships and 
+scavengers. Player score and ship status values use new Daylon::TBindableValue 
+template class to update corresponding readouts using delegates -- when the 
+value changes, the delegate fires. Now the FPlayerShip class doesn't need 
+to know how the game updates readouts. We could've used a delegate member 
+called "ReadoutUpdater" but that would've implied that FPlayerShip needs 
+to explicitly call it. Instead, it can just modify shields and other values 
+and the delegate is implicitly called.
 
 
 Version 1.7.5

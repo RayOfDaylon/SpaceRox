@@ -39,9 +39,7 @@ DEFINE_LOG_CATEGORY(LogGame)
 
 #define FEATURE_SPINNING_ASTEROIDS  1
 
-#define FEATURE_MULTIPLE_ENEMIES    1
 
-#define FEATURE_SCAVENGERS          1
 
 
 #if(DEBUG_MODULE == 1)
@@ -49,6 +47,10 @@ DEFINE_LOG_CATEGORY(LogGame)
 #endif
 
 
+
+
+
+// ------------------------------------------------------------------------------------------------------------------
 
 FVector2D UPlayViewBase::MakeInertia(const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation)
 {
@@ -116,6 +118,10 @@ void UPlayViewBase::CreatePlayerShip()
 {
 	PlayerShip = FPlayerShip::Create(PlayerShipAtlas, FVector2D(32), 0.4f);
 
+	PlayerShip->DoubleShotsLeft   .Bind([this](int32){ UpdatePlayerShipReadout(EPowerup::DoubleGuns);    });
+	PlayerShip->ShieldsLeft       .Bind([this](int32){ UpdatePlayerShipReadout(EPowerup::Shields);       });
+	PlayerShip->InvincibilityLeft .Bind([this](float){ UpdatePlayerShipReadout(EPowerup::Invincibility); });
+
 	PlayerShip->Initialize(*this);
 }
 
@@ -126,7 +132,6 @@ void UPlayViewBase::CreateTorpedos()
 {
 	for(int32 Index = 0; Index < TorpedoCount; Index++)
 	{
-		//auto TorpedoPtr = FTorpedo::Create(TorpedoBrush, 0.5f);
 		auto TorpedoPtr = FTorpedo::Create(TorpedoAtlas, 0.5f);
 
 		TorpedoPtr->Inertia = FVector2D(0);
@@ -142,11 +147,10 @@ void UPlayViewBase::InitializeVariables()
 {
 	bHighScoreWasEntered          = false;
 
+	PlayerScore.Bind([this](int32){ this->UpdatePlayerScoreReadout(); });
+
 	PlayerScore                   = 0;
 	WaveNumber                    = 0;
-
-	NumSmallEnemyShips            = 0;
-	NumBigEnemyShips              = 0;
 
 	ThrustSoundTimeRemaining      = 0.0f;
 	StartMsgAnimationAge          = 0.0f;
@@ -493,7 +497,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			
 			RemoveExplosions  ();
 			RemoveTorpedos    ();
-			RemoveEnemyShips  ();
+			EnemyShips.RemoveAll();
 			RemovePowerups    ();
 
 
@@ -536,7 +540,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			PlayerShip->Initialize    (*this);
 
 			RemoveAsteroids           ();
-			RemoveEnemyShips          ();
+			EnemyShips.RemoveAll();
 			RemovePowerups            ();
 
 			WaveNumber = 0;
@@ -544,11 +548,6 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Show  (PlayerScoreReadout);
 			UDaylonUtils::Show  (PlayerShipsReadout);
 			UDaylonUtils::Show  (PowerupReadouts);
-
-			UpdatePowerupReadout(EPowerup::DoubleGuns);
-			UpdatePowerupReadout(EPowerup::Shields);
-			UpdatePowerupReadout(EPowerup::Invincibility);
-
 
 			PlayerShip->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
 
@@ -590,7 +589,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			UDaylonUtils::Show (PlayerScoreReadout, (PreviousState == EGameState::HighScoreEntry));
 
-			RemoveEnemyShips();
+			EnemyShips.RemoveAll();
 
 			break;
 
@@ -603,7 +602,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			}
 
 			RemoveAsteroids   ();
-			RemoveEnemyShips  ();
+			EnemyShips.RemoveAll();
 			RemovePowerups    ();
 
 			UDaylonUtils::Show(PlayerScoreReadout);
@@ -622,7 +621,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering credits state"), (int32)PreviousState);
 			}
 
-			RemoveEnemyShips ();
+			EnemyShips.RemoveAll();
 			RemovePowerups   ();
 
 			UDaylonUtils::Show(CreditsContent);
@@ -638,7 +637,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			}
 
 			RemoveAsteroids   ();
-			RemoveEnemyShips  ();
+			EnemyShips.RemoveAll();
 			RemovePowerups    ();
 
 			UDaylonUtils::Show(HelpContent);
@@ -745,7 +744,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				PlayerShip->Perform     (*this, InDeltaTime);
 			}
 
-			UpdateEnemyShips          (InDeltaTime);
+			EnemyShips.Update         (*this, InDeltaTime);
 			UpdateAsteroids           (InDeltaTime);
 			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
@@ -755,7 +754,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			ProcessWaveTransition     (InDeltaTime);
 
-			if(IsPlayerPresent() && PlayerShip->IsSpawning)
+			if(PlayerShip && PlayerShip->IsSpawning)
 			{
 				ProcessPlayerShipSpawn    (InDeltaTime);
 			}
@@ -765,7 +764,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 		case EGameState::Over:
 
-			UpdateEnemyShips          (InDeltaTime);
+			EnemyShips.Update         (*this, InDeltaTime);
 			UpdateAsteroids           (InDeltaTime);
 			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
@@ -961,7 +960,9 @@ bool UPlayViewBase::IsSafeToSpawnPlayer() const
 		ScreenCenter - SafeZoneSize / 2,
 		ScreenCenter + SafeZoneSize / 2);
 
-	return (!ImageObjectsIntersectBox(Asteroids, SafeZone) && !ImageObjectsIntersectBox(EnemyShips, SafeZone));
+	return (!ImageObjectsIntersectBox(Asteroids, SafeZone) && 
+	        !ImageObjectsIntersectBox(EnemyShips.Ships, SafeZone) &&
+			!ImageObjectsIntersectBox(EnemyShips.Scavengers, SafeZone));
 }
 
 
@@ -1282,7 +1283,7 @@ void UPlayViewBase::UpdateExplosions(float DeltaTime)
 		if(!Explosions[Index]->Update(DeltaTime))
 		{
 			RootCanvas->GetCanvasWidget()->RemoveSlot(Explosions[Index].ToSharedRef());
-			Explosions.RemoveAt(Index);
+			Explosions.RemoveAtSwap(Index);
 		}
 	}
 }
@@ -1374,56 +1375,6 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 }
 
 
-void UPlayViewBase::KillEnemyShip(int32 EnemyIndex)
-{
-	if(!EnemyShips.IsValidIndex(EnemyIndex))
-	{
-		UE_LOG(LogGame, Error, TEXT("Invalid enemy ship index %d"), EnemyIndex);
-		return;
-	}
-
-	auto& EnemyShip = *EnemyShips[EnemyIndex].Get();
-
-	SpawnExplosion(EnemyShip.GetPosition());
-	PlaySound(ExplosionSounds[EnemyShip.Value == ValueBigEnemy ? 0 : 1]);
-	RemoveEnemyShip(EnemyIndex);
-}
-
-
-void UPlayViewBase::KillScavenger(int32 ScavengerIndex)
-{
-	if(!Scavengers.IsValidIndex(ScavengerIndex))
-	{
-		UE_LOG(LogGame, Error, TEXT("Invalid scavenger index %d"), ScavengerIndex);
-		return;
-	}
-
-	auto& Scavenger = *Scavengers[ScavengerIndex].Get();
-
-	// Have scavenger drop any powerups it was carrying.
-
-	// For now, place them in a line trailing away from the scavenger.
-	FVector2D Direction = Scavenger.Inertia;
-	Direction.Normalize();
-	Direction *= -1; // Start from the scavenger's position and work backwards.
-
-	for(int32 Index = 0; Index < Scavenger.AcquiredPowerups.Num(); Index++)
-	{
-		auto DroppedPowerupPtr = Scavenger.AcquiredPowerups[Index];
-		DroppedPowerupPtr->Show();
-		DroppedPowerupPtr->SetPosition(WrapPositionToViewport(Scavenger.GetPosition() + (Direction * DroppedPowerupPtr->GetRadius() * 2.5f * Index)));
-		Powerups.Add(DroppedPowerupPtr);
-	}
-	Scavenger.AcquiredPowerups.Empty();
-
-	SpawnExplosion(Scavenger.GetPosition());
-
-	// todo: have scavenger explosion sound
-	PlaySound(ExplosionSounds[0]);
-	RemoveScavenger(ScavengerIndex);
-}
-
-
 void UPlayViewBase::KillPowerup(int32 PowerupIndex)
 {
 	if(!Powerups.IsValidIndex(PowerupIndex))
@@ -1449,12 +1400,13 @@ void UPlayViewBase::IncreasePlayerScoreBy(int32 Amount)
 
 	const int32 PrevLevel = PlayerScore / PlayerShipBonusAt;
 
-	PlayerScore += Amount;
+	PlayerScore = FMath::Min(MaxPlayerScore, PlayerScore + Amount);
+	/*PlayerScore += Amount;
 
 	if(PlayerScore > MaxPlayerScore)
 	{
 		PlayerScore = MaxPlayerScore;
-	}
+	}*/
 
 	if(PrevLevel != PlayerScore / PlayerShipBonusAt)
 	{
@@ -1463,59 +1415,56 @@ void UPlayViewBase::IncreasePlayerScoreBy(int32 Amount)
 		PlaySound(PlayerShipBonusSound);
 	}
 
-	UpdatePlayerScoreReadout();
-
+	//UpdatePlayerScoreReadout();
 }
 
 
 void UPlayViewBase::UpdatePlayerScoreReadout()
 {
-	PlayerScoreReadout->SetText(FText::FromString(FString::Format(TEXT("{0}"), { PlayerScore })));
+	PlayerScoreReadout->SetText(FText::FromString(FString::Format(TEXT("{0}"), { PlayerScore.GetValue() })));
 }
 
 
-void UPlayViewBase::UpdatePowerupReadout(EPowerup PowerupKind)
+void UPlayViewBase::UpdateRoundedReadout(UTextBlock* Readout, float Value, int32& OldValue)
+{
+	check(Readout);
+
+	const int32 N = FMath::RoundToInt(Value);
+
+	if(N != OldValue)
+	{
+		const auto Str = FString::Printf(TEXT("%d"), N);
+		Readout->SetText(FText::FromString(Str));
+		OldValue = N;
+	}
+}
+
+
+void UPlayViewBase::UpdatePlayerShipReadout(EPowerup PowerupKind)
 {
 	FString Str;
+
+	static int32 ShieldsLeft       = -10;
+	static int32 InvincibilityLeft = -10;
 
 	switch(PowerupKind)
 	{
 		case EPowerup::DoubleGuns:
-			Str = FString::Printf(TEXT("%d"), PlayerShip->DoubleShotsLeft);
+			Str = FString::Printf(TEXT("%d"), PlayerShip->DoubleShotsLeft.GetValue());
 			DoubleGunReadout->SetText(FText::FromString(Str));
 			break;
 
 		case EPowerup::Shields:
-			Str = FString::Printf(TEXT("%d"), FMath::RoundToInt(PlayerShip->ShieldsLeft));
-			PlayerShieldReadout->SetText(FText::FromString(Str));
+			UpdateRoundedReadout(PlayerShieldReadout, PlayerShip->ShieldsLeft, ShieldsLeft);
 			break;
 
 		case EPowerup::Invincibility:
-			Str = FString::Printf(TEXT("%d"), FMath::RoundToInt(PlayerShip->InvincibilityLeft));
-			InvincibilityReadout->SetText(FText::FromString(Str));
+			UpdateRoundedReadout(InvincibilityReadout, PlayerShip->InvincibilityLeft, InvincibilityLeft);
 			break;
 	}
 }
 
 
-void UPlayViewBase::AdjustDoubleShotsLeft(int32 Amount)
-{
-	PlayerShip->DoubleShotsLeft += Amount;
-	UpdatePowerupReadout(EPowerup::DoubleGuns);
-}
-
-
-void UPlayViewBase::AdjustInvincibilityLeft(float Amount)
-{
-	if(PlayerShip->InvincibilityLeft < 0.0f)
-	{
-		PlayerShip->InvincibilityLeft = 0.0f;
-	}
-
-	PlayerShip->InvincibilityLeft = FMath::Max(0.0f, PlayerShip->InvincibilityLeft + Amount);
-
-	UpdatePowerupReadout(EPowerup::Invincibility);
-}
 
 
 void UPlayViewBase::ProcessPlayerCollision()
@@ -1628,42 +1577,42 @@ void UPlayViewBase::CheckCollisions()
 		{
 			// See if the torpedo hit an enemy ship.
 
-			for(int32 EnemyIndex = EnemyShips.Num() - 1; EnemyIndex >= 0; EnemyIndex--)
+			for(int32 EnemyIndex = EnemyShips.NumShips() - 1; EnemyIndex >= 0; EnemyIndex--)
 			{
-				auto& EnemyShip = *EnemyShips[EnemyIndex].Get();
+				auto& EnemyShip = EnemyShips.GetShip(EnemyIndex);
 
 				if(UDaylonUtils::DoesLineSegmentIntersectCircle(OldP, CurrentP, EnemyShip.GetPosition(), EnemyShip.GetRadius()))
 				{
 					Torpedo.Kill();
 					IncreasePlayerScoreBy(EnemyShip.Value);
-					SpawnExplosion(EnemyShip.GetPosition());
-					PlaySound(ExplosionSounds[EnemyShip.Value == ValueBigEnemy ? 0 : 1]);
-					RemoveEnemyShip(EnemyIndex);
+					EnemyShips.KillShip(*this, EnemyIndex);
 				}
 			}
 
 			// See if the torpedo hit a scavenger.
-
-			for(int32 ScavengerIndex = Scavengers.Num() - 1; ScavengerIndex >= 0; ScavengerIndex--)
+			if(Torpedo.IsAlive())
 			{
-				auto& Scavenger = *Scavengers[ScavengerIndex].Get();
-
-				if(UDaylonUtils::DoesLineSegmentIntersectCircle(OldP, CurrentP, Scavenger.GetPosition(), Scavenger.GetRadius()))
+				for(int32 ScavengerIndex = EnemyShips.NumScavengers() - 1; ScavengerIndex >= 0; ScavengerIndex--)
 				{
-					Torpedo.Kill();
-					IncreasePlayerScoreBy(Scavenger.Value);
-					KillScavenger(ScavengerIndex);
+					auto& Scavenger = EnemyShips.GetScavenger(ScavengerIndex);
+
+					if(UDaylonUtils::DoesLineSegmentIntersectCircle(OldP, CurrentP, Scavenger.GetPosition(), Scavenger.GetRadius()))
+					{
+						Torpedo.Kill();
+						IncreasePlayerScoreBy(Scavenger.Value);
+						EnemyShips.KillScavenger(*this, ScavengerIndex);
+					}
 				}
 			}
 		}
 	} // next torpedo
 
 
-	for(int32 ScavengerIndex = Scavengers.Num() - 1; ScavengerIndex >= 0; ScavengerIndex--)
+	for(int32 ScavengerIndex = EnemyShips.NumScavengers() - 1; ScavengerIndex >= 0; ScavengerIndex--)
 	{
 		// Did a scavenger collide with a powerup?
 
-		auto& Scavenger = *Scavengers[ScavengerIndex].Get();
+		auto& Scavenger = EnemyShips.GetScavenger(ScavengerIndex);
 
 		int32 PowerupIndex = 0;
 
@@ -1679,7 +1628,7 @@ void UPlayViewBase::CheckCollisions()
 
 				PowerupPtr.Get()->Hide();
 				Scavenger.AcquiredPowerups.Add(PowerupPtr);
-				Powerups.RemoveAt(PowerupIndex);
+				Powerups.RemoveAtSwap(PowerupIndex);
 
 				Scavenger.CurrentTarget.Reset();
 
@@ -1721,9 +1670,9 @@ void UPlayViewBase::CheckCollisions()
 
 	if(IsPlayerPresent())
 	{
-		for(int32 EnemyIndex = EnemyShips.Num() - 1; EnemyIndex >= 0; EnemyIndex--)
+		for(int32 EnemyIndex = EnemyShips.NumShips() - 1; EnemyIndex >= 0; EnemyIndex--)
 		{
-			auto& EnemyShip = *EnemyShips[EnemyIndex].Get();
+			auto& EnemyShip = EnemyShips.GetShip(EnemyIndex);
 
 			if (UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, EnemyShip.OldPosition, EnemyShip.GetRadius())
 				|| FVector2D::Distance(PlayerShip->UnwrappedNewPosition, EnemyShip.UnwrappedNewPosition) < EnemyShip.GetRadius() + PlayerShip->GetRadius())
@@ -1731,7 +1680,7 @@ void UPlayViewBase::CheckCollisions()
 				// Enemy ship collided with player ship.
 
 				IncreasePlayerScoreBy(EnemyShip.Value);
-				KillEnemyShip(EnemyIndex);
+				EnemyShips.KillShip(*this, EnemyIndex);
 
 				ProcessPlayerCollision();
 
@@ -1742,9 +1691,9 @@ void UPlayViewBase::CheckCollisions()
 
 	if(IsPlayerPresent())
 	{
-		for(int32 ScavengerIndex = Scavengers.Num() - 1; ScavengerIndex >= 0; ScavengerIndex--)
+		for(int32 ScavengerIndex = EnemyShips.NumScavengers() - 1; ScavengerIndex >= 0; ScavengerIndex--)
 		{
-			auto& Scavenger = *Scavengers[ScavengerIndex].Get();
+			auto& Scavenger = EnemyShips.GetScavenger(ScavengerIndex);
 
 			if (UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Scavenger.OldPosition, Scavenger.GetRadius())
 				|| FVector2D::Distance(PlayerShip->UnwrappedNewPosition, Scavenger.UnwrappedNewPosition) < Scavenger.GetRadius() + PlayerShip->GetRadius())
@@ -1752,7 +1701,7 @@ void UPlayViewBase::CheckCollisions()
 				// Enemy ship collided with player ship.
 
 				IncreasePlayerScoreBy(Scavenger.Value);
-				KillScavenger(ScavengerIndex);
+				EnemyShips.KillScavenger(*this, ScavengerIndex);
 
 				ProcessPlayerCollision();
 
@@ -1779,22 +1728,21 @@ void UPlayViewBase::CheckCollisions()
 				{
 					case EPowerup::DoubleGuns:
 
-						AdjustDoubleShotsLeft(DoubleGunsPowerupIncrease);
+						PlayerShip->AdjustDoubleShotsLeft(DoubleGunsPowerupIncrease);
 						PlaySound(GainDoubleGunPowerupSound);
 						PlayAnimation(DoubleGunReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
 						break;
 
-
 					case EPowerup::Shields:
 
-						PlayerShip->AdjustShieldsLeft(*this, ShieldPowerupIncrease);
+						PlayerShip->AdjustShieldsLeft(ShieldPowerupIncrease);
 						PlaySound(GainShieldPowerupSound);
 						PlayAnimation(ShieldReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
 						break;
 
 					case EPowerup::Invincibility:
 						PlaySound(GainShieldPowerupSound); // todo: specific sound
-						AdjustInvincibilityLeft(MaxInvincibilityTime);
+						PlayerShip->AdjustInvincibilityLeft(MaxInvincibilityTime);
 						PlayerShip->TimeUntilNextInvincibilityWarnFlash = MaxInvincibilityWarnTime;
 						PlayAnimation(InvincibilityReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
 						break;
@@ -1810,9 +1758,9 @@ void UPlayViewBase::CheckCollisions()
 
 	// Check if enemy ship collided with an asteroid
 
-	for(int32 EnemyIndex = EnemyShips.Num() - 1; EnemyIndex >= 0; EnemyIndex--)
+	for(int32 EnemyIndex = EnemyShips.NumShips() - 1; EnemyIndex >= 0; EnemyIndex--)
 	{
-		auto& EnemyShip = *EnemyShips[EnemyIndex].Get();
+		auto& EnemyShip = EnemyShips.GetShip(EnemyIndex);
 
 		int32 AsteroidIndex = -1; 
 
@@ -1827,7 +1775,7 @@ void UPlayViewBase::CheckCollisions()
 			{
 				// Enemy ship collided with a rock.
 
-				KillEnemyShip(EnemyIndex);
+				EnemyShips.KillShip(*this, EnemyIndex);
 				KillAsteroid(AsteroidIndex, DontCreditPlayerForKill);
 
 				break;
@@ -1835,9 +1783,9 @@ void UPlayViewBase::CheckCollisions()
 		}
 	}
 
-	for(int32 ScavengerIndex = Scavengers.Num() - 1; ScavengerIndex >= 0; ScavengerIndex--)
+	for(int32 ScavengerIndex = EnemyShips.NumScavengers() - 1; ScavengerIndex >= 0; ScavengerIndex--)
 	{
-		auto& Scavenger = *Scavengers[ScavengerIndex].Get();
+		auto& Scavenger = EnemyShips.GetScavenger(ScavengerIndex);
 
 		int32 AsteroidIndex = -1; 
 
@@ -1852,7 +1800,7 @@ void UPlayViewBase::CheckCollisions()
 			{
 				// Scavenger collided with a rock.
 
-				KillScavenger(ScavengerIndex);
+				EnemyShips.KillScavenger(*this, ScavengerIndex);
 				KillAsteroid(AsteroidIndex, DontCreditPlayerForKill);
 
 				break;
@@ -1870,7 +1818,7 @@ void UPlayViewBase::UpdateTasks(float DeltaTime)
 	{
 		if(ScheduledTasks[Index].Tick(DeltaTime))
 		{
-			ScheduledTasks.RemoveAt(Index);
+			ScheduledTasks.RemoveAtSwap(Index);
 		}
 	}
 
@@ -1878,7 +1826,7 @@ void UPlayViewBase::UpdateTasks(float DeltaTime)
 	{
 		if(!DurationTasks[Index].Tick(DeltaTime))
 		{
-			DurationTasks.RemoveAt(Index);
+			DurationTasks.RemoveAtSwap(Index);
 		}
 	}
 }
@@ -1942,68 +1890,6 @@ void UPlayViewBase::RemovePowerup(int32 PowerupIndex)
 }
 
 
-void UPlayViewBase::RemoveEnemyShip(int32 EnemyIndex)
-{
-	if(!EnemyShips.IsValidIndex(EnemyIndex))
-	{
-		UE_LOG(LogGame, Error, TEXT("Invalid enemy ship index %d"), EnemyIndex);
-		return;
-	}
-
-	auto& EnemyShip = *EnemyShips[EnemyIndex].Get();
-
-	if(EnemyShip.Value == ValueBigEnemy)
-	{
-		NumBigEnemyShips--;
-	}
-	else
-	{
-		NumSmallEnemyShips--;
-	}
-
-	check(NumBigEnemyShips >= 0 && NumSmallEnemyShips >= 0);
-
-	Daylon::Destroy(EnemyShips[EnemyIndex]);
-
-	EnemyShips.RemoveAt(EnemyIndex);
-}
-
-
-void UPlayViewBase::RemoveEnemyShips()
-{
-	while(!EnemyShips.IsEmpty())
-	{
-		RemoveEnemyShip(0);
-	}
-
-	while(!Scavengers.IsEmpty())
-	{
-		RemoveScavenger(0);
-	}
-}
-
-
-void UPlayViewBase::RemoveScavenger(int32 ScavengerIndex)
-{
-	if(!Scavengers.IsValidIndex(ScavengerIndex))
-	{
-		UE_LOG(LogGame, Error, TEXT("Invalid ScavangerIndex %d"), ScavengerIndex);
-		return;
-	}
-
-	auto& Scavenger = *Scavengers[ScavengerIndex].Get();
-
-	for(auto PowerupPtr : Scavenger.AcquiredPowerups)
-	{
-		Daylon::Destroy(PowerupPtr);
-	}
-
-	Daylon::Destroy(Scavengers[ScavengerIndex]);
-
-	Scavengers.RemoveAt(ScavengerIndex);
-}
-
-
 void UPlayViewBase::RemoveExplosions()
 {
 	while(!Explosions.IsEmpty())
@@ -2033,218 +1919,6 @@ void UPlayViewBase::RemoveTorpedos()
 }
 
 
-void UPlayViewBase::SpawnEnemyShip()
-{
-	// Generate a big enemy ship vs. small one based on player score.
-	// The higher the score, the likelier a small enemy will appear.
-	// Regardless of score, there's always a 10% chance of a big enemy ship.
-
-	const int32 ScoreTmp = FMath::Max(0, PlayerScore - 5000);
-
-	float BigEnemyProbability = pow(FMath::Lerp(1.0f, 0.1f,  FMath::Min(1.0f, ScoreTmp / 65'000.0f)), 2.0f);
-	BigEnemyProbability = FMath::Max(0.1f, BigEnemyProbability);
-
-	const bool IsBigEnemy = (FMath::FRand() <= BigEnemyProbability);
-
-
-	auto EnemyShipPtr = FEnemyShip::Create(
-		IsBigEnemy ? BigEnemyAtlas : SmallEnemyAtlas, 
-		IsBigEnemy ? ValueBigEnemy : ValueSmallEnemy,
-		0.375f);
-
-
-	// Choose a random Y-pos to appear at. Leave room to avoid ship appearing clipped.
-	FVector2D P(0.0, FMath::RandRange(EnemyShipPtr->GetSize().Y + 2, ViewportSize.Y - (EnemyShipPtr->GetSize().Y + 2)));
-
-	auto Inertia = FVector2D(1, 0) * 300; // todo: use global constant for speed, maybe min/max it
-
-	if(FMath::RandBool())
-	{
-		Inertia.X *= -1; // make enemy ship travel from right to left.
-		P.X = ViewportSize.X - 1.0f; // avoid immediate removal
-	}
-
-	EnemyShipPtr->Spawn(WrapPositionToViewport(P), Inertia, 0.0f);
-
-	EnemyShips.Add(EnemyShipPtr);
-
-	if(IsBigEnemy)
-	{
-		NumBigEnemyShips++;
-	}
-	else
-	{
-		NumSmallEnemyShips++;
-	}
-
-
-	if(IsBigEnemy)
-	{
-		if(NumBigEnemyShips == 1)
-		{
-			BigEnemyShipSoundLoop.Start();
-		}
-	}
-	else
-	{
-		if(NumSmallEnemyShips == 1)
-		{
-			SmallEnemyShipSoundLoop.Start();
-		}
-	}
-}
-
-
-void UPlayViewBase::UpdateEnemyShips(float DeltaTime)
-{
-	check(NumBigEnemyShips + NumSmallEnemyShips == EnemyShips.Num());
-
-	for(int32 ShipIndex = EnemyShips.Num() - 1; ShipIndex >= 0; ShipIndex--)
-	{
-		auto& EnemyShip = *EnemyShips[ShipIndex].Get();
-
-		// If we've reached the opposite side of the viewport, remove us.
-		const auto P2 = WrapPositionToViewport(EnemyShip.UnwrappedNewPosition);
-
-		if(P2.X != EnemyShip.UnwrappedNewPosition.X)
-		{
-			RemoveEnemyShip(ShipIndex);
-			continue;
-		}
-
-		EnemyShip.Perform(*this, DeltaTime);
-	}
-
-#if(FEATURE_MULTIPLE_ENEMIES == 0)
-	if(EnemyShips.IsEmpty())
-#endif
-	{
-		// See if we need to spawn an enemy ship.
-		// Time between enemy ship spawns depends on asteroid density (no ships if too many rocks)
-		// and while low density, spawn once every ten seconds down to two seconds depending on player score.
-
-		TimeUntilNextEnemyShip -= DeltaTime;
-
-		if(TimeUntilNextEnemyShip <= 0.0f)
-		{
-			SpawnEnemyShip();
-
-			// Reset the timer.
-			TimeUntilNextEnemyShip = FMath::Lerp(MaxTimeUntilEnemyRespawn, MinTimeUntilEnemyRespawn, (float)FMath::Min(PlayerScore, ExpertPlayerScore) / ExpertPlayerScore);
-			// score = 10'000 --> 9 seconds
-			//         20'000 --> 8 seconds
-			//         50'000 --> 5 seconds
-			//        100'000+ --> 1 second
-			// might want to apply a gamma curve to speed up spawning at lower scores
-		}
-	}
-
-	if(NumBigEnemyShips > 0)
-	{
-		BigEnemyShipSoundLoop.Tick(DeltaTime);
-	}
-
-	if(NumSmallEnemyShips > 0)
-	{
-		SmallEnemyShipSoundLoop.Tick(DeltaTime);
-	}
-
-
-#if(FEATURE_SCAVENGERS == 1)
-	
-	for(int32 ScavengerIndex = Scavengers.Num() - 1; ScavengerIndex >= 0; ScavengerIndex--)
-	{
-		auto& Scavenger = *Scavengers[ScavengerIndex].Get();
-
-		Scavenger.Update(DeltaTime);
-
-
-		if(Scavenger.CurrentTarget.IsValid())
-		{
-			// Keep moving toward target.
-			Scavenger.Move(DeltaTime, WrapPositionToViewport);
-		}
-		else
-		{
-			// No current target.
-
-			if(!Powerups.IsEmpty())
-			{
-				// Powerups exist, assign ourselves one as a target.
-				// Pick the one closest to us.
-				// Note that we don't care if multiple scavengers target the same powerup.
-
-				double ShortestDistance = 1.0e7;
-				int32 NearestPowerupIndex = 0;
-				int32 Index = 0;
-
-				for(auto PowerupPtr : Powerups)
-				{
-					const auto Distance = FVector2D::Distance(Scavenger.GetPosition(), PowerupPtr.Get()->GetPosition());
-					
-					if(Distance < ShortestDistance)
-					{
-						ShortestDistance = Distance;
-						NearestPowerupIndex = Index;
-					}
-					Index++;
-				}
-
-				Scavenger.CurrentTarget = Powerups[NearestPowerupIndex];
-
-				// Point the scavenger at the powerup.
-				Scavenger.Inertia = (Powerups[NearestPowerupIndex].Get()->GetPosition() - Scavenger.GetPosition());
-				Scavenger.Inertia.Normalize();
-				Scavenger.Inertia *= MaxScavengerSpeed;
-				Scavenger.SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger.Inertia));
-			}
-			else
-			{
-				// No target exists and none are available. Just move flat towards edge of sector.
-				if(Scavenger.Inertia.Y != 0)
-				{
-					Scavenger.Inertia = FVector2D(1, 0) * MaxScavengerSpeed;
-					Scavenger.SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger.Inertia));
-				}
-
-				Scavenger.Move(DeltaTime, WrapPositionToViewport);
-
-				// If we've reached the opposite side of the viewport, remove us.
-				const auto P2 = WrapPositionToViewport(Scavenger.UnwrappedNewPosition);
-
-				if(P2.X != Scavenger.UnwrappedNewPosition.X)
-				{
-					RemoveScavenger(ScavengerIndex);
-				}
-			}
-		}
-	} // for all scavengers
-
-
-	// If there are no scavengers, spawn one if enough time has passed.
-
-	if(Scavengers.IsEmpty())
-	{
-		TimeUntilNextScavenger -= DeltaTime;
-
-		if(TimeUntilNextScavenger <= 0.0f)
-		{
-			TimeUntilNextScavenger = MaxTimeUntilNextScavenger;
-
-			auto Scavenger = FScavenger::Create(ScavengerAtlas, FVector2D(32));
-
-			Scavenger->SetPosition(FVector2D(0, FMath::FRandRange(ViewportSize.Y * 0.1, ViewportSize.Y * 0.9)));
-			Scavenger->Inertia.Set(MaxScavengerSpeed, 0);
-			Scavenger->SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger->Inertia));
-
-			Scavengers.Add(Scavenger);
-		}
-	}
-
-#endif
-}
-
-
 bool UPlayViewBase::IsPlayerPresent() const
 {
 	return (PlayerShip && PlayerShip->IsVisible());
@@ -2260,70 +1934,7 @@ void UPlayViewBase::OnFireTorpedo()
 		return;
 	}
 
-	const FVector2D PlayerFwd = PlayerShip->GetDirectionVector();
-
-	const auto Inertia = (PlayerFwd * MaxTorpedoSpeed) + PlayerShip->Inertia;
-
-	// Position torpedo at nose of player ship.
-
-
-	int32 TorpedoIndex = GetAvailableTorpedo();
-
-	if(TorpedoIndex == INDEX_NONE)
-	{
-		return;
-	}
-
-	PlaySound(TorpedoSound);
-
-    if(PlayerShip->DoubleShotsLeft == 0)
-	{
-		// Find an available torpedo, spawn it at the nose of the player ship,
-		// and give it an inertia which is player ship intertia + player ship fwd * MaxTorpedoSpeed
-
-		auto& Torpedo = *Torpedos[TorpedoIndex].Get();
-
-		Torpedo.FiredByPlayer = true;
-
-		auto P = PlayerShip->GetPosition();
-		P += PlayerFwd * (PlayerShip->GetSize().Y / 2 + /*PlayerShip->Inertia.Length()*/ 2.0); // The last offset is so that the bullet doesn't start off accidentally overlapping the player ship
-		P = WrapPositionToViewport(P);
-
-		Torpedo.Spawn(P, Inertia, MaxTorpedoLifeTime);
-	}
-	else
-	{
-		AdjustDoubleShotsLeft(-1);
-
-		auto& Torpedo1 = *Torpedos[TorpedoIndex].Get();
-		Torpedo1.FiredByPlayer = true;
-
-		auto P = PlayerFwd * (PlayerShip->GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
-		P = UDaylonUtils::Rotate(P, 90.0f);
-		P += PlayerShip->GetPosition();
-		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
-		P = WrapPositionToViewport(P);
-
-		Torpedo1.Spawn(P, Inertia, MaxTorpedoLifeTime);
-
-		TorpedoIndex = GetAvailableTorpedo();
-
-		if(TorpedoIndex == INDEX_NONE)
-		{
-			return;
-		}
-
-		auto& Torpedo2 = *Torpedos[TorpedoIndex].Get();
-		Torpedo2.FiredByPlayer = true;
-
-		P = PlayerFwd * (PlayerShip->GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
-		P = UDaylonUtils::Rotate(P, -90.0f);
-		P += PlayerShip->GetPosition();
-		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
-		P = WrapPositionToViewport(P);
-
-		Torpedo2.Spawn(P, Inertia, MaxTorpedoLifeTime);
-	}
+	PlayerShip->FireTorpedo(*this);
 }
 
 

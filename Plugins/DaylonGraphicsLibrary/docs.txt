@@ -2,7 +2,7 @@ Documentation for DaylonGraphicsLibrary plug-in for Unreal Engine
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox (inside Plugins folder)
-May 16, 2023
+May 20, 2023
 
 
 
@@ -70,6 +70,9 @@ This namespace contains data types (other than UObject-based ones which cannot r
 within a namespace).
 
 EListNavigationDirection      Enum constants for list navigation.
+
+TBindableValue                Template class that binds a delegate to a variable.
+                              When the variable changes, the delegate is called.
 
 FLoopedSound                  A simple class that plays a sound over and over 
                               as long as its Tick method is called.

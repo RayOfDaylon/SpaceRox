@@ -7,6 +7,7 @@
 
 #include "CoreMinimal.h"
 #include "PlayObject.h"
+#include "DaylonUtils.h"
 
 
 class UPlayViewBase;
@@ -18,9 +19,11 @@ class FPlayerShip : public FPlayObject
 
 	bool   IsUnderThrust;
 	bool   IsSpawning;
-	int32  DoubleShotsLeft;
-	float  ShieldsLeft;
-	float  InvincibilityLeft;
+
+	Daylon::TBindableValue<int32> DoubleShotsLeft;
+	Daylon::TBindableValue<float> ShieldsLeft;
+	Daylon::TBindableValue<float> InvincibilityLeft;
+
 	float  TimeUntilNextInvincibilityWarnFlash;
 
 
@@ -30,6 +33,10 @@ class FPlayerShip : public FPlayObject
 
 	static TSharedPtr<FPlayerShip> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S, float RadiusFactor);
 
+	void AdjustDoubleShotsLeft   (int32 Amount);
+	void AdjustShieldsLeft       (float Amount);
+	void AdjustInvincibilityLeft (float Amount);
+
 	void ReleaseResources   (UPlayViewBase& Arena);
 
 	void Initialize         (UPlayViewBase& Arena);
@@ -37,8 +44,9 @@ class FPlayerShip : public FPlayObject
 
 	void Perform            (UPlayViewBase& Arena, float DeltaTime);
 	bool ProcessCollision   (UPlayViewBase& Arena);
-	void AdjustShieldsLeft  (UPlayViewBase& Arena, float Amount);
 
 	void SpawnExplosion     (UPlayViewBase& Arena);
+
+	void FireTorpedo        (UPlayViewBase& Arena);
 };
 

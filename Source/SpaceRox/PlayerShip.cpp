@@ -138,7 +138,7 @@ void FPlayerShip::Perform(UPlayViewBase& Arena, float DeltaTime)
 	{
 		// We have to budge the shield texture by two px to look nicely centered around the player ship.
 		Shield->SetPosition(GetPosition() + UDaylonUtils::Rotate(FVector2D(0, 2), GetAngle()));
-		AdjustShieldsLeft(Arena, -DeltaTime);
+		AdjustShieldsLeft(-DeltaTime);
 	}
 
 
@@ -171,7 +171,7 @@ void FPlayerShip::Perform(UPlayViewBase& Arena, float DeltaTime)
 
 	if(InvincibilityLeft > 0.0f)
 	{
-		Arena.AdjustInvincibilityLeft(-DeltaTime);
+		AdjustInvincibilityLeft(-DeltaTime);
 	}
 }
 
@@ -236,7 +236,7 @@ bool FPlayerShip::ProcessCollision(UPlayViewBase& Arena)
 
 	if(Shield->IsVisible())
 	{
-		AdjustShieldsLeft(Arena, -ShieldBonkDamage);
+		AdjustShieldsLeft(-ShieldBonkDamage);
 		Arena.PlaySound(Arena.ShieldBonkSound);
 		return true;
 	}
@@ -245,13 +245,89 @@ bool FPlayerShip::ProcessCollision(UPlayViewBase& Arena)
 }
 
 
-void FPlayerShip::AdjustShieldsLeft(UPlayViewBase& Arena, float Amount)
+void FPlayerShip::AdjustShieldsLeft(float Amount)
 {
-	if(ShieldsLeft < 0.0f)
+	ShieldsLeft = FMath::Max(0.0f, ShieldsLeft + Amount);
+}
+
+
+void FPlayerShip::AdjustInvincibilityLeft(float Amount)
+{
+	InvincibilityLeft = FMath::Max(0.0f, InvincibilityLeft + Amount);
+}
+
+
+void FPlayerShip::AdjustDoubleShotsLeft(int32 Amount)
+{
+	DoubleShotsLeft = FMath::Max(0, DoubleShotsLeft + Amount);
+}
+
+
+void FPlayerShip::FireTorpedo(UPlayViewBase& Arena)
+{
+	const FVector2D PlayerFwd = GetDirectionVector();
+
+	const auto TorpedoInertia = (PlayerFwd * MaxTorpedoSpeed) + Inertia;
+
+	// Position torpedo at nose of player ship.
+
+
+	int32 TorpedoIndex = Arena.GetAvailableTorpedo();
+
+	if(TorpedoIndex == INDEX_NONE)
 	{
-		ShieldsLeft = 0.0f;
+		return;
 	}
 
-	ShieldsLeft = FMath::Max(0.0f, ShieldsLeft + Amount);
-	Arena.UpdatePowerupReadout(EPowerup::Shields); // todo: use delegated value and have arena listen to it
+	Arena.PlaySound(Arena.TorpedoSound);
+
+    if(DoubleShotsLeft == 0)
+	{
+		// Find an available torpedo, spawn it at the nose of the player ship,
+		// and give it an inertia which is player ship intertia + player ship fwd * MaxTorpedoSpeed
+
+		auto& Torpedo = *Arena.Torpedos[TorpedoIndex].Get();
+
+		Torpedo.FiredByPlayer = true;
+
+		auto P = GetPosition();
+		P += PlayerFwd * (GetSize().Y / 2 + /*Inertia.Length()*/ 2.0); // The last offset is so that the bullet doesn't start off accidentally overlapping the player ship
+		P = Arena.WrapPositionToViewport(P);
+
+		Torpedo.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
+	}
+	else
+	{
+		AdjustDoubleShotsLeft(-1);
+
+		auto& Torpedo1 = *Arena.Torpedos[TorpedoIndex].Get();
+		Torpedo1.FiredByPlayer = true;
+
+		auto P = PlayerFwd * (GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
+		P = UDaylonUtils::Rotate(P, 90.0f);
+		P += GetPosition();
+		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
+		P = Arena.WrapPositionToViewport(P);
+
+		Torpedo1.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
+
+		TorpedoIndex = Arena.GetAvailableTorpedo();
+
+		if(TorpedoIndex == INDEX_NONE)
+		{
+			return;
+		}
+
+		auto& Torpedo2 = *Arena.Torpedos[TorpedoIndex].Get();
+		Torpedo2.FiredByPlayer = true;
+
+		P = PlayerFwd * (GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
+		P = UDaylonUtils::Rotate(P, -90.0f);
+		P += GetPosition();
+		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
+		P = Arena.WrapPositionToViewport(P);
+
+		Torpedo2.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
+	}
 }
+
