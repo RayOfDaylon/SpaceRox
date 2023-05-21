@@ -24,6 +24,7 @@
 #include "Scavenger.h"
 #include "Asteroid.h"
 #include "Torpedo.h"
+#include "Asteroids.h"
 #include "EnemyShips.h"
 #include "Explosions.h"
 #include "PlayViewBase.generated.h"
@@ -380,17 +381,16 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnPowerup               (TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P);
 	
-	void      RemoveAsteroid             (int32 Index);
-	void      RemoveAsteroids            ();
+	//void      RemoveAsteroid             (int32 Index);
+	//void      RemoveAsteroids            ();
 	void      RemovePowerup              (int32 PowerupIndex);
 	void      RemovePowerups             ();
 	void      RemoveTorpedos             ();
 
-	void      KillAsteroid               (int32 AsteroidIndex, bool KilledByPlayer);
+	//void      KillAsteroid               (int32 AsteroidIndex, bool KilledByPlayer);
 	void      KillPowerup                (int32 PowerupIndex);
 	void      KillPlayerShip             ();
 
-	void      IncreasePlayerScoreBy      (int32 Amount);
 	void      StartWave                  ();
 	void      AddPlayerShips             (int32 Amount);
 	void      UpdatePlayerScoreReadout   ();
@@ -417,13 +417,15 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	int32     GetAvailableTorpedo        () const;
 	void      PlaySound                  (USoundBase* Sound, float VolumeScale = 1.0f);
 	void      UpdatePlayerShipReadout    (EPowerup PowerupKind);
+	void      IncreasePlayerScoreBy      (int32 Amount);
 
 	void      SpawnExplosion             (const FVector2D& P, const FVector2D& Inertia);
 
-	TSharedPtr<FPlayerShip>                    PlayerShip;
-	TArray<TSharedPtr<FTorpedo>>               Torpedos;
-	TArray<TSharedPtr<FAsteroid>>              Asteroids;
-	FExplosions                            Explosions; 
+	TSharedPtr<FPlayerShip>           PlayerShip;
+	TArray<TSharedPtr<FTorpedo>>      Torpedos;
+	//TArray<TSharedPtr<FAsteroid>>   Asteroids;
+	FAsteroids                        Asteroids;
+	FExplosions                       Explosions; 
 
 
 	protected:
@@ -435,7 +437,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void CheckCollisions           ();
 	void ProcessPlayerCollision    ();
 
-	void UpdateAsteroids           (float DeltaTime);
+	//void UpdateAsteroids           (float DeltaTime);
 	void UpdateTorpedos            (float DeltaTime);
 	void UpdatePowerups            (float DeltaTime);
 	void UpdateTasks               (float DeltaTime);

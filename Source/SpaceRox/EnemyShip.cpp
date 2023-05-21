@@ -137,7 +137,7 @@ void FEnemyShip::Shoot(UPlayViewBase& Arena)
 		else
 		{
 			// Shoot at an asteroid.
-			const auto& Asteroid = *Arena.Asteroids[FMath::RandRange(0, Arena.Asteroids.Num() - 1)].Get();
+			const auto& Asteroid = Arena.Asteroids.Get(FMath::RandRange(0, Arena.Asteroids.Num() - 1));
 			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Asteroid.GetPosition(), Asteroid.Inertia);
 		}
 	}

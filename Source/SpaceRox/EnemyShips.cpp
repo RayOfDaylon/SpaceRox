@@ -5,6 +5,7 @@
 #include "EnemyShips.h"
 #include "Constants.h"
 #include "PlayViewBase.h"
+#include "DaylonUtils.h"
 
 
 #define FEATURE_MULTIPLE_ENEMIES    1
@@ -111,7 +112,9 @@ void FEnemyShips::KillShip(UPlayViewBase& Arena, int32 Index)
 			80);
 
 */ 
-	Arena.Explosions.SpawnOne(Arena, Ship.GetPosition(),
+	Arena.Explosions.SpawnOne(
+		Arena, 
+		Ship.GetPosition(),
 		 3.0f, 
 		 8.0f, 
 		30.0f, 
@@ -127,6 +130,38 @@ void FEnemyShips::KillShip(UPlayViewBase& Arena, int32 Index)
 }
 
 
+// To easily place powerups along a series of concentric circles around the destroyed scavenger,
+// make an array whose elements provide the circle's radius and an angle along the circle.
+struct FPowerupPlacement
+{
+	float CircleRadius;
+	float Angle;
+};
+
+const FPowerupPlacement PowerupPlacements[] = 
+{
+	{ 0.0f,   0.0f },
+	{ 1.0f,   0.0f },
+	{ 1.0f,  60.0f },
+	{ 1.0f, 120.0f },
+	{ 1.0f, 180.0f },
+	{ 1.0f, 240.0f },
+	{ 1.0f, 300.0f },
+	{ 2.0f,   0.0f },
+	{ 2.0f,  30.0f },
+	{ 2.0f,  60.0f },
+	{ 2.0f,  90.0f },
+	{ 2.0f, 120.0f },
+	{ 2.0f, 150.0f },
+	{ 2.0f, 180.0f },
+	{ 2.0f, 210.0f },
+	{ 2.0f, 240.0f },
+	{ 2.0f, 270.0f },
+	{ 2.0f, 300.0f },
+	{ 2.0f, 330.0f }
+};
+
+
 void FEnemyShips::KillScavenger(UPlayViewBase& Arena, int32 Index)
 {
 	if(!Scavengers.IsValidIndex(Index))
@@ -140,20 +175,53 @@ void FEnemyShips::KillScavenger(UPlayViewBase& Arena, int32 Index)
 	// Have scavenger drop any powerups it was carrying.
 
 	// For now, place them in a line trailing away from the scavenger.
-	FVector2D Direction = Scavenger.Inertia;
-	Direction.Normalize();
-	Direction *= -1; // Start from the scavenger's position and work backwards.
+	// todo: use a spiral. Each groove needs to be DroppedPowerupPtr->GetRadius*2 distant.
 
-	for(int32 PowerupIndex = 0; PowerupIndex < Scavenger.AcquiredPowerups.Num(); PowerupIndex++)
+	const int32 NumAcquiredPowerups = Scavenger.AcquiredPowerups.Num();
+
+	if(NumAcquiredPowerups > 0)
 	{
-		auto DroppedPowerupPtr = Scavenger.AcquiredPowerups[PowerupIndex];
-		DroppedPowerupPtr->Show();
-		DroppedPowerupPtr->SetPosition(Arena.WrapPositionToViewport(Scavenger.GetPosition() + (Direction * DroppedPowerupPtr->GetRadius() * 2.5f * PowerupIndex)));
-		Arena.Powerups.Add(DroppedPowerupPtr);
-	}
-	Scavenger.AcquiredPowerups.Empty();
+		// All powerups have the same radius.
+		const auto PowerupDiameter = Scavenger.AcquiredPowerups[0]->GetRadius() * 2;
 
-	Arena.SpawnExplosion(Scavenger.GetPosition(), Scavenger.Inertia);
+		//FVector2D Direction = Scavenger.Inertia;
+		//Direction.Normalize();
+		//Direction *= -1; // Start from the scavenger's position and work backwards.
+
+		for(int32 PowerupIndex = 0; PowerupIndex < NumAcquiredPowerups; PowerupIndex++)
+		{
+			if(PowerupIndex >= sizeof(PowerupPlacements) / sizeof(PowerupPlacements[0]))
+			{
+				continue;
+			}
+			const auto& Placement = PowerupPlacements[PowerupIndex];
+
+			auto DroppedPowerupPtr = Scavenger.AcquiredPowerups[PowerupIndex];
+			DroppedPowerupPtr->Show();
+			//DroppedPowerupPtr->SetPosition(Arena.WrapPositionToViewport(Scavenger.GetPosition() + (Direction * DroppedPowerupPtr->GetRadius() * 2.5f * PowerupIndex)));
+			const FVector2D CircleP = UDaylonUtils::AngleToVector2D(Placement.Angle) * PowerupDiameter * Placement.CircleRadius;
+			DroppedPowerupPtr->SetPosition(Arena.WrapPositionToViewport(Scavenger.GetPosition() + CircleP));
+			Arena.Powerups.Add(DroppedPowerupPtr);
+		}
+		Scavenger.AcquiredPowerups.Empty();
+	}
+
+	// The more full the scavenger, the more powerful the explosion.
+
+	const float ExplosionScale = FMath::Clamp(NumAcquiredPowerups, 0, 10) * 0.1f;
+
+	Arena.Explosions.SpawnOne(
+		Arena,
+		Scavenger.GetPosition(), 
+		 FMath::Lerp(2.0f, 6.0f, ExplosionScale), 
+		 FMath::Lerp(6.0f, 12.0f, ExplosionScale), 
+		30.0f, 
+       FMath::Lerp(120.0f, 180.0f, ExplosionScale),
+		 FMath::Lerp(0.33f, 0.67f, ExplosionScale), 
+		 FMath::Lerp(1.25f, 2.0f, ExplosionScale), 
+		 0.25f, 
+		FMath::Lerp(60, 120, ExplosionScale),
+		Scavenger.Inertia);
 
 	// todo: have scavenger explosion sound
 	Arena.PlaySound(Arena.ExplosionSounds[0]);
