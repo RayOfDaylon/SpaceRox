@@ -179,8 +179,9 @@ void FPlayerShip::Perform(UPlayViewBase& Arena, float DeltaTime)
 void FPlayerShip::SpawnExplosion(UPlayViewBase& Arena)
 {
 	const auto P = GetPosition();
+	const auto ShipInertia = Inertia * 0; // Don't use any inertia 
 
-	Arena.SpawnExplosion(P, 
+	Arena.Explosions.SpawnOne(Arena, P, 
 		3.0f,
 		6.0f,
 		30.0f,
@@ -188,7 +189,8 @@ void FPlayerShip::SpawnExplosion(UPlayViewBase& Arena)
 		0.5f,
 		3.0f,
 		0.25f,
-		80);
+		80,
+		ShipInertia);
 
 
 	// Set up second explosion event for 3/4 second later
@@ -197,19 +199,14 @@ void FPlayerShip::SpawnExplosion(UPlayViewBase& Arena)
 
 	Task.When = 0.66f;
 
-	Task.What = [P, ArenaPtr = TWeakObjectPtr<UPlayViewBase>(&Arena)]()
+	Task.What = [P, ShipInertia, ArenaPtr = TWeakObjectPtr<UPlayViewBase>(&Arena)]()
 	{
-		if(!ArenaPtr.IsValid())
+		if(!ArenaPtr.IsValid() || ArenaPtr->GameState != EGameState::Active)
 		{
 			return;
 		}
 
-		if(ArenaPtr->GameState != EGameState::Active)
-		{
-			return;
-		}
-
-		ArenaPtr->SpawnExplosion(P, 
+		ArenaPtr->Explosions.SpawnOne(*ArenaPtr.Get(), P, 
 			4.5f,
 			9.0f,
 			45.0f,
@@ -217,7 +214,8 @@ void FPlayerShip::SpawnExplosion(UPlayViewBase& Arena)
 			0.5f,
 			4.0f,
 			0.25f,
-			80);
+			80,
+			ShipInertia);
 	};
 
 	Arena.ScheduledTasks.Add(Task);

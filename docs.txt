@@ -55,6 +55,7 @@ Source
         Asteroid.*             Handles asteroids
         EnemyShip.*            Enemy ship class (classic big and small enemies)
         EnemyShips.*           Handles all the enemy ships (including scavengers)
+        Explosions.*           Manages all the explosions
         PlayerShip.*           The player's ship (technically a singleton)
         Powerup.*              Powerup class
         Scavenger.*            The scavenger enemy
@@ -321,6 +322,18 @@ In development mode, this will be in the project's
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
+
+
+Version 1.7.7
+-------------------------------------------------------------------------------------
+Explosions moved to their own manager class.
+
+Explicit FExplosion class added. Supports including the destroyed object's 
+inertia, making the fireball particles also move along its path. 
+The global constant ExplosionInertialFactor is 0.5, meaning that 
+half of the inertia is used. To mimic the original arcade game, use 0.0.
+The faster a destroyed object was moving, the more obvious the effect.
+The player ship explosion uses no inertia, however, to make it stand out.
 
 
 Version 1.7.6

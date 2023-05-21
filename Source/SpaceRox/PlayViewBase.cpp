@@ -160,6 +160,7 @@ void UPlayViewBase::InitializeVariables()
 	TimeUntilGameOverStateEnds    = 0.0f;
 	MruHighScoreAnimationAge      = 0.0f;
 	TimeUntilNextScavenger        = 5.0f;
+	Explosions.InertialFactor     = ExplosionInertialFactor;
 
 	GameState                     = EGameState::Startup;
 	SelectedMenuItem              = EMenuItem::StartPlaying;
@@ -495,7 +496,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Hide (HighScoreEntryContent);
 			
-			RemoveExplosions  ();
+			Explosions.RemoveAll  (*this);
 			RemoveTorpedos    ();
 			EnemyShips.RemoveAll();
 			RemovePowerups    ();
@@ -698,7 +699,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 					{
 						ExploCountAge = 0.1f;
 
-						SpawnExplosion(
+						Explosions.SpawnOne(*this,
 							UDaylonUtils::RandomPtWithinBox(Box),
 							4.5f,   // MinParticleSize
 							9.0f,   // MaxParticleSize
@@ -722,7 +723,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				}
 			}
 
-			UpdateExplosions(InDeltaTime);
+			Explosions.Update(*this, WrapPositionToViewport, InDeltaTime);
 
 			TimeUntilIntroStateEnds -= InDeltaTime;
 
@@ -748,7 +749,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			UpdateAsteroids           (InDeltaTime);
 			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
-			UpdateExplosions          (InDeltaTime);
+			Explosions.Update         (*this, WrapPositionToViewport, InDeltaTime);
 
 			CheckCollisions();
 
@@ -768,7 +769,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			UpdateAsteroids           (InDeltaTime);
 			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
-			UpdateExplosions          (InDeltaTime);
+			Explosions.Update         (*this, WrapPositionToViewport, InDeltaTime);
 			CheckCollisions(); // In case any late torpedos or enemies hit something
 
 			// Make the "game over" message blink
@@ -1221,71 +1222,9 @@ void UPlayViewBase::UpdatePowerups(float DeltaTime)
 }
 
 
-void UPlayViewBase::SpawnExplosion
-(
-	const FVector2D& P,
-	float MinParticleSize,
-	float MaxParticleSize,
-	float MinParticleVelocity,
-	float MaxParticleVelocity,
-	float MinParticleLifetime,
-	float MaxParticleLifetime,
-	float FinalOpacity,
-	int32 NumParticles
-)
+void UPlayViewBase::SpawnExplosion(const FVector2D& P, const FVector2D& Inertia)
 {
-	auto Explosion = SNew(SDaylonParticles)
-		.MinParticleSize      (MinParticleSize)
-		.MaxParticleSize      (MaxParticleSize)
-		.MinParticleVelocity  (MinParticleVelocity)
-		.MaxParticleVelocity  (MaxParticleVelocity)
-		.MinParticleLifetime  (MinParticleLifetime)
-		.MaxParticleLifetime  (MaxParticleLifetime)
-		.FinalOpacity         (FinalOpacity)
-		.NumParticles         (NumParticles);
-
-	Explosion->SetVisibility(EVisibility::HitTestInvisible);
-	Explosion->SetRenderTransformPivot(FVector2D(0.5f));
-
-	Explosion->SetParticleBrush(TorpedoBrush);
-
-	auto SlotArgs = RootCanvas->GetCanvasWidget()->AddSlot();
-
-	SlotArgs[Explosion];
-	SlotArgs.AutoSize(true);
-	SlotArgs.Alignment(FVector2D(0.5));
-
-	auto Margin = SlotArgs.GetSlot()->GetOffset();
-	Margin.Left = P.X;
-	Margin.Top  = P.Y;
-
-	SlotArgs.GetSlot()->SetOffset(Margin);
-
-	Explosions.Add(Explosion);
-}
-
-
-void UPlayViewBase::SpawnExplosion(const FVector2D& P)
-{
-	SpawnExplosion(P, 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40);
-}
-
-
-void UPlayViewBase::UpdateExplosions(float DeltaTime)
-{
-	if(Explosions.IsEmpty())
-	{
-		return;
-	}
-
-	for(int32 Index = Explosions.Num() - 1; Index >= 0; Index--)
-	{
-		if(!Explosions[Index]->Update(DeltaTime))
-		{
-			RootCanvas->GetCanvasWidget()->RemoveSlot(Explosions[Index].ToSharedRef());
-			Explosions.RemoveAtSwap(Index);
-		}
-	}
+	Explosions.SpawnOne(*this, P, 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40, Inertia);
 }
 
 
@@ -1329,7 +1268,7 @@ void UPlayViewBase::KillAsteroid(int32 AsteroidIndex, bool KilledByPlayer)
 		IncreasePlayerScoreBy(Asteroid.Value);
 	}
 
-	SpawnExplosion(Asteroid.UnwrappedNewPosition);
+	SpawnExplosion(Asteroid.UnwrappedNewPosition, Asteroid.Inertia);
 
 	int32 SoundIndex = 0;
 	
@@ -1401,12 +1340,6 @@ void UPlayViewBase::IncreasePlayerScoreBy(int32 Amount)
 	const int32 PrevLevel = PlayerScore / PlayerShipBonusAt;
 
 	PlayerScore = FMath::Min(MaxPlayerScore, PlayerScore + Amount);
-	/*PlayerScore += Amount;
-
-	if(PlayerScore > MaxPlayerScore)
-	{
-		PlayerScore = MaxPlayerScore;
-	}*/
 
 	if(PrevLevel != PlayerScore / PlayerShipBonusAt)
 	{
@@ -1414,8 +1347,6 @@ void UPlayViewBase::IncreasePlayerScoreBy(int32 Amount)
 
 		PlaySound(PlayerShipBonusSound);
 	}
-
-	//UpdatePlayerScoreReadout();
 }
 
 
@@ -1568,7 +1499,7 @@ void UPlayViewBase::CheckCollisions()
 			if(UDaylonUtils::DoesLineSegmentIntersectTriangle(OldP, CurrentP, PlayerShipTriangle))
 			{
 				Torpedo.Kill();
-				SpawnExplosion(OldP);
+				SpawnExplosion(OldP, PlayerShip->Inertia);
 				ProcessPlayerCollision();
 			}
 		}
@@ -1887,16 +1818,6 @@ void UPlayViewBase::RemovePowerup(int32 PowerupIndex)
 	Daylon::Destroy(Powerups[PowerupIndex]);
 
 	Powerups.RemoveAt(PowerupIndex);
-}
-
-
-void UPlayViewBase::RemoveExplosions()
-{
-	while(!Explosions.IsEmpty())
-	{
-		RootCanvas->GetCanvasWidget()->RemoveSlot(Explosions.Last(0).ToSharedRef());
-		Explosions.Pop();
-	}
 }
 
 

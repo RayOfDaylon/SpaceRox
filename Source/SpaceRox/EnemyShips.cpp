@@ -111,7 +111,7 @@ void FEnemyShips::KillShip(UPlayViewBase& Arena, int32 Index)
 			80);
 
 */ 
-	Arena.SpawnExplosion(Ship.GetPosition(),
+	Arena.Explosions.SpawnOne(Arena, Ship.GetPosition(),
 		 3.0f, 
 		 8.0f, 
 		30.0f, 
@@ -119,7 +119,8 @@ void FEnemyShips::KillShip(UPlayViewBase& Arena, int32 Index)
 		 0.33f, 
 		 1.5f, 
 		 0.25f, 
-		60);
+		60,
+		Ship.Inertia);
 
 	Arena.PlaySound(Arena.ExplosionSounds[Ship.Value == ValueBigEnemy ? 0 : 1]);
 	RemoveShip(Index);
@@ -152,7 +153,7 @@ void FEnemyShips::KillScavenger(UPlayViewBase& Arena, int32 Index)
 	}
 	Scavenger.AcquiredPowerups.Empty();
 
-	Arena.SpawnExplosion(Scavenger.GetPosition());
+	Arena.SpawnExplosion(Scavenger.GetPosition(), Scavenger.Inertia);
 
 	// todo: have scavenger explosion sound
 	Arena.PlaySound(Arena.ExplosionSounds[0]);

@@ -81,3 +81,4 @@ const int32 PlayerShipThrustingAtlasCel    = 1;
 const int32 ShieldDefenseAtlasCel          = 0;
 const int32 InvincibilityDefenseAtlasCel   = 1;
 
+const float ExplosionInertialFactor        = 0.5f; // Original game had 0.0f, larger values make explosion particles retain target's inertia
