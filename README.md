@@ -12,6 +12,7 @@ Version 1.6.4 (nicer intro): https://www.youtube.com/watch?v=xYPj2w0ImMY
 The game departs from Asteroids as development continues, e.g.:
 - Powerups such as shields and double-guns  
 - Scavenger enemies that harvest unpicked powerups
+- Minibosses that are shielded
 
 Unreal Engine 5.1 or higher required.
 
