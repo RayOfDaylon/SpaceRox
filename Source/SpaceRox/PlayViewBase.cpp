@@ -37,7 +37,7 @@ DEFINE_LOG_CATEGORY(LogGame)
 // Make wave start with three rocks (big/medium/small) at rest.
 #define TEST_ASTEROIDS              0
 
-
+#define FEATURE_MINIBOSS            1
 
 
 
@@ -156,6 +156,7 @@ void UPlayViewBase::InitializeVariables()
 	TimeUntilNextWave             = 0.0f;
 	TimeUntilNextPlayerShip       = 0.0f;
 	TimeUntilNextEnemyShip        = 0.0f;
+	TimeUntilNextBoss             = 0.0f;
 	TimeUntilGameOverStateEnds    = 0.0f;
 	MruHighScoreAnimationAge      = 0.0f;
 	TimeUntilNextScavenger        = 5.0f;
@@ -521,6 +522,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			}
 
 			TimeUntilNextEnemyShip = 20.0f;
+			TimeUntilNextBoss      = 22.0f;
 			TimeUntilNextWave      =  2.0f;
 
 			if(!PlayerShip)
@@ -549,6 +551,48 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Show  (PowerupReadouts);
 
 			PlayerShip->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
+
+
+#if(FEATURE_MINIBOSS == 1)
+			{
+				EnemyShips.SpawnBoss(*this);
+				//EnemyBoss = FEnemyBoss::Create(PlayerShipAtlas, 32, ValueMiniBoss, 3, BossShieldSpinSpeed);
+				//EnemyBoss->SetPosition(FVector2D(400, 400));
+				//EnemyBoss->Show();
+
+				/*
+				PolyShieldPtrs.Add(SNew(SDaylonPolyShield)
+					.NumSides(9)
+					.Thickness(3)
+					.Size(100)
+					.SpinSpeed(30.0f));
+
+				PolyShieldPtrs.Add(SNew(SDaylonPolyShield)
+					.NumSides(6)
+					.Thickness(3)
+					.Size(70)
+					.SpinSpeed(-30.0f));
+
+				int Index = 0;
+				for(auto& PolyShieldPtr : PolyShieldPtrs)
+				{
+					auto SlotArgs = RootCanvas->GetCanvasWidget()->AddSlot();
+					SlotArgs[PolyShieldPtr.ToSharedRef()];
+					SlotArgs.Anchors(FAnchors());
+					SlotArgs.AutoSize(true);
+					SlotArgs.Alignment(FVector2D(0.5));
+					FMargin Margin;
+					Margin.Left = 250.0f;
+					Margin.Top = 250.0f;
+					Margin.Right = Margin.Bottom = (Index == 0 ? 100 : 70);
+					SlotArgs.GetSlot()->SetOffset(Margin);
+
+					PolyShieldPtr->SetRenderTransform(FSlateRenderTransform(FVector2D(0.5)));
+					UDaylonUtils::Show(PolyShieldPtr.Get());
+					Index++;
+				}*/
+			}
+#endif
 
 			break;
 
@@ -1130,6 +1174,7 @@ void UPlayViewBase::StartWave()
 	SpawnAsteroids(NumAsteroids);
 
 	TimeUntilNextEnemyShip = MaxTimeUntilNextEnemyShip; 
+	TimeUntilNextBoss      = MaxTimeUntilNextBoss;
 
 	
 	// Spawn extra powerups if requested.
@@ -1410,6 +1455,45 @@ void UPlayViewBase::CheckCollisions()
 					}
 				}
 			}
+
+#if(FEATURE_MINIBOSS == 1)
+			if(Torpedo.IsAlive() && Torpedo.FiredByPlayer)
+			{
+				int32 ShieldSegmentIndex;
+				int32 Part;
+				
+				for(int32 BossIndex = EnemyShips.NumBosses() - 1; BossIndex >= 0; BossIndex--)
+				{
+					auto& Boss = EnemyShips.GetBoss(BossIndex);
+
+					Part = Boss.CheckCollision(OldP, CurrentP, ShieldSegmentIndex);
+
+					if(Part != INDEX_NONE)
+					{
+						Torpedo.Kill();
+
+						if(Part == 0) 
+						{ 
+							IncreasePlayerScoreBy(Boss.Value);
+							EnemyShips.KillBoss(*this, BossIndex);
+							/*Boss.SpawnExplosion(*this);
+							PlaySound(ExplosionSounds[0]); // todo: need specific sound
+							Daylon::DestroyImpl(StaticCastSharedPtr<SWidget>(EnemyBoss));
+							EnemyBoss.Reset();*/
+						} 
+						else
+						{
+							SpawnExplosion(CurrentP, FVector2D(0));
+							PlaySound(ShieldBonkSound);
+							float PartHealth = Boss.GetShieldSegmentHealth(Part, ShieldSegmentIndex);
+							PartHealth = FMath::Max(0.0f, PartHealth - 0.25f);
+							Boss.SetShieldSegmentHealth(Part, ShieldSegmentIndex, PartHealth);
+						}
+					}
+				}
+
+			}
+#endif
 		}
 	} // next torpedo
 

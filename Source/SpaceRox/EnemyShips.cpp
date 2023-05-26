@@ -44,6 +44,20 @@ void FEnemyShips::RemoveShip(int32 Index)
 }
 
 
+void FEnemyShips::RemoveBoss(int32 Index) 
+{
+	if(!Bosses.IsValidIndex(Index))
+	{
+		UE_LOG(LogEnemyShips, Error, TEXT("Invalid enemy boss index %d"), Index);
+		return;
+	}
+
+	Daylon::DestroyImpl(Bosses[Index]);
+
+	Bosses.RemoveAtSwap(Index);
+}
+
+
 void FEnemyShips::RemoveScavenger(int32 Index)
 {
 	if(!Scavengers.IsValidIndex(Index))
@@ -65,11 +79,16 @@ void FEnemyShips::RemoveScavenger(int32 Index)
 }
 
 
-void FEnemyShips::RemoveAll ()
+void FEnemyShips::RemoveAll()
 {
 	while(!Ships.IsEmpty())
 	{
 		RemoveShip(0);
+	}
+
+	while(!Bosses.IsEmpty())
+	{
+		RemoveBoss(0);
 	}
 
 	while(!Scavengers.IsEmpty())
@@ -129,6 +148,57 @@ void FEnemyShips::KillShip(UPlayViewBase& Arena, int32 Index)
 	RemoveShip(Index);
 }
 
+
+void FEnemyShips::KillBoss(UPlayViewBase& Arena, int32 Index)
+{
+	if(!Bosses.IsValidIndex(Index))
+	{
+		UE_LOG(LogEnemyShips, Error, TEXT("Invalid enemy boss index %d"), Index);
+		return;
+	}
+
+	auto& Boss = *Bosses[Index].Get();
+
+	//Arena.SpawnExplosion(Ship.GetPosition());
+/*
+	float MinParticleSize,
+	float MaxParticleSize,
+	float MinParticleVelocity,
+	float MaxParticleVelocity,
+	float MinParticleLifetime,
+	float MaxParticleLifetime,
+	float FinalOpacity,
+	int32 NumParticles
+*/
+/*
+ playership 2nd explosion:
+ 			4.5f,
+			9.0f,
+			45.0f,
+			240.0f,
+			0.5f,
+			4.0f,
+			0.25f,
+			80);
+
+*/ 
+	Arena.Explosions.SpawnOne(
+		Arena, 
+		Boss.GetPosition(),
+		 3.0f, 
+		 8.0f, 
+		30.0f, 
+       180.0f, 
+		 0.33f, 
+		 1.5f, 
+		 0.25f, 
+		60,
+		Boss.Inertia);
+
+	Arena.PlaySound(Arena.ExplosionSounds[0], 0.5f); // todo: use specific sound
+
+	RemoveBoss(Index);
+}
 
 // To easily place powerups along a series of concentric circles around the destroyed scavenger,
 // make an array whose elements provide the circle's radius and an angle along the circle.
@@ -291,6 +361,48 @@ void FEnemyShips::SpawnShip(UPlayViewBase& Arena)
 }
 
 
+void FEnemyShips::SpawnBoss(UPlayViewBase& Arena)
+{
+	// The higher the player score, the more likely the boss will have multiple shields.
+
+	// Don't spawn if score too low.
+	const int32 ScoreTmp = Arena.PlayerScore - 30'000;
+
+	if(ScoreTmp < 0)
+	{
+		return;
+	}
+
+	float DualShieldProbability = pow(FMath::Lerp(1.0f, 0.1f,  FMath::Min(1.0f, ScoreTmp / 100'000.0f)), 2.0f);
+	DualShieldProbability = FMath::Max(0.1f, DualShieldProbability);
+
+	const bool IsDualShielded = (FMath::FRand() > DualShieldProbability);
+
+	const int32 NumShields = IsDualShielded ? 2 : 1;
+
+
+	auto BossShipPtr = FEnemyBoss::Create(Arena.Miniboss1Atlas, 32, ValueMiniBoss, NumShields);
+
+	// Like an asteroid, start at some random edge place with a random inertia.
+
+	FVector2D P(0);
+
+	if(FMath::RandBool())
+	{
+		P.X = FMath::RandRange(0.0, ViewportSize.X);
+	}
+	else
+	{
+		P.Y = FMath::RandRange(0.0, ViewportSize.Y);
+	}
+
+	BossShipPtr->SetPosition(P);
+	BossShipPtr->Inertia = UDaylonUtils::RandVector2D() * 100.0f;
+
+	Bosses.Add(BossShipPtr);
+}
+
+
 void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 {
 	check(NumBigEnemyShips + NumSmallEnemyShips == Ships.Num());
@@ -343,6 +455,21 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 	if(NumSmallEnemyShips > 0)
 	{
 		Arena.SmallEnemyShipSoundLoop.Tick(DeltaTime);
+	}
+
+
+	for(auto& BossPtr : Bosses)
+	{
+		BossPtr->Update(DeltaTime);
+		BossPtr->Perform(Arena, DeltaTime);
+	}
+
+	Arena.TimeUntilNextBoss -= DeltaTime;
+
+	if(Arena.TimeUntilNextBoss <= 0.0f)
+	{
+		SpawnBoss(Arena);
+		Arena.TimeUntilNextBoss = FMath::Lerp(MaxTimeUntilBossRespawn, MinTimeUntilBossRespawn, (float)FMath::Min(ExpertPlayerScore, Arena.PlayerScore.GetValue()) / ExpertPlayerScore);
 	}
 
 

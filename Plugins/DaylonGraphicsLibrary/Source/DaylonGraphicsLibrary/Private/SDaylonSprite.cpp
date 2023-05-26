@@ -1,13 +1,16 @@
 // Copyright 2023 Daylon Graphics Ltd. All Rights Reserved.
 
 #include "SDaylonSprite.h"
+#include "DaylonUtils.h"
 
 
-#define DEBUG_MODULE      0
+#define DEBUG_MODULE      1
 
 #if(DEBUG_MODULE == 1)
 #pragma optimize("", off)
 #endif
+
+
 
 
 void FDaylonSpriteAtlas::InitCache()
@@ -198,6 +201,193 @@ int32 SDaylonSprite::OnPaint
 #endif
 
 	}
+
+	return LayerId;
+}
+
+
+// ------------------------------------------------------------------------------------------------------------------------
+
+void SDaylonPolyShield::Construct(const FArguments& InArgs)
+{
+	Size      = InArgs._Size.Get();
+	SpinSpeed = InArgs._SpinSpeed.Get();
+	Thickness = InArgs._Thickness.Get();
+	NumSides  = InArgs._NumSides.Get();
+
+	SegmentHealth.Reserve(NumSides);
+
+	Reset();
+}
+
+
+FVector2D SDaylonPolyShield::ComputeDesiredSize(float) const 
+{
+	return Size; 
+}
+
+
+void SDaylonPolyShield::SetSize(const FVector2D& InSize)
+{
+	Size = InSize; 
+}
+
+
+void SDaylonPolyShield::Reset()
+{
+	CurrentAge = 0.0f;
+
+	SegmentHealth.SetNum(NumSides);
+
+	int32 N = 0;
+
+	for(auto& Health : SegmentHealth)
+	{
+		Health = 1.0f;
+		//Health = (1.0f / NumSides) * N++;
+	}
+}
+
+
+void SDaylonPolyShield::Update(float DeltaTime)
+{
+	CurrentAge += DeltaTime;
+
+	if(CurrentAge > 1000.f)
+	{
+		CurrentAge -= 1000.f;
+	}
+}
+
+
+int32 SDaylonPolyShield::GetHitSegment(const FVector2D& P1, const FVector2D& P2) const
+{
+	// P1, P2 are in widget space.
+
+	const auto ShieldAngle = CurrentAge * SpinSpeed;
+
+	if(!UDaylonUtils::DoesLineSegmentIntersectCircle(P1, P2, FVector2D(0), Size.X / 2))
+	{
+		return INDEX_NONE;
+	}
+
+	const auto HitVector = (P1 + P2) / 2; // todo: take the middle of the line for now
+
+
+	//UE_LOG(LogDaylon, Log, TEXT("HitAngle = %.2f"), HitAngle);
+
+	const auto HitAngle = FMath::Wrap(UDaylonUtils::Vector2DToAngle(HitVector) - ShieldAngle, 0.0f, 360.0f);
+
+	//UE_LOG(LogDaylon, Log, TEXT("Wrapped HitAngle = %.2f"), HitAngle);
+
+	const int32 Segment = (int32)FMath::Floor(HitAngle / (360.0f / NumSides));
+
+	// No collision if hit segment has no health left.
+	check(SegmentHealth.IsValidIndex(Segment));
+
+	return (SegmentHealth[Segment] > 0.0f ? Segment : INDEX_NONE);
+
+	//UE_LOG(LogDaylon, Log, TEXT("HitSegment = %d"), HitSegment);
+}
+
+
+float SDaylonPolyShield::GetSegmentHealth(int32 Index) const
+{
+	if(!SegmentHealth.IsValidIndex(Index))
+	{
+		return 0.0f;
+	}
+
+	return SegmentHealth[Index];
+}
+
+
+void SDaylonPolyShield::SetSegmentHealth(int32 Index, float Health)
+{
+	UE_LOG(LogDaylon, Log, TEXT("SetSegmentHealth: Index = %d"), Index);
+
+	if(!SegmentHealth.IsValidIndex(Index))
+	{
+		return;
+	}
+
+	SegmentHealth[Index] = Health;
+}
+
+
+
+int32 SDaylonPolyShield::OnPaint
+(
+	const FPaintArgs&          Args,
+	const FGeometry&           AllottedGeometry,
+	const FSlateRect&          MyCullingRect,
+	FSlateWindowElementList&   OutDrawElements,
+	int32                      LayerId,
+	const FWidgetStyle&        InWidgetStyle,
+	bool                       bParentEnabled
+) const
+{
+
+	float Angle = CurrentAge * SpinSpeed;
+	const float AngleDelta = 360.0f / NumSides;
+	const auto Radius = Size * 0.5f;
+
+	for(int32 SegmentIndex = 0; SegmentIndex < NumSides; SegmentIndex++, Angle += AngleDelta)
+	{
+		if(SegmentHealth[SegmentIndex] <= 0.0f)
+		{
+			continue;
+		}
+
+		FLinearColor Color(1.0f, 1.0f, 1.0f, SegmentHealth[SegmentIndex]);
+
+		TArray<FVector2f> Points;
+
+		Points.Add(UE::Slate::CastToVector2f(AllottedGeometry.GetLocalSize() / 2 + UDaylonUtils::AngleToVector2D(Angle) * Radius));
+		Points.Add(UE::Slate::CastToVector2f(AllottedGeometry.GetLocalSize() / 2 + UDaylonUtils::AngleToVector2D(Angle + AngleDelta) * Radius));
+
+		FSlateDrawElement::MakeLines(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, Color, true, Thickness);
+	}
+
+
+/*		if(AllottedGeometry.HasRenderTransform())
+		{
+			FSlateDrawElement::MakeBox(
+				OutDrawElements,
+				LayerId,
+				AllottedGeometry.ToPaintGeometry(),
+				&Atlas.AtlasBrush,
+				ESlateDrawEffect::None,
+				Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
+		}
+		else
+		{
+			const auto GeomSize = AllottedGeometry.GetAbsoluteSize();
+			const FPaintGeometry PaintGeometry(AllottedGeometry.GetAbsolutePosition(), GeomSize, 1.0f);
+
+			FSlateDrawElement::MakeBox(
+				OutDrawElements,
+				LayerId,
+				PaintGeometry,
+				&Atlas.AtlasBrush,
+				ESlateDrawEffect::None,
+				Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
+		}
+*/
+#if 0
+		{
+			// Draw where P is.
+			FLinearColor Red(1.0f, 0.0f, 0.0f, 1.0f);
+			const FPaintGeometry PaintGeometry2(AllottedGeometry.GetAbsolutePosition(), FVector2D(4), 1.0f);
+			FSlateDrawElement::MakeBox(
+				OutDrawElements,
+				LayerId,
+				PaintGeometry2,
+				&Atlas.AtlasBrush,
+				ESlateDrawEffect::None,
+				Red * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
+		}
+#endif
 
 	return LayerId;
 }

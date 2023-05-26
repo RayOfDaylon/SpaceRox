@@ -76,13 +76,14 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSprite : public SLeafWidget
 			void Construct(const FArguments& InArgs);
 
 
-			void SetSize    (const FVector2D& InSize);
-			void SetAtlas   (const FDaylonSpriteAtlas& InAtlas);
+			const FVector2D&  GetSize       () const { return Size; }
+			void              SetSize       (const FVector2D& InSize);
+			void              SetAtlas      (const FDaylonSpriteAtlas& InAtlas);
 
-			void SetCurrentCel (int32 Index);
-			void SetCurrentCel (int32 CelX, int32 CelY);
-			void Update        (float DeltaTime);
-			void Reset         ();
+			void              SetCurrentCel (int32 Index);
+			void              SetCurrentCel (int32 CelX, int32 CelY);
+			void              Update        (float DeltaTime);
+			void              Reset         ();
 
 
 			virtual int32 OnPaint
@@ -106,6 +107,75 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSprite : public SLeafWidget
 
 			float                        CurrentAge      = 0.0f;
 			int32                        CurrentCelIndex = 0;
+
+			virtual bool ComputeVolatility() const override { return true; }
+
+};
+
+
+
+class DAYLONGRAPHICSLIBRARY_API SDaylonPolyShield : public SLeafWidget
+{
+	public:
+		SLATE_BEGIN_ARGS(SDaylonPolyShield)
+			: 
+			  _Size                (FVector2D(16)),
+			  _SpinSpeed           (10.0f),
+			  _Thickness           (2.0f),
+			  _NumSides            (9)
+			{
+				_Clipping = EWidgetClipping::OnDemand;
+			}
+
+			SLATE_ATTRIBUTE(FVector2D, Size)
+			SLATE_ATTRIBUTE(float,     SpinSpeed)
+			SLATE_ATTRIBUTE(float,     Thickness)
+			SLATE_ATTRIBUTE(int32,     NumSides)
+
+			SLATE_END_ARGS()
+
+			SDaylonPolyShield() {}
+
+			~SDaylonPolyShield() {}
+
+			void Construct(const FArguments& InArgs);
+
+
+			void              SetSize  (const FVector2D& InSize);
+
+			void Update        (float DeltaTime);
+			void Reset         ();
+
+			// Given P1 and P2 in local coordinates, return which segment got hit (INDEX_NONE if no hit).
+			int32 GetHitSegment     (const FVector2D& P1, const FVector2D& P2) const;
+			void  SetSegmentHealth  (int32 Index, float Health);
+			float GetSegmentHealth  (int32 Index) const;
+
+
+			virtual int32 OnPaint
+			(
+				const FPaintArgs&          Args,
+				const FGeometry&           AllottedGeometry,
+				const FSlateRect&          MyCullingRect,
+				FSlateWindowElementList&   OutDrawElements,
+				int32                      LayerId,
+				const FWidgetStyle&        InWidgetStyle,
+				bool                       bParentEnabled
+			) const override;
+
+			virtual FVector2D ComputeDesiredSize(float) const override;
+
+
+
+		protected:
+
+			FVector2D                    Size;
+			float                        SpinSpeed;
+			float                        Thickness;
+			int32                        NumSides;
+			TArray<float>                SegmentHealth;
+
+			float                        CurrentAge      = 0.0f;
 
 			virtual bool ComputeVolatility() const override { return true; }
 

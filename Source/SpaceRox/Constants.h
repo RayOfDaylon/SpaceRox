@@ -46,6 +46,7 @@ const int32 ValueSmallAsteroid             =   100;
 const int32 ValueBigEnemy                  =   200;
 const int32 ValueSmallEnemy                =  1000;
 const int32 ValueScavenger                 =   500;
+const int32 ValueMiniBoss                  =  2000;
 							           
 const float MaxIntroStateLifetime          =  5.0f;  // How long the initial intro screen is visible before the main menu appears.
 const float TimeBetweenWaves               =  3.0f;  // Number of seconds between each wave.
@@ -54,6 +55,10 @@ const float MaxTimeUntilGameOverStateEnds  =  5.0f;  // Time to wait between gam
 const float MaxTimeUntilNextEnemyShip      = 20.0f;  // Let each wave start with a breather.
 const float MaxTimeUntilEnemyRespawn       = 10.0f;  // Longest delay between successive enemy ship spawns. Favored when player score is low.
 const float MinTimeUntilEnemyRespawn       =  2.0f;  // Shortest delay between successive enemy ship spawns. Favored more as player score increases.
+
+const float MaxTimeUntilNextBoss          = 22.0f;  // Let each wave start with a breather.
+const float MaxTimeUntilBossRespawn       = 20.0f;  
+const float MinTimeUntilBossRespawn       = 10.0f;  
 
 const float BigEnemyTorpedoSpeed           = MaxTorpedoSpeed;
 const float BigEnemyReloadTime             =   1.25f;
@@ -82,3 +87,4 @@ const int32 ShieldDefenseAtlasCel          = 0;
 const int32 InvincibilityDefenseAtlasCel   = 1;
 
 const float ExplosionInertialFactor        = 0.5f; // Original game had 0.0f, larger values make explosion particles retain target's inertia
+const float BossShieldSpinSpeed            = 100.0f; // degrees/sec

@@ -146,3 +146,156 @@ void FEnemyShip::Shoot(UPlayViewBase& Arena)
 
 	Arena.PlaySound(Arena.TorpedoSound);
 }
+
+
+// ------------------------------------------------------------------------------------------------------------------
+
+
+TSharedPtr<FEnemyBoss> FEnemyBoss::Create(UDaylonSpriteWidgetAtlas* Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed)
+{
+	check(Atlas);
+	check(NumShields > 0);
+	check(SpinSpeed >= 0.0f);
+
+	auto Widget = SNew(FEnemyBoss);
+
+	Widget->Value = Value;
+
+	auto SlotSprite = Widget->AddSlot();
+	Widget->SpriteSlot = SlotSprite.GetSlot();
+	Widget->SpriteSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Center);
+	Widget->SpriteSlot->SetVerticalAlignment(EVerticalAlignment::VAlign_Center);
+
+	SlotSprite[SAssignNew(Widget->Sprite, SDaylonSprite).Size(S)];
+
+	Widget->Sprite->SetAtlas(Atlas->Atlas);
+	Daylon::FinishCreating<SOverlay>(Widget, 0.5f);
+
+	Widget->NumShields = NumShields;
+		
+
+	bool ShieldSpinDir = FMath::RandBool();
+
+	for(int32 Index = 0; Index < NumShields; Index++, ShieldSpinDir = !ShieldSpinDir)
+	{
+		auto ShieldSlot = Widget->AddSlot();
+		Widget->ShieldSlots.Add(ShieldSlot.GetSlot());
+
+		TSharedPtr<SDaylonPolyShield> Tmp;
+		ShieldSlot[SAssignNew(Tmp, SDaylonPolyShield).Size(60 + Index * 30).NumSides(6 + Index * 3).Thickness(3).SpinSpeed(SpinSpeed * (ShieldSpinDir ? 1 : -1))];
+		Widget->Shields.Add(Tmp);
+	}
+
+	//auto SlotOuterShield = Widget->AddSlot();
+	//Widget->SlotOuterShieldPtr = SlotOuterShield.GetSlot();
+	//SlotOuterShield[SAssignNew(Widget->OuterShield, SDaylonPolyShield).Size(90).NumSides(9).Thickness(3).SpinSpeed(100)];
+
+	/*
+	StaticCastSharedRef<SOverlay>(Widget)
+	+ SOverlay::Slot()
+	[
+		SNew(SDaylonSprite)
+	]
+	+ SOverlay::Slot()
+	[
+		SNew(SDaylonPolyShield).Size(60)
+	]
+	;
+	*/
+	return Widget;
+}
+
+
+void FEnemyBoss::Update(float DeltaTime)
+{
+	for(auto ShieldPtr : Shields)
+	{
+		ShieldPtr->Update(DeltaTime);
+	}
+
+	Sprite->Update(DeltaTime);
+}
+
+
+int32 FEnemyBoss::CheckCollision(const FVector2D& P1, const FVector2D &P2, int32& ShieldSegmentIndex) const
+{
+	// P1 and P2 are in scene space.
+	// Return INDEX_NONE if no part got hit.
+	// Return 0 if center sprite was hit
+	// Return 1 ... NumShields if a shield got hit, from center out,
+	// and put shield segment index into ShieldSegmentIndex.
+
+	const auto LocalP1 = P1 - GetPosition();
+	const auto LocalP2 = P2 - GetPosition();
+
+	if(UDaylonUtils::DoesLineSegmentIntersectCircle(LocalP1, LocalP2, FVector2D(0), Sprite->GetSize().X / 2))
+	{
+		return 0;
+	}
+
+	int32 ShieldIndex = 1;
+
+	for(auto ShieldPtr : Shields)
+	{
+		ShieldSegmentIndex = ShieldPtr->GetHitSegment(LocalP1, LocalP2);
+		if(ShieldSegmentIndex != INDEX_NONE)
+		{
+			return ShieldIndex;
+		}
+
+		ShieldIndex++;
+	}
+
+	return INDEX_NONE;
+}
+
+
+float FEnemyBoss::GetShieldSegmentHealth(int32 ShieldNumber, int32 SegmentIndex) const
+{
+	const auto ShieldIndex = ShieldNumber - 1;
+
+	if(!Shields.IsValidIndex(ShieldIndex))
+	{
+		return 0.0f;
+	}
+
+	return Shields[ShieldIndex]->GetSegmentHealth(SegmentIndex);
+}
+
+
+void FEnemyBoss::SetShieldSegmentHealth(int32 ShieldNumber, int32 SegmentIndex, float Health)
+{
+	const auto ShieldIndex = ShieldNumber - 1;
+
+	if(!Shields.IsValidIndex(ShieldIndex))
+	{
+		return;
+	}
+
+	Shields[ShieldIndex]->SetSegmentHealth(SegmentIndex, Health);
+}
+
+
+void FEnemyBoss::SpawnExplosion(UPlayViewBase& Arena)
+{
+	const auto P = GetPosition();
+	const auto ShipInertia = Inertia;
+
+	Arena.Explosions.SpawnOne(Arena, P, 
+		4.5f,
+		9.0f,
+		45.0f,
+		240.0f,
+		0.5f,
+		4.0f,
+		0.25f,
+		80,
+		ShipInertia);
+}
+
+
+void FEnemyBoss::Perform(UPlayViewBase& Arena, float DeltaTime)
+{
+	Move(DeltaTime, Arena.WrapPositionToViewport);
+}
+

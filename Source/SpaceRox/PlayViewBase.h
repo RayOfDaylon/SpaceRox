@@ -13,6 +13,7 @@
 #include "UMG/Public/Components/GridPanel.h"
 #include "UMG/Public/Components/Image.h"
 #include "UMG/Public/Components/EditableTextBox.h"
+#include "Runtime/SlateCore/Public/Widgets/SOverlay.h"
 #include "Runtime/Engine/Classes/Sound/SoundBase.h"
 #include "UDaylonParticlesWidget.h"
 #include "UDaylonSpriteWidget.h"
@@ -199,6 +200,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* ScavengerAtlas;
 
+	// The animation flipbook for the first miniboss 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	UDaylonSpriteWidgetAtlas* Miniboss1Atlas;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	FSlateBrush TorpedoBrush;
 
@@ -381,13 +386,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	void      SpawnAsteroids             (int32 NumAsteroids);
 	void      SpawnPowerup               (TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P);
 	
-	//void      RemoveAsteroid             (int32 Index);
-	//void      RemoveAsteroids            ();
 	void      RemovePowerup              (int32 PowerupIndex);
 	void      RemovePowerups             ();
 	void      RemoveTorpedos             ();
 
-	//void      KillAsteroid               (int32 AsteroidIndex, bool KilledByPlayer);
 	void      KillPowerup                (int32 PowerupIndex);
 	void      KillPlayerShip             ();
 
@@ -423,9 +425,12 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 
 	TSharedPtr<FPlayerShip>           PlayerShip;
 	TArray<TSharedPtr<FTorpedo>>      Torpedos;
-	//TArray<TSharedPtr<FAsteroid>>   Asteroids;
 	FAsteroids                        Asteroids;
 	FExplosions                       Explosions; 
+
+	//TArray<TSharedPtr<SDaylonPolyShield>>     PolyShieldPtrs;
+
+	//TSharedPtr<FEnemyBoss>           EnemyBoss;
 
 
 	protected:
@@ -456,12 +461,13 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	TArray<Daylon::FDurationTask>   DurationTasks;
 	TArray<TSharedPtr<FPowerup>>    Powerups; // Not including those inside asteroids
 	float                           TimeUntilNextEnemyShip;
+	float                           TimeUntilNextBoss;
 	float                           TimeUntilNextScavenger;
 
 
 	protected:
 
-	FEnemyShips                            EnemyShips;
+	FEnemyShips                     EnemyShips;
 
 	Daylon::FHighScoreTable         HighScores;
 	Daylon::FHighScore              MostRecentHighScore;

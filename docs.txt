@@ -325,6 +325,19 @@ file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
 
 
+Version 1.7.9
+-------------------------------------------------------------------------------------
+Added minibosses, which are shielded enemies protected by one or two layers 
+of counterrotating polygon shields. Torpedo collisions will lower the strength 
+of a hit shield segment, if it reaches zero (black) torpedos will then pass 
+through that part of the shield. The boss is destroyed if a torpedo can hit 
+the ship at the center. Minibosses don't appear until the player score is 
+30,000 points. They appear with one shield but then two shields are more 
+probable as gameplay progresses. Unlike the original enemies, bosses 
+wrap around the screen and stay present until destroyed.
+    Still a work in progress e.g. movement, firing and collision detection.
+
+
 Version 1.7.8
 -------------------------------------------------------------------------------------
 Asteroid objects now managed by their own FAsteroids class.
