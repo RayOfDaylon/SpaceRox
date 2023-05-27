@@ -9,6 +9,16 @@
 #include "Constants.h"
 
 
+// Set to 1 to enable debugging
+#define DEBUG_MODULE                1
+
+
+#if(DEBUG_MODULE == 1)
+#pragma optimize("", off)
+#endif
+
+
+
 TSharedPtr<FEnemyShip> FEnemyShip::Create(UDaylonSpriteWidgetAtlas* Atlas, int Value, float RadiusFactor)
 {
 	auto Widget = SNew(FEnemyShip);
@@ -228,19 +238,71 @@ int32 FEnemyBoss::CheckCollision(const FVector2D& P1, const FVector2D &P2, int32
 	const auto LocalP1 = P1 - GetPosition();
 	const auto LocalP2 = P2 - GetPosition();
 
+	// Check center first.
 	if(UDaylonUtils::DoesLineSegmentIntersectCircle(LocalP1, LocalP2, FVector2D(0), Sprite->GetSize().X / 2))
 	{
 		return 0;
 	}
 
+	// Check shields, starting with the inner one.
 	int32 ShieldIndex = 1;
 
 	for(auto ShieldPtr : Shields)
 	{
 		ShieldSegmentIndex = ShieldPtr->GetHitSegment(LocalP1, LocalP2);
+
 		if(ShieldSegmentIndex != INDEX_NONE)
 		{
 			return ShieldIndex;
+		}
+
+		ShieldIndex++;
+	}
+
+	return INDEX_NONE;
+}
+
+
+int32 FEnemyBoss::CheckCollision(const FVector2D& P1, const FVector2D &P2, float Radius, int32& ShieldSegmentIndex, FVector2D& HitPt) const
+{
+	// P1 and P2 are in scene space.
+	// Radius is the radius of the object that may have hit us.
+	// Return INDEX_NONE if no part got hit.
+	// Return 0 if center sprite was hit
+	// Return 1 ... NumShields if a shield got hit, from center out,
+	// and put shield segment index into ShieldSegmentIndex.
+	// Return specific collision point in HitPt.
+
+	const auto LocalP1 = P1 - GetPosition();
+	const auto LocalP2 = P2 - GetPosition();
+
+	// Check if center was hit.
+
+	auto LocalAvgP = (LocalP1 + LocalP2) / 2;
+
+	// For now, use the average of P1, P2 as the hit point.
+	HitPt = (P1 + P2) / 2;
+
+	if(UDaylonUtils::DoCirclesIntersect(LocalAvgP, Radius, FVector2D(0), GetRadius()))
+	{
+		return 0;
+	}
+
+	// Check shields, starting with the inner one.
+
+	int32 ShieldIndex = 1;
+
+	for(auto ShieldPtr : Shields)
+	{
+		if(UDaylonUtils::DoCirclesIntersect(LocalAvgP, Radius, FVector2D(0), ShieldPtr->GetSize().X / 2))
+		{
+			// Determine the segment by casting a ray from our center.
+			ShieldSegmentIndex = ShieldPtr->GetHitSegment(FVector2D(0), LocalAvgP * 10.0f);
+
+			if(ShieldSegmentIndex != INDEX_NONE)
+			{
+				return ShieldIndex;
+			}
 		}
 
 		ShieldIndex++;
@@ -299,3 +361,7 @@ void FEnemyBoss::Perform(UPlayViewBase& Arena, float DeltaTime)
 	Move(DeltaTime, Arena.WrapPositionToViewport);
 }
 
+
+#if(DEBUG_MODULE == 1)
+#pragma optimize("", on)
+#endif

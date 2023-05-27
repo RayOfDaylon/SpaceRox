@@ -16,10 +16,10 @@ void FAsteroids::Remove(int32 Index)
 
 	if(Asteroid.HasPowerup())
 	{
-		Daylon::Destroy(Asteroid.Powerup);
+		Daylon::Uninstall(Asteroid.Powerup);
 	}
 
-	Daylon::Destroy(Asteroids[Index]);
+	Daylon::Uninstall(Asteroids[Index]);
 
 	Asteroids.RemoveAtSwap(Index);
 }

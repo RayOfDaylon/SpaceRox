@@ -21,13 +21,13 @@ void FPlayerShip::ReleaseResources(UPlayViewBase& Arena)
 {
 	if(Shield)
 	{
-		Daylon::Destroy(Shield);
+		Daylon::Uninstall(Shield);
 		Shield.Reset();
 	}
 
 	if(InvincibilityShield)
 	{
-		Daylon::Destroy(InvincibilityShield);
+		Daylon::Uninstall(InvincibilityShield);
 		InvincibilityShield.Reset();
 	}
 }

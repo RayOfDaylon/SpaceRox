@@ -72,6 +72,12 @@ float UDaylonUtils::WrapAngle(float Angle)
 
 
 
+bool UDaylonUtils::DoCirclesIntersect(const FVector2D& C1, float R1, const FVector2D& C2, float R2)
+{
+	return (FVector2D::Distance(C1, C2) < (R1 + R2));
+}
+
+
 static UE::Geometry::TIntrTriangle2Triangle2<double> TriTriIntersector;
 
 
@@ -147,13 +153,14 @@ bool UDaylonUtils::DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVe
 		return false;
 	}
 
-	// checks whether a point is within a segment
+	// Checks whether a point is within a segment
 	auto within = [x1, y1, x2, y2](double x, double y)
 	{
 		auto d1 = sqrt(Square(x2 - x1) + Square(y2 - y1));  // distance between end-points
 		auto d2 = sqrt(Square(x - x1) + Square(y - y1));    // distance from point to one end
 		auto d3 = sqrt(Square(x2 - x) + Square(y2 - y));    // distance from point to other end
 		auto delta = d1 - d2 - d3;
+
 		return abs(delta) < Epsilon;                // true if delta is less than a small tolerance
 	};
 
@@ -166,7 +173,8 @@ bool UDaylonUtils::DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVe
 
 	if (d == 0.0)
 	{
-		// line is tangent to circle, so just one intersect at most
+		// Line is tangent to circle, so just one intersect at most
+
 		if (bnz)
 		{
 			x = -b / (2 * a);
@@ -182,8 +190,10 @@ bool UDaylonUtils::DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVe
 	}
 	else
 	{
-		// two intersects at most
+		// Two intersects at most
+
 		d = sqrt(d);
+
 		if (bnz)
 		{
 			x = (-b + d) / (2 * a);
@@ -255,9 +265,6 @@ FVector2D UDaylonUtils::GetWidgetDirectionVector(const UWidget* Widget)
 
 	return UDaylonUtils::AngleToVector2D(Widget->GetRenderTransformAngle());
 }
-
-
-
 
 
 void UDaylonUtils::Show(UWidget* Widget, bool Visible)
@@ -376,6 +383,8 @@ void Daylon::FHighScoreTable::Add(int32 Score, const FString& Name)
 }
 
 
+// ------------------------------------------------------------------------------------------
+
 TSharedPtr<Daylon::ImagePlayObject2D> Daylon::CreateImagePlayObject2D(const FSlateBrush& Brush, float Radius)
 {
 	auto PlayObj = SNew(ImagePlayObject2D);
@@ -402,27 +411,27 @@ TSharedPtr<Daylon::SpritePlayObject2D> Daylon::CreateSpritePlayObject2D(const FD
 }
 
 
-void Daylon::DestroyImpl(TSharedPtr<SWidget> Widget)
+void Daylon::UninstallImpl(TSharedPtr<SWidget> Widget)
 {
 	UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(Widget.ToSharedRef());
 }
 
-#define DESTROY_PLAYOBJECT(_Widget)	\
+#define UNINSTALL_PLAYOBJECT(_Widget)	\
 	if(!_Widget->IsValid())	\
 	{	\
 		UE_LOG(LogDaylon, Error, TEXT("Daylon::Destroy() tried to destroy an invalid Slate widget!"));	\
 		return;	\
 	}	\
-	DestroyImpl(StaticCastSharedPtr<SWidget>(Widget));
+	UninstallImpl(StaticCastSharedPtr<SWidget>(Widget));
 
 
-void Daylon::Destroy(TSharedPtr<Daylon::ImagePlayObject2D> Widget)
+void Daylon::Uninstall(TSharedPtr<Daylon::ImagePlayObject2D> Widget)
 {
-	DESTROY_PLAYOBJECT(Widget);
+	UNINSTALL_PLAYOBJECT(Widget);
 }
 
 
-void Daylon::Destroy(TSharedPtr<SpritePlayObject2D> Widget)
+void Daylon::Uninstall(TSharedPtr<SpritePlayObject2D> Widget)
 {
-	DESTROY_PLAYOBJECT(Widget);
+	UNINSTALL_PLAYOBJECT(Widget);
 }

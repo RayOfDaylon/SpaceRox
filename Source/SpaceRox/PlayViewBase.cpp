@@ -32,7 +32,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogGame, Log, All);
 DEFINE_LOG_CATEGORY(LogGame)
 
 // Set to 1 to enable debugging
-#define DEBUG_MODULE                0
+#define DEBUG_MODULE                1
 
 // Make wave start with three rocks (big/medium/small) at rest.
 #define TEST_ASTEROIDS              0
@@ -283,7 +283,7 @@ void UPlayViewBase::OnAbortButtonPressed()
 	if(PlayerShip)
 	{
 		PlayerShip->ReleaseResources(*this);
-		Daylon::Destroy(PlayerShip);
+		Daylon::Uninstall(PlayerShip);
 		PlayerShip.Reset();
 	}
 
@@ -605,7 +605,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			}
 
 			PlayerShip->ReleaseResources(*this);
-			Daylon::Destroy(PlayerShip);
+			Daylon::Uninstall(PlayerShip);
 			PlayerShip.Reset();
 
 
@@ -1437,6 +1437,7 @@ void UPlayViewBase::CheckCollisions()
 					Torpedo.Kill();
 					IncreasePlayerScoreBy(EnemyShip.Value);
 					EnemyShips.KillShip(*this, EnemyIndex);
+					break;
 				}
 			}
 
@@ -1452,49 +1453,51 @@ void UPlayViewBase::CheckCollisions()
 						Torpedo.Kill();
 						IncreasePlayerScoreBy(Scavenger.Value);
 						EnemyShips.KillScavenger(*this, ScavengerIndex);
+						break;
 					}
 				}
 			}
+		}
 
 #if(FEATURE_MINIBOSS == 1)
-			if(Torpedo.IsAlive() && Torpedo.FiredByPlayer)
-			{
-				int32 ShieldSegmentIndex;
-				int32 Part;
+		// Let bosses be hit by any torpedo, not just ours.
+		if(Torpedo.IsAlive() /* && Torpedo.FiredByPlayer*/)
+		{
+			int32 ShieldSegmentIndex;
+			int32 Part;
 				
-				for(int32 BossIndex = EnemyShips.NumBosses() - 1; BossIndex >= 0; BossIndex--)
+			for(int32 BossIndex = EnemyShips.NumBosses() - 1; BossIndex >= 0; BossIndex--)
+			{
+				auto& Boss = EnemyShips.GetBoss(BossIndex);
+
+				Part = Boss.CheckCollision(OldP, CurrentP, ShieldSegmentIndex);
+
+				if(Part != INDEX_NONE)
 				{
-					auto& Boss = EnemyShips.GetBoss(BossIndex);
+					Torpedo.Kill();
 
-					Part = Boss.CheckCollision(OldP, CurrentP, ShieldSegmentIndex);
-
-					if(Part != INDEX_NONE)
+					if(Part == 0) 
 					{
-						Torpedo.Kill();
-
-						if(Part == 0) 
-						{ 
-							IncreasePlayerScoreBy(Boss.Value);
-							EnemyShips.KillBoss(*this, BossIndex);
-							/*Boss.SpawnExplosion(*this);
-							PlaySound(ExplosionSounds[0]); // todo: need specific sound
-							Daylon::DestroyImpl(StaticCastSharedPtr<SWidget>(EnemyBoss));
-							EnemyBoss.Reset();*/
-						} 
-						else
+						if(Torpedo.FiredByPlayer)
 						{
-							SpawnExplosion(CurrentP, FVector2D(0));
-							PlaySound(ShieldBonkSound);
-							float PartHealth = Boss.GetShieldSegmentHealth(Part, ShieldSegmentIndex);
-							PartHealth = FMath::Max(0.0f, PartHealth - 0.25f);
-							Boss.SetShieldSegmentHealth(Part, ShieldSegmentIndex, PartHealth);
+							IncreasePlayerScoreBy(Boss.Value);
 						}
+						EnemyShips.KillBoss(*this, BossIndex);
+					} 
+					else
+					{
+						SpawnExplosion(CurrentP, FVector2D(0));
+						PlaySound(ShieldBonkSound, 0.5f);
+						float PartHealth = Boss.GetShieldSegmentHealth(Part, ShieldSegmentIndex);
+						PartHealth = FMath::Max(0.0f, PartHealth - 0.25f);
+						Boss.SetShieldSegmentHealth(Part, ShieldSegmentIndex, PartHealth);
 					}
-				}
 
+					break;
+				}
 			}
-#endif
 		}
+#endif
 	} // next torpedo
 
 
@@ -1575,6 +1578,9 @@ void UPlayViewBase::CheckCollisions()
 		}
 	}
 
+
+	// Check if scavenger collided with the player
+
 	if(IsPlayerPresent())
 	{
 		for(int32 ScavengerIndex = EnemyShips.NumScavengers() - 1; ScavengerIndex >= 0; ScavengerIndex--)
@@ -1595,6 +1601,74 @@ void UPlayViewBase::CheckCollisions()
 			}
 		}
 	}
+
+
+#if(FEATURE_MINIBOSS == 1)
+	// Check if player ship collided with a boss
+
+	if(IsPlayerPresent())
+	{
+		int32 Part;
+		int32 ShieldSegmentIndex;
+		FVector2D HitPt;
+
+		for(int32 BossIndex = EnemyShips.NumBosses() - 1; BossIndex >= 0; BossIndex--)
+		{
+			auto& Boss = EnemyShips.GetBoss(BossIndex);
+
+			Part = Boss.CheckCollision(PlayerShipLineStart, PlayerShipLineEnd, PlayerShip->GetRadius(), ShieldSegmentIndex, HitPt);
+
+			if(Part == INDEX_NONE)
+			{
+				continue;
+			}
+			
+			ProcessPlayerCollision();
+
+			// Player will have died if it wasn't shielded.
+
+			if(Part == 0) 
+			{ 
+				IncreasePlayerScoreBy(Boss.Value);
+				EnemyShips.KillBoss(*this, BossIndex);
+				break;
+			} 
+
+			// Player hit a boss' shield.
+
+			SpawnExplosion(PlayerShipLineEnd, FVector2D(0));
+			PlaySound(ShieldBonkSound, 0.5f);
+			float PartHealth = Boss.GetShieldSegmentHealth(Part, ShieldSegmentIndex);
+			PartHealth = FMath::Max(0.0f, PartHealth - 0.25f);
+			Boss.SetShieldSegmentHealth(Part, ShieldSegmentIndex, PartHealth);
+
+			if(IsPlayerPresent())
+			{
+				// Player was shielded or invincible (or in god mode)
+				// so do an elastic collision.
+
+				auto ShieldImpactNormal = (HitPt - Boss.UnwrappedNewPosition);
+				ShieldImpactNormal.Normalize();
+
+				auto BounceForce = ShieldImpactNormal * PlayerShip->GetSpeed();
+
+				PlayerShip->Inertia += BounceForce;
+
+				while(PlayerShip->GetSpeed() < 100.0f)
+				{
+					PlayerShip->Inertia *= 1.1f;
+				}
+
+				// Move the player ship away from the boss to avoid overcolliding.
+				while(FVector2D::Distance(PlayerShip->UnwrappedNewPosition, HitPt) < 20.0f)
+				{
+					PlayerShip->Move(1.0f / 60, WrapPositionToViewport);
+				}
+			}
+			break;
+		}
+	}
+#endif // #if(FEATURE_MINIBOSS == 1)
 
 
 	// Check if player ship collided with a powerup
@@ -1685,6 +1759,56 @@ void UPlayViewBase::CheckCollisions()
 			}
 		}
 	}
+
+
+	for(int32 BossIndex = EnemyShips.NumBosses() - 1; BossIndex >= 0; BossIndex--)
+	{
+		auto& Boss = EnemyShips.GetBoss(BossIndex);
+
+		int32 ShieldSegmentIndex;
+		FVector2D HitPt;
+
+		for(int32 AsteroidIndex = 0; AsteroidIndex < Asteroids.Num(); AsteroidIndex++)
+		{
+			auto& Asteroid = Asteroids.Get(AsteroidIndex);
+
+			auto Part = Boss.CheckCollision(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, Asteroid.GetRadius(), ShieldSegmentIndex, HitPt);
+
+			if(Part == INDEX_NONE)
+			{
+				continue;
+			}
+
+			Asteroids.Kill(*this, AsteroidIndex, DontCreditPlayerForKill);
+
+			if(Part == 0)
+			{
+				// Asteroid hit boss center.
+				EnemyShips.KillBoss(*this, BossIndex);
+				break;
+			}
+
+			// Asteroid collided with a boss shield.
+			// The bigger the asteroid, the greater the health impact.
+			float HealthDrop = 1.0f;
+
+			switch(Asteroid.Value)
+			{
+				case ValueMediumAsteroid: HealthDrop = 0.50f; break;
+				case ValueSmallAsteroid:  HealthDrop = 0.25f; break;
+			}
+
+			// The faster the asteroid was moving, the greater the health impact.
+			HealthDrop = FMath::Min(1.0f, HealthDrop * Asteroid.GetSpeed() / 200);
+			SpawnExplosion(PlayerShipLineEnd, FVector2D(0));
+			PlaySound(ShieldBonkSound, 0.5f);
+			float PartHealth = Boss.GetShieldSegmentHealth(Part, ShieldSegmentIndex);
+			PartHealth = FMath::Max(0.0f, PartHealth - HealthDrop);
+			Boss.SetShieldSegmentHealth(Part, ShieldSegmentIndex, PartHealth);
+
+			break;
+		}
+	}
 }
 
 
@@ -1762,7 +1886,7 @@ void UPlayViewBase::RemovePowerup(int32 PowerupIndex)
 		return;
 	}
 
-	Daylon::Destroy(Powerups[PowerupIndex]);
+	Daylon::Uninstall(Powerups[PowerupIndex]);
 
 	Powerups.RemoveAt(PowerupIndex);
 }

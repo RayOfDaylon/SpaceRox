@@ -62,6 +62,7 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary
 	static bool        DoesLineSegmentIntersectCircle       (const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R);
 	static bool        DoesLineSegmentIntersectTriangle     (const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3]);
 	static bool        DoesTriangleIntersectTriangle        (const FVector2D TriA[3], const FVector2D TriB[3]);
+	static bool        DoCirclesIntersect                   (const FVector2D& C1, float R1, const FVector2D& C2, float R2);
 	static FVector2D   RandomPtWithinBox                    (const FBox2d& Box);
 
 	static FVector2D   GetWidgetDirectionVector             (const UWidget* Widget);
@@ -576,10 +577,10 @@ namespace Daylon
 	DAYLONGRAPHICSLIBRARY_API TSharedPtr<ImagePlayObject2D>          CreateImagePlayObject2D  (const FSlateBrush& Brush, float Radius);
 	DAYLONGRAPHICSLIBRARY_API TSharedPtr<Daylon::SpritePlayObject2D> CreateSpritePlayObject2D (const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float Radius);
 
-	DAYLONGRAPHICSLIBRARY_API void DestroyImpl(TSharedPtr<SWidget> Widget);
+	DAYLONGRAPHICSLIBRARY_API void UninstallImpl(TSharedPtr<SWidget> Widget);
 
-	DAYLONGRAPHICSLIBRARY_API void Destroy(TSharedPtr<ImagePlayObject2D> Widget);
-	DAYLONGRAPHICSLIBRARY_API void Destroy(TSharedPtr<SpritePlayObject2D> Widget);
+	DAYLONGRAPHICSLIBRARY_API void Uninstall(TSharedPtr<ImagePlayObject2D> Widget);
+	DAYLONGRAPHICSLIBRARY_API void Uninstall(TSharedPtr<SpritePlayObject2D> Widget);
 
 
 } // namespace Daylon

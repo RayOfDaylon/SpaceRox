@@ -49,6 +49,7 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 
 	void  Update                   (float DeltaTime);
 	int32 CheckCollision           (const FVector2D& P1, const FVector2D &P2, int32& ShieldSegmentIndex) const;
+	int32 CheckCollision           (const FVector2D& P1, const FVector2D &P2, float Radius, int32& ShieldSegmentIndex, FVector2D& HitPt) const;
 	float GetShieldSegmentHealth   (int32 ShieldNumber, int32 SegmentIndex) const;
 	void  SetShieldSegmentHealth   (int32 ShieldNumber, int32 SegmentIndex, float Health);
 	void  SpawnExplosion           (UPlayViewBase& Arena);

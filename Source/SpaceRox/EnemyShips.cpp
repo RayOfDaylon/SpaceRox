@@ -38,7 +38,7 @@ void FEnemyShips::RemoveShip(int32 Index)
 
 	check(NumBigEnemyShips >= 0 && NumSmallEnemyShips >= 0);
 
-	Daylon::Destroy(Ships[Index]);
+	Daylon::Uninstall(Ships[Index]);
 
 	Ships.RemoveAtSwap(Index);
 }
@@ -52,7 +52,7 @@ void FEnemyShips::RemoveBoss(int32 Index)
 		return;
 	}
 
-	Daylon::DestroyImpl(Bosses[Index]);
+	Daylon::UninstallImpl(Bosses[Index]);
 
 	Bosses.RemoveAtSwap(Index);
 }
@@ -70,10 +70,10 @@ void FEnemyShips::RemoveScavenger(int32 Index)
 
 	for(auto PowerupPtr : Scavenger.AcquiredPowerups)
 	{
-		Daylon::Destroy(PowerupPtr);
+		Daylon::Uninstall(PowerupPtr);
 	}
 
-	Daylon::Destroy(Scavengers[Index]);
+	Daylon::Uninstall(Scavengers[Index]);
 
 	Scavengers.RemoveAtSwap(Index);
 }

@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 25, 2023
+May 27, 2023
 
 
 
@@ -322,6 +322,14 @@ High scores are kept in a highscores.txt file.
 In development mode, this will be in the project's 
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
+
+
+
+Version 1.8
+-------------------------------------------------------------------------------------
+More collision detection for minibosses i.e. torpedos and player ship.
+
+Shield bonk sound plays at half volume when it's a miniboss' shields.
 
 
 

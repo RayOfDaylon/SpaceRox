@@ -142,6 +142,7 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonPolyShield : public SLeafWidget
 
 
 			void              SetSize  (const FVector2D& InSize);
+			FVector2D         GetSize  () const { return Size; }
 
 			void Update        (float DeltaTime);
 			void Reset         ();
