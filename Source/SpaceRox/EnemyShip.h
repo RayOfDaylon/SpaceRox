@@ -38,6 +38,8 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 
 	public:
 
+	float                                 TimeRemainingToNextShot = 0.0f;
+	float                                 TimeRemainingToNextMove = 0.0f;
 	int32                                 NumShields = 0;
 	TSharedPtr<SDaylonSprite>             Sprite;
 	FOverlaySlot*                         SpriteSlot;
@@ -54,4 +56,5 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 	void  SetShieldSegmentHealth   (int32 ShieldNumber, int32 SegmentIndex, float Health);
 	void  SpawnExplosion           (UPlayViewBase& Arena);
 	void  Perform                  (UPlayViewBase& Arena, float DeltaTime);
+	void  Shoot                    (UPlayViewBase& Arena);
 };

@@ -46,7 +46,8 @@ const int32 ValueSmallAsteroid             =   100;
 const int32 ValueBigEnemy                  =   200;
 const int32 ValueSmallEnemy                =  1000;
 const int32 ValueScavenger                 =   500;
-const int32 ValueMiniBoss                  =  2000;
+const int32 ValueMiniBoss1                 =  1500;
+const int32 ValueMiniBoss2                 =  3000;
 							           
 const float MaxIntroStateLifetime          =  5.0f;  // How long the initial intro screen is visible before the main menu appears.
 const float TimeBetweenWaves               =  3.0f;  // Number of seconds between each wave.
@@ -56,9 +57,12 @@ const float MaxTimeUntilNextEnemyShip      = 20.0f;  // Let each wave start with
 const float MaxTimeUntilEnemyRespawn       = 10.0f;  // Longest delay between successive enemy ship spawns. Favored when player score is low.
 const float MinTimeUntilEnemyRespawn       =  2.0f;  // Shortest delay between successive enemy ship spawns. Favored more as player score increases.
 
-const float MaxTimeUntilNextBoss          = 22.0f;  // Let each wave start with a breather.
-const float MaxTimeUntilBossRespawn       = 20.0f;  
-const float MinTimeUntilBossRespawn       = 10.0f;  
+const int32 ScoreForBossSpawn              =  30'000;  // Player score must be this high for bosses to appear.
+const int32 ScoreForBossAimPerfect         = 150'000; // At this score, bosses aim perfectly.
+const float MaxTimeUntilNextBoss           = 22.0f;  // Let each wave start with a breather.
+const float MaxTimeUntilBossRespawn        = 20.0f;  
+const float MinTimeUntilBossRespawn        = 10.0f;  
+const float BossTorpedoSpeed               = MaxTorpedoSpeed;
 
 const float BigEnemyTorpedoSpeed           = MaxTorpedoSpeed;
 const float BigEnemyReloadTime             =   1.25f;

@@ -325,6 +325,15 @@ file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
 
 
+Version 1.8.2
+-------------------------------------------------------------------------------------
+Minibosses change heading every second or two. They also fire 
+at the player, randomly at first, then more accurately as time goes by.
+Two-shield boss has its own ship sprite.
+
+The sound loop for the classic enemy ships grows quieter over time.
+
+
 Version 1.8.1
 -------------------------------------------------------------------------------------
 Intro title graphics are animated.

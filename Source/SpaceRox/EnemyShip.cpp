@@ -358,7 +358,78 @@ void FEnemyBoss::SpawnExplosion(UPlayViewBase& Arena)
 
 void FEnemyBoss::Perform(UPlayViewBase& Arena, float DeltaTime)
 {
+	TimeRemainingToNextMove -= DeltaTime;
+
+	if(TimeRemainingToNextMove <= 0.0f)
+	{
+		// Alter heading by some random vector.
+
+		TimeRemainingToNextMove = FMath::FRandRange(2.0f, 3.0f);
+
+		// Make new direction not differ so much from current direction.
+		const auto OldAngle = UDaylonUtils::Vector2DToAngle(Inertia);
+		const auto NewAngle = OldAngle + FMath::FRandRange(-70.0f, 70.0f);
+
+		Inertia = UDaylonUtils::AngleToVector2D(NewAngle) * GetSpeed();
+	}
+
 	Move(DeltaTime, Arena.WrapPositionToViewport);
+
+
+	TimeRemainingToNextShot -= DeltaTime;
+
+	if(TimeRemainingToNextShot <= 0.0f)
+	{
+		TimeRemainingToNextShot = FMath::FRandRange(1.0f, 2.0f);
+		Shoot(Arena);
+	}
+}
+
+
+void FEnemyBoss::Shoot(UPlayViewBase& Arena)
+{
+	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
+	// For now, just use wild and leaded.
+
+	if(!Arena.IsPlayerPresent())
+	{
+		return;
+	}
+
+	const int32 TorpedoIdx = Arena.GetAvailableTorpedo();
+
+	if(TorpedoIdx == INDEX_NONE)
+	{
+		return;
+	}
+
+	auto& Torpedo = *Arena.Torpedos[TorpedoIdx].Get();
+
+	Torpedo.FiredByPlayer = false;
+
+
+	// Interpolate between a random shot and an accurate shot.
+
+
+	auto DirectionToPlayer = Arena.PlayerShip->GetPosition() - GetPosition();
+	DirectionToPlayer.Normalize();
+	const auto FiringPoint = Arena.WrapPositionToViewport(GetPosition() + DirectionToPlayer * (Shields.Last(0)->GetSize().X / 2 + 10.0f));
+
+	// The random direction has to be away from us. It can vary by -90 to +90 degrees from DirectionToPlayer.
+	const auto AngleToPlayer = UDaylonUtils::Vector2DToAngle(DirectionToPlayer);
+	const auto RandomAngle = AngleToPlayer + FMath::FRandRange(-90.0f, 90.0f);
+
+	const auto PerfectDirection = UDaylonUtils::ComputeFiringSolution(FiringPoint, BossTorpedoSpeed, Arena.PlayerShip->GetPosition(), Arena.PlayerShip->Inertia);
+	const auto PerfectAngle = UDaylonUtils::Vector2DToAngle(PerfectDirection);
+
+	const float Aim = FMath::Min(1.0f, UDaylonUtils::Normalize(Arena.PlayerScore, ScoreForBossSpawn, ScoreForBossAimPerfect));
+	const auto Angle = FMath::Lerp(RandomAngle, PerfectAngle, Aim);
+
+	const auto Direction = UDaylonUtils::AngleToVector2D(Angle);
+
+	Torpedo.Spawn(FiringPoint, Direction * BossTorpedoSpeed, MaxTorpedoLifeTime);
+
+	Arena.PlaySound(Arena.TorpedoSound);
 }
 
 

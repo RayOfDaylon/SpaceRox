@@ -343,19 +343,22 @@ void FEnemyShips::SpawnShip(UPlayViewBase& Arena)
 		NumSmallEnemyShips++;
 	}
 
+	// Taper enemy ship volume quieter as player score increases.
+	float VolumeScale = FMath::Clamp(UDaylonUtils::Normalize(Arena.PlayerScore, 100'000, 30'000), 0.0f, 1.0f);
+	VolumeScale = FMath::Lerp(0.5f, 1.0f, VolumeScale);
 
 	if(IsBigEnemy)
 	{
 		if(NumBigEnemyShips == 1)
 		{
-			Arena.BigEnemyShipSoundLoop.Start();
+			Arena.BigEnemyShipSoundLoop.Start(VolumeScale);
 		}
 	}
 	else
 	{
 		if(NumSmallEnemyShips == 1)
 		{
-			Arena.SmallEnemyShipSoundLoop.Start();
+			Arena.SmallEnemyShipSoundLoop.Start(VolumeScale);
 		}
 	}
 }
@@ -380,8 +383,13 @@ void FEnemyShips::SpawnBoss(UPlayViewBase& Arena)
 
 	const int32 NumShields = IsDualShielded ? 2 : 1;
 
+	TSharedPtr<FEnemyBoss> BossShipPtr;
 
-	auto BossShipPtr = FEnemyBoss::Create(Arena.Miniboss1Atlas, 32, ValueMiniBoss, NumShields);
+	switch(NumShields)
+	{
+		case 1: BossShipPtr = FEnemyBoss::Create(Arena.Miniboss1Atlas, 32, ValueMiniBoss1, NumShields); break;
+		case 2: BossShipPtr = FEnemyBoss::Create(Arena.Miniboss2Atlas, 32, ValueMiniBoss2, NumShields); break;
+	}
 
 	// Like an asteroid, start at some random edge place with a random inertia.
 

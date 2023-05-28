@@ -260,6 +260,10 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* Miniboss1Atlas;
 
+	// The animation flipbook for the second miniboss 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
+	UDaylonSpriteWidgetAtlas* Miniboss2Atlas;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	FSlateBrush TorpedoBrush;
 

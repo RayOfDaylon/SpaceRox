@@ -50,6 +50,7 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary
 	static void          SetRootCanvas   (UCanvasPanel* InCanvas) { RootCanvas = InCanvas; }
 	static UCanvasPanel* GetRootCanvas   () { return RootCanvas; }
 
+	static float       Normalize         (float N, float Min, float Max);
 	static FVector2D   AngleToVector2D   (float Angle);
 	static FVector2D   RandVector2D      ();
 	static FVector2D   Rotate            (const FVector2D& P, float Angle); 
@@ -102,7 +103,8 @@ namespace Daylon
 
 		USoundBase* Sound = nullptr;
 
-		float VolumeScale = 1.0f;
+		float VolumeScale  = 1.0f;
+		float VolumeScale2 = 1.0f;
 
 		UObject* WorldContextPtr = nullptr;
 
@@ -113,7 +115,7 @@ namespace Daylon
 			VolumeScale     = InVolumeScale;
 		}
 
-		void Start();
+		void Start(float InVolumeScale = 1.0f);
 
 		void Tick(float DeltaTime);
 

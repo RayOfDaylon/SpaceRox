@@ -20,6 +20,17 @@ UWidgetTree*  UDaylonUtils::WidgetTree = nullptr;
 UCanvasPanel* UDaylonUtils::RootCanvas = nullptr;
 
 
+float UDaylonUtils::Normalize(float N, float Min, float Max)
+{
+	// Return N normalized given Min/Max.
+	// Note that result can be outside the 0..1 range if N is not inside Min..Max.
+
+	check(Min != Max);
+
+	return (N - Min) / (Max - Min);
+}
+
+
 FVector2D UDaylonUtils::AngleToVector2D(float Angle)
 {
 	// We place zero degrees pointing up and increasing clockwise.
@@ -302,8 +313,9 @@ void UDaylonUtils::Hide(SWidget* Widget)
 
 // ------------------------------------------------------------------------------------------
 
-void Daylon::FLoopedSound::Start()
+void Daylon::FLoopedSound::Start(float InVolumeScale)
 {
+	VolumeScale2 = InVolumeScale;
 	TimeRemaining = 0.0f;
 	Tick(0.0f);
 }
@@ -323,7 +335,7 @@ void Daylon::FLoopedSound::Tick(float DeltaTime)
 	{
 		TimeRemaining = Sound->GetDuration();
 
-		UGameplayStatics::PlaySound2D(WorldContextPtr, Sound, VolumeScale);
+		UGameplayStatics::PlaySound2D(WorldContextPtr, Sound, VolumeScale * VolumeScale2);
 	}
 }
 
