@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 27, 2023
+May 28, 2023
 
 
 
@@ -325,12 +325,25 @@ file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
 
 
+Version 1.8.1
+-------------------------------------------------------------------------------------
+Intro title graphics are animated.
+
+Daylon::FinishCreating was renamed to Daylon::Install, 
+because the function installs a created widget into
+the scenegraph (and sets some related slot properties).
+
+Daylon::DestroyXXX was renamed Daylon::UninstallXXX, 
+because it only removed the widget from the scenegraph
+(if that was the last shared reference, then it would 
+also be removed, but that's usually not the case).
+
+
 Version 1.8
 -------------------------------------------------------------------------------------
 More collision detection for minibosses i.e. torpedos and player ship.
 
 Shield bonk sound plays at half volume when it's a miniboss' shields.
-
 
 
 Version 1.7.9

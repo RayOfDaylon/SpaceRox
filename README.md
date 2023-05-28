@@ -7,7 +7,8 @@ Example Videos
 
 Version 1.2: https://www.youtube.com/watch?v=mXKK6ThleVQ  
 Version 1.4 (powerups): https://www.youtube.com/watch?v=i2CBQ7l-PXI  
-Version 1.6.4 (nicer intro): https://www.youtube.com/watch?v=xYPj2w0ImMY
+Version 1.6.4 (nicer intro): https://www.youtube.com/watch?v=xYPj2w0ImMY  
+Version 1.8.1 (minibosses): https://youtu.be/W9DrlSYwxMM
 
 The game departs from Asteroids as development continues, e.g.:
 - Powerups such as shields and double-guns  

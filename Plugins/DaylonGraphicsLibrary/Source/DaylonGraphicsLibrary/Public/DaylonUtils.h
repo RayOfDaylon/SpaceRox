@@ -393,14 +393,7 @@ namespace Daylon
 				return;
 			}
 
-			const auto S = GetActualSize();
-		
-			auto Margin = Slot->GetOffset();
-
-			Margin.Right  = S.X;
-			Margin.Bottom = S.Y;
-
-			Slot->SetOffset(Margin);
+			SetSizeInSlot(GetActualSize());
 		}
 
 	
@@ -454,6 +447,22 @@ namespace Daylon
 			const auto Margin = Slot->GetOffset();
 
 			return FVector2D(Margin.Right, Margin.Bottom);
+		}
+
+
+		void SetSizeInSlot(const FVector2D& S) 
+		{
+			if(!IsValid())
+			{
+				return;
+			}
+
+			auto Margin = Slot->GetOffset();
+
+			Margin.Right  = S.X;
+			Margin.Bottom = S.Y;
+
+			Slot->SetOffset(Margin);
 		}
 
 
@@ -556,7 +565,7 @@ namespace Daylon
 
 
 	template <class SWidgetT>
-	void FinishCreating(TSharedPtr<PlayObject2D<SWidgetT>> Widget, float InRadiusFactor)
+	void Install(TSharedPtr<PlayObject2D<SWidgetT>> Widget, float InRadiusFactor)
 	{
 		Widget->SetRenderTransformPivot(FVector2D(0.5f));
 

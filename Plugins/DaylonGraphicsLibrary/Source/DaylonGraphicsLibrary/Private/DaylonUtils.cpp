@@ -389,7 +389,7 @@ TSharedPtr<Daylon::ImagePlayObject2D> Daylon::CreateImagePlayObject2D(const FSla
 {
 	auto PlayObj = SNew(ImagePlayObject2D);
 
-	Daylon::FinishCreating<SImage>(PlayObj, Radius);
+	Daylon::Install<SImage>(PlayObj, Radius);
 
 	PlayObj->SetBrush(Brush);
 
@@ -401,7 +401,7 @@ TSharedPtr<Daylon::SpritePlayObject2D> Daylon::CreateSpritePlayObject2D(const FD
 {
 	auto PlayObj = SNew(SpritePlayObject2D);
 
-	Daylon::FinishCreating<SDaylonSprite>(PlayObj, Radius);
+	Daylon::Install<SDaylonSprite>(PlayObj, Radius);
 
 	PlayObj->SetAtlas(Atlas);
 	PlayObj->SetSize(S);

@@ -10,7 +10,7 @@ TSharedPtr<FTorpedo> FTorpedo::Create(UDaylonSpriteWidgetAtlas* Atlas, float Rad
 {
 	auto Widget = SNew(FTorpedo);
 
-	Daylon::FinishCreating<SDaylonSprite>(Widget, RadiusFactor);
+	Daylon::Install<SDaylonSprite>(Widget, RadiusFactor);
 
 	Widget->SetAtlas(Atlas->Atlas);
 	Widget->SetCurrentCel(0);

@@ -7,7 +7,7 @@ TSharedPtr<FAsteroid> FAsteroid::Create(UDaylonSpriteWidgetAtlas* Atlas)
 {
 	auto Widget = SNew(FAsteroid);
 
-	Daylon::FinishCreating<SDaylonSprite>(Widget, 0.5f);
+	Daylon::Install<SDaylonSprite>(Widget, 0.5f);
 
 	Widget->SetAtlas(Atlas->Atlas);
 	Widget->SetSize(Atlas->Atlas.AtlasBrush.GetImageSize() / 2);

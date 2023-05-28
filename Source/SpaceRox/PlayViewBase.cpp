@@ -32,7 +32,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogGame, Log, All);
 DEFINE_LOG_CATEGORY(LogGame)
 
 // Set to 1 to enable debugging
-#define DEBUG_MODULE                1
+#define DEBUG_MODULE                0
 
 // Make wave start with three rocks (big/medium/small) at rest.
 #define TEST_ASTEROIDS              0
@@ -125,8 +125,6 @@ void UPlayViewBase::CreatePlayerShip()
 }
 
 
-
-
 void UPlayViewBase::CreateTorpedos()
 {
 	for(int32 Index = 0; Index < TorpedoCount; Index++)
@@ -189,6 +187,69 @@ void UPlayViewBase::InitializeSoundLoops()
 	PlayerShipThrustSoundLoop.Set (this, ThrustSound);
 	BigEnemyShipSoundLoop.Set     (this, EnemyShipBigSound);
 	SmallEnemyShipSoundLoop.Set   (this, EnemyShipSmallSound);
+}
+
+
+void UPlayViewBase::InitializeTitleGraphics()
+{
+	// Location and size, in px.
+	FBox2d SrcUVs[] =
+	{
+		{{   0.,  0.},   {   87.,   85. }  },
+		{{  91.,  0.},   {   96. ,  85. }  },
+		{{ 194.,  0.},   {   80. ,  85. }  },
+		{{ 281.,  0.},   {   73. ,  85. }  },
+		{{ 281.,  0.},   {   73. ,  85. }  },
+		{{ 359.,  0.},   {  105. ,  85. }  },
+		{{ 470.,  0.},   {   91. ,  85. }  },
+		{{   0., 88.},   {  127. , 107. }  },
+		{{ 131., 88.},   {  130. , 107. }  },
+		{{ 263., 87.},   {  123. , 108. }  },
+		{{ 388., 88.},   {  111. , 107. }  },
+		{{ 501., 88.},   {   98. , 107. }  },
+		{{   0., 88.},   {  127. , 107. }  },
+	};
+
+	// Location and size, in px.
+	FInt32Rect DstPxs[] =
+	{
+		{{  456 , 315}, {  93 ,  88  }},
+		{{  553 , 315}, { 102 ,  88  }},
+		{{  662 , 315}, {  85 ,  88  }},
+		{{  764 , 315}, {  78 ,  88  }},
+		{{  851 , 315}, {  74 ,  88  }},
+		{{  925 , 315}, { 111 ,  88  }},
+		{{ 1045 , 315}, {  96 ,  88  }},
+		{{  731 , 441}, { 117 ,  96  }},
+		{{  858 , 426}, { 138 , 110  }},
+		{{  969 , 428}, { 112 ,  97  }},
+		{{ 1091 , 425}, { 118 , 111  }},
+		{{ 1227 , 445}, {  87 ,  92  }},
+		{{ 1328 , 432}, { 134 , 110  }},
+	};
+
+	int32 Index = 0;
+	for(auto& SrcUV : SrcUVs)
+	{
+		// Convert from px to UV position.
+		SrcUV.Min /= TitleSheet.GetImageSize();
+		// Convert cel size from px to UV size and location.
+		SrcUV.Max = SrcUV.Max / TitleSheet.GetImageSize() + SrcUV.Min;
+
+		// For now, make all the source px rects the same, coming from the center.
+		FInt32Rect SrcPx(ViewportSize.X / 2, ViewportSize.Y / 2, ViewportSize.X / 2, ViewportSize.Y / 2);
+
+		FInt32Rect DstPx = DstPxs[Index];
+		DstPx.Max += DstPx.Min;
+
+		TSharedPtr<FAnimSpriteCel> Cel = SNew(FAnimSpriteCel);
+		Daylon::Install<SImage>(Cel, 0.5f);
+		Cel->Init(TitleSheet, SrcUV, SrcPx, DstPx, Index * 0.2f, MaxIntroStateLifetime / 8);
+
+		TitleCels.Add(Cel);
+
+		Index++;
+	}
 }
 
 
@@ -463,6 +524,8 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering intro state"), (int32)PreviousState);
 			}
 
+	
+
 			TimeUntilIntroStateEnds = MaxIntroStateLifetime;
 			Asteroids.RemoveAll();
 
@@ -483,6 +546,11 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			if(PreviousState == EGameState::Intro)
 			{
 				StopAnimation(PressToStartFlash);
+				for(auto& CelPtr : TitleCels)
+				{
+					Daylon::Uninstall(CelPtr);
+				}
+				TitleCels.Empty();
 			}
 
 			UDaylonUtils::Hide (IntroContent);
@@ -710,6 +778,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 	static float ExploCountAge = 1.0f;
 
+
 	switch(GameState)
 	{
 		case EGameState::Intro:
@@ -722,16 +791,28 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			}
 
 			UDaylonUtils::Show(IntroContent);
+			TitleGraphic->SetOpacity(0.0f);
 
 
 			// Fade in the title graphic and version number while explosions rage
+
+			if(TitleCels.IsEmpty())
+			{
+				InitializeTitleGraphics();
+			}
 
 			{
 				static FBox2d Box(FVector2D(480, 300), FVector2D(1500, 550));
 
 				if(TimeUntilIntroStateEnds > 0.0f)
 				{
-					TitleGraphic->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 1.5f) / MaxIntroStateLifetime));
+#if 1
+					for(auto& CelPtr : TitleCels)
+					{
+						CelPtr->Update(InDeltaTime);
+					}
+#endif
+					// TitleGraphic->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 1.5f) / MaxIntroStateLifetime));
 
 					VersionReadout->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 3.0f) / MaxIntroStateLifetime));
 
@@ -739,7 +820,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				
 					if(ExploCountAge <= 0.0f)
 					{
-						ExploCountAge = 0.1f;
+						ExploCountAge = FMath::FRandRange(0.05f, 0.2f);
 
 						Explosions.SpawnOne(*this,
 							UDaylonUtils::RandomPtWithinBox(Box),

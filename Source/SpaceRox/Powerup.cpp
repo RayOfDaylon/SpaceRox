@@ -10,7 +10,7 @@ TSharedPtr<FPowerup> FPowerup::Create(UDaylonSpriteWidgetAtlas* Atlas, const FVe
 {
 	auto Widget = SNew(FPowerup);
 
-	Daylon::FinishCreating<SDaylonSprite>(Widget, 0.5f);
+	Daylon::Install<SDaylonSprite>(Widget, 0.5f);
 
 	Widget->SetAtlas(Atlas->Atlas);
 	Widget->SetSize(S);

@@ -10,7 +10,7 @@
 
 
 // Set to 1 to enable debugging
-#define DEBUG_MODULE                1
+#define DEBUG_MODULE                0
 
 
 #if(DEBUG_MODULE == 1)
@@ -23,7 +23,7 @@ TSharedPtr<FEnemyShip> FEnemyShip::Create(UDaylonSpriteWidgetAtlas* Atlas, int V
 {
 	auto Widget = SNew(FEnemyShip);
 
-	Daylon::FinishCreating<SDaylonSprite>(Widget, RadiusFactor);
+	Daylon::Install<SDaylonSprite>(Widget, RadiusFactor);
 
 	Widget->SetAtlas(Atlas->Atlas);
 	Widget->SetCurrentCel(0);
@@ -179,7 +179,7 @@ TSharedPtr<FEnemyBoss> FEnemyBoss::Create(UDaylonSpriteWidgetAtlas* Atlas, float
 	SlotSprite[SAssignNew(Widget->Sprite, SDaylonSprite).Size(S)];
 
 	Widget->Sprite->SetAtlas(Atlas->Atlas);
-	Daylon::FinishCreating<SOverlay>(Widget, 0.5f);
+	Daylon::Install<SOverlay>(Widget, 0.5f);
 
 	Widget->NumShields = NumShields;
 		

@@ -27,7 +27,7 @@ TSharedPtr<FExplosion> FExplosion::Create
 		.FinalOpacity        ( FinalOpacity)
 		.NumParticles(NumParticles);
 
-	Daylon::FinishCreating<SDaylonParticles>(Widget, 0.5f);
+	Daylon::Install<SDaylonParticles>(Widget, 0.5f);
 
 	Widget->Inertia = Inertia;
 	Widget->SetVisibility(EVisibility::HitTestInvisible);

@@ -7,7 +7,7 @@ TSharedPtr<FPlayerShip> FPlayerShip::Create(UDaylonSpriteWidgetAtlas* Atlas, con
 {
 	auto Widget = SNew(FPlayerShip);
 
-	Daylon::FinishCreating<SDaylonSprite>(Widget, RadiusFactor);
+	Daylon::Install<SDaylonSprite>(Widget, RadiusFactor);
 
 	Widget->SetAtlas(Atlas->Atlas);
 	Widget->SetSize(S);
@@ -50,7 +50,7 @@ void FPlayerShip::InitializeDefenses(UPlayViewBase& Arena)
 {
 	Shield = SNew(Daylon::SpritePlayObject2D);
 
-	Daylon::FinishCreating<SDaylonSprite>(Shield, 0.5f);
+	Daylon::Install<SDaylonSprite>(Shield, 0.5f);
 
 	Shield->SetAtlas(Arena.DefensesAtlas->Atlas);
 	Shield->SetCurrentCel(ShieldDefenseAtlasCel);
@@ -63,7 +63,7 @@ void FPlayerShip::InitializeDefenses(UPlayViewBase& Arena)
 
 	InvincibilityShield = SNew(Daylon::SpritePlayObject2D);
 
-	Daylon::FinishCreating<SDaylonSprite>(InvincibilityShield, 0.5f);
+	Daylon::Install<SDaylonSprite>(InvincibilityShield, 0.5f);
 
 	InvincibilityShield->SetAtlas(Arena.DefensesAtlas->Atlas);
 	InvincibilityShield->SetCurrentCel(InvincibilityDefenseAtlasCel);

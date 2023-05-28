@@ -2,7 +2,7 @@ Documentation for DaylonGraphicsLibrary plug-in for Unreal Engine
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox (inside Plugins folder)
-May 20, 2023
+May 28, 2023
 
 
 
@@ -60,6 +60,8 @@ containing several static functions.
   DoesLineSegmentIntersectTriangle    Returns true if a line intersects a triangle.
 
   DoesTriangleIntersectTriangle       Returns true if two triangles intersect.
+
+  DoCirclesIntersect                  Returns true if two circles overlap.
 
 
 
