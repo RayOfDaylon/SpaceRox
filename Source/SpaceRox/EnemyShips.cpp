@@ -182,6 +182,7 @@ void FEnemyShips::KillBoss(UPlayViewBase& Arena, int32 Index)
 			80);
 
 */ 
+	// Spawn explosion for the ship at the center.
 	Arena.Explosions.SpawnOne(
 		Arena, 
 		Boss.GetPosition(),
@@ -196,6 +197,50 @@ void FEnemyShips::KillBoss(UPlayViewBase& Arena, int32 Index)
 		Boss.Inertia);
 
 	Arena.PlaySound(Arena.ExplosionSounds[0], 0.5f); // todo: use specific sound
+
+
+	// Spawn explosion for any surviving shields.
+
+	TArray<FDaylonLineParticle> Particles;
+
+	// Copy shield data into Particles array.
+	FVector2D P1, P2;
+	FDaylonLineParticle Particle;
+
+	for(auto& ShieldPtr : Boss.Shields)
+	{
+		for(int32 Index = 0; Index < ShieldPtr->GetNumSides(); Index++)
+		{
+			auto Health = ShieldPtr->GetSegmentHealth(Index);
+			if(Health <= 0.0f)
+			{
+				continue;
+			}
+
+			ShieldPtr->GetSegmentGeometry(Index, P1, P2);
+
+			Particle.Color = FLinearColor(Health, Health, Health, 1.0f);
+			Particle.Angle = UDaylonUtils::Vector2DToAngle(P2 - P1);
+			Particle.P = (P1 + P2) / 2;
+			Particle.Spin = FMath::RandRange(0, 7) == 0 ? FMath::FRandRange(-240.0f, 240.0f) : FMath::FRandRange(-120.0f, 120.0f);
+			Particle.Length = (P2 - P1).Length();
+
+			Particles.Add(Particle);
+		}
+	}
+
+
+	Arena.ShieldExplosions.SpawnOne(
+		Arena,
+		Boss.GetPosition(),
+		Particles,
+		Boss.GetShieldThickness(),
+		30.0f, 
+        80.0f, 
+		 0.5f, 
+		 2.5f, 
+		 0.25f, 
+         Boss.Inertia);
 
 	RemoveBoss(Index);
 }

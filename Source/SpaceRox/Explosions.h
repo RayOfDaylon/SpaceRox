@@ -61,3 +61,51 @@ struct FExplosions
 
 	void RemoveAll (UPlayViewBase& Arena);
 };
+
+// ---------------------------------------------------------------------------------------------------------
+
+class FShieldExplosion : public Daylon::PlayObject2D<SDaylonLineParticles>  
+{
+	public:
+
+		static TSharedPtr<FShieldExplosion> Create(
+			const FVector2D&                   P,
+			const TArray<FDaylonLineParticle>& Particles,
+			float                              ShieldThickness,
+			float                              MinParticleVelocity,
+			float                              MaxParticleVelocity,
+			float                              MinParticleLifetime,
+			float                              MaxParticleLifetime,
+			float                              FinalOpacity,
+			const FVector2D&                   Inertia = FVector2D(0)
+		);
+
+
+		virtual FVector2D GetActualSize() const override { return FVector2D(4); }
+};
+
+
+struct FShieldExplosions
+{
+	TArray<TSharedPtr<FShieldExplosion>>   Explosions; 
+	float                                  InertialFactor = 1.0f;
+
+
+	void SpawnOne
+	(
+		UPlayViewBase&                     Arena,
+		const FVector2D&                   P,
+		const TArray<FDaylonLineParticle>& Particles,
+		float                              ShieldThickness,
+		float                              MinParticleVelocity,
+		float                              MaxParticleVelocity,
+		float                              MinParticleLifetime,
+		float                              MaxParticleLifetime,
+		float                              FinalOpacity,
+		const FVector2D&                   Inertia = FVector2D(0)
+	);
+
+	void Update    (UPlayViewBase& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
+
+	void RemoveAll (UPlayViewBase& Arena);
+};

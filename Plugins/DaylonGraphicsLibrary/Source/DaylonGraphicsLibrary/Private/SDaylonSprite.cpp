@@ -291,6 +291,19 @@ int32 SDaylonPolyShield::GetHitSegment(const FVector2D& P1, const FVector2D& P2)
 }
 
 
+void  SDaylonPolyShield::GetSegmentGeometry(int32 SegmentIndex, FVector2D& P1, FVector2D& P2) const
+{
+	auto Angle = CurrentAge * SpinSpeed;
+	const auto AngleDelta = 360.0f / NumSides;
+	const auto Radius = Size * 0.5f;
+
+	Angle += AngleDelta * SegmentIndex;
+
+	P1 = UDaylonUtils::AngleToVector2D(Angle) * Radius;
+	P2 = UDaylonUtils::AngleToVector2D(Angle + AngleDelta) * Radius;
+}
+
+
 float SDaylonPolyShield::GetSegmentHealth(int32 Index) const
 {
 	if(!SegmentHealth.IsValidIndex(Index))
@@ -327,7 +340,6 @@ int32 SDaylonPolyShield::OnPaint
 	bool                       bParentEnabled
 ) const
 {
-
 	float Angle = CurrentAge * SpinSpeed;
 	const float AngleDelta = 360.0f / NumSides;
 	const auto Radius = Size * 0.5f;

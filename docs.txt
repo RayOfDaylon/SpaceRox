@@ -325,6 +325,12 @@ file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
 
 
+Version 1.8.3
+-------------------------------------------------------------------------------------
+Miniboss explosions show their shields fragmenting and dispersing
+instead of just immediately disappearing.
+
+
 Version 1.8.2
 -------------------------------------------------------------------------------------
 Minibosses change heading every second or two. They also fire 

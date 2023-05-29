@@ -491,13 +491,11 @@ class SPACEROX_API UPlayViewBase : public UUserWidget
 	TArray<TSharedPtr<FTorpedo>>      Torpedos;
 	FAsteroids                        Asteroids;
 	FExplosions                       Explosions; 
-
-	//TArray<TSharedPtr<SDaylonPolyShield>>     PolyShieldPtrs;
-
-	//TSharedPtr<FEnemyBoss>           EnemyBoss;
+	FShieldExplosions                 ShieldExplosions;
 
 
 	protected:
+
 	// -- Called every frame -----------------------------------------------------------
 
 	void ProcessWaveTransition     (float DeltaTime);

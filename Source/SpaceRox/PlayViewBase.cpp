@@ -158,7 +158,9 @@ void UPlayViewBase::InitializeVariables()
 	TimeUntilGameOverStateEnds    = 0.0f;
 	MruHighScoreAnimationAge      = 0.0f;
 	TimeUntilNextScavenger        = 5.0f;
-	Explosions.InertialFactor     = ExplosionInertialFactor;
+
+	Explosions.InertialFactor       = ExplosionInertialFactor;
+	ShieldExplosions.InertialFactor = ExplosionInertialFactor;
 
 	GameState                     = EGameState::Startup;
 	SelectedMenuItem              = EMenuItem::StartPlaying;
@@ -563,11 +565,11 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Hide (HighScoreEntryContent);
 			
-			Explosions.RemoveAll  (*this);
-			RemoveTorpedos    ();
-			EnemyShips.RemoveAll();
-			RemovePowerups    ();
-
+			Explosions.RemoveAll       (*this);
+			ShieldExplosions.RemoveAll (*this);
+			RemoveTorpedos             ();
+			EnemyShips.RemoveAll       ();
+			RemovePowerups             ();
 
 			StartMsgAnimationAge = 0.0f;
 			UDaylonUtils::Show(MenuContent);
@@ -873,6 +875,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
 			Explosions.Update         (*this, WrapPositionToViewport, InDeltaTime);
+			ShieldExplosions.Update   (*this, WrapPositionToViewport, InDeltaTime);
 
 			CheckCollisions();
 
@@ -893,6 +896,8 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
 			Explosions.Update         (*this, WrapPositionToViewport, InDeltaTime);
+			ShieldExplosions.Update   (*this, WrapPositionToViewport, InDeltaTime);
+
 			CheckCollisions(); // In case any late torpedos or enemies hit something
 
 			// Make the "game over" message blink

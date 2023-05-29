@@ -312,6 +312,27 @@ int32 FEnemyBoss::CheckCollision(const FVector2D& P1, const FVector2D &P2, float
 }
 
 
+float FEnemyBoss::GetShieldThickness() const
+{
+	check(!Shields.IsEmpty());
+
+	return Shields[0]->GetThickness();
+}
+
+
+void FEnemyBoss::GetShieldSegmentGeometry(int32 ShieldNumber, int32 SegmentIndex, FVector2D& P1, FVector2D& P2) const
+{
+	const auto ShieldIndex = ShieldNumber - 1;
+
+	if(!Shields.IsValidIndex(ShieldIndex))
+	{
+		return;
+	}
+
+	return Shields[ShieldIndex]->GetSegmentGeometry(SegmentIndex, P1, P2);
+}
+
+
 float FEnemyBoss::GetShieldSegmentHealth(int32 ShieldNumber, int32 SegmentIndex) const
 {
 	const auto ShieldIndex = ShieldNumber - 1;
@@ -340,6 +361,7 @@ void FEnemyBoss::SetShieldSegmentHealth(int32 ShieldNumber, int32 SegmentIndex, 
 
 void FEnemyBoss::SpawnExplosion(UPlayViewBase& Arena)
 {
+	// todo: this never gets called, FEnemyShips::KillBoss() is handling it.
 	const auto P = GetPosition();
 	const auto ShipInertia = Inertia;
 

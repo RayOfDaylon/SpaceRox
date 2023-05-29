@@ -141,16 +141,20 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonPolyShield : public SLeafWidget
 			void Construct(const FArguments& InArgs);
 
 
-			void              SetSize  (const FVector2D& InSize);
-			FVector2D         GetSize  () const { return Size; }
+			void              SetSize      (const FVector2D& InSize);
+			FVector2D         GetSize      () const { return Size; }
+			int32             GetNumSides  () const { return NumSides; }
+			float             GetThickness () const { return Thickness; }
 
 			void Update        (float DeltaTime);
 			void Reset         ();
 
 			// Given P1 and P2 in local coordinates, return which segment got hit (INDEX_NONE if no hit).
-			int32 GetHitSegment     (const FVector2D& P1, const FVector2D& P2) const;
-			void  SetSegmentHealth  (int32 Index, float Health);
-			float GetSegmentHealth  (int32 Index) const;
+			int32 GetHitSegment      (const FVector2D& P1, const FVector2D& P2) const;
+			void  SetSegmentHealth   (int32 Index, float Health);
+			float GetSegmentHealth   (int32 Index) const;
+			void  GetSegmentGeometry (int32 SegmentIndex, FVector2D& P1, FVector2D& P2) const; // Local space
+
 
 
 			virtual int32 OnPaint
