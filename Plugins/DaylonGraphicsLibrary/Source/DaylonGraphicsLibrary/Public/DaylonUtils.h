@@ -56,6 +56,7 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary
 	static FVector2D   Rotate            (const FVector2D& P, float Angle); 
 	static float       Vector2DToAngle   (const FVector2D& Vector);
 	static float       WrapAngle         (float Angle);
+	static FVector2D   DeviateVector     (const FVector2D& VectorOld, float MinDeviation, float MaxDeviation);
 
 	FORCEINLINE static double Square     (double x) { return x * x; }
 

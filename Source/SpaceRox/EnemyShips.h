@@ -10,7 +10,7 @@
 #include "Scavenger.h"
 
 
-class UPlayViewBase;
+class IArena;
 
 struct FEnemyShips
 {
@@ -39,13 +39,13 @@ struct FEnemyShips
 	void RemoveScavenger (int32 Index);
 	void RemoveAll       ();
 
-	void KillShip        (UPlayViewBase& Arena, int32 Index);
-	void KillBoss        (UPlayViewBase& Arena, int32 Index);
-	void KillScavenger   (UPlayViewBase& Arena, int32 Index);
+	void KillShip        (IArena& Arena, int32 Index);
+	void KillBoss        (IArena& Arena, int32 Index);
+	void KillScavenger   (IArena& Arena, int32 Index);
 
-	void SpawnShip       (UPlayViewBase& Arena);
-	void SpawnBoss	     (UPlayViewBase& Arena);
-	void Update          (UPlayViewBase& Arena, float DeltaTime);
+	void SpawnShip       (IArena& Arena);
+	void SpawnBoss	     (IArena& Arena);
+	void Update          (IArena& Arena, float DeltaTime);
 };
 
 

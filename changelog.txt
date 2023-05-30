@@ -1,0 +1,245 @@
+Change log for Stellar Mayhem
+
+
+Version 1.8.4
+-------------------------------------------------------------------------------------
+Refactored the various helper classes to use IArena instead of UPlayViewBase, 
+so that they don't depend on any particular implementation of the game, 
+and UPlayViewBase doesn't have to make the helpers friends or declare needed 
+members public.
+
+
+Version 1.8.3
+-------------------------------------------------------------------------------------
+Miniboss explosions show their shields fragmenting and dispersing
+instead of just immediately disappearing.
+
+
+Version 1.8.2
+-------------------------------------------------------------------------------------
+Minibosses change heading every second or two. They also fire 
+at the player, randomly at first, then more accurately as time goes by.
+Two-shield boss has its own ship sprite.
+
+The sound loop for the classic enemy ships grows quieter over time.
+
+
+Version 1.8.1
+-------------------------------------------------------------------------------------
+Intro title graphics are animated.
+
+Daylon::FinishCreating was renamed to Daylon::Install, 
+because the function installs a created widget into
+the scenegraph (and sets some related slot properties).
+
+Daylon::DestroyXXX was renamed Daylon::UninstallXXX, 
+because it only removed the widget from the scenegraph
+(if that was the last shared reference, then it would 
+also be removed, but that's usually not the case).
+
+
+Version 1.8
+-------------------------------------------------------------------------------------
+More collision detection for minibosses i.e. torpedos and player ship.
+
+Shield bonk sound plays at half volume when it's a miniboss' shields.
+
+
+Version 1.7.9
+-------------------------------------------------------------------------------------
+Added minibosses, which are shielded enemies protected by one or two layers 
+of counterrotating polygon shields. Torpedo collisions will lower the strength 
+of a hit shield segment, if it reaches zero (black) torpedos will then pass 
+through that part of the shield. The boss is destroyed if a torpedo can hit 
+the ship at the center. Minibosses don't appear until the player score is 
+30,000 points. They appear with one shield but then two shields are more 
+probable as gameplay progresses. Unlike the original enemies, bosses 
+wrap around the screen and stay present until destroyed.
+    Still a work in progress e.g. movement, firing and collision detection.
+
+
+Version 1.7.8
+-------------------------------------------------------------------------------------
+Asteroid objects now managed by their own FAsteroids class.
+
+Scavenger explosions more pronounced, and dependant on how many powerups one is carrying.
+
+Scavengers drop acquired powerups in a tight cluster instead of in a line.
+
+
+Version 1.7.7
+-------------------------------------------------------------------------------------
+Explosions moved to their own manager class.
+
+Explicit FExplosion class added. Supports including the destroyed object's 
+inertia, making the fireball particles also move along its path. 
+The global constant ExplosionInertialFactor is 0.5, meaning that 
+half of the inertia is used. To mimic the original arcade game, use 0.0.
+The faster a destroyed object was moving, the more obvious the effect.
+The player ship explosion uses no inertia, however, to make it stand out.
+
+
+Version 1.7.6
+-------------------------------------------------------------------------------------
+Enemy ship explosions made more dramatic.
+
+More refactoring: New FEnemyShips class manages all the enemy ships and 
+scavengers. Player score and ship status values use new Daylon::TBindableValue 
+template class to update corresponding readouts using delegates -- when the 
+value changes, the delegate fires. Now the FPlayerShip class doesn't need 
+to know how the game updates readouts. We could've used a delegate member 
+called "ReadoutUpdater" but that would've implied that FPlayerShip needs 
+to explicitly call it. Instead, it can just modify shields and other values 
+and the delegate is implicitly called.
+
+
+Version 1.7.5
+-------------------------------------------------------------------------------------
+More refactoring done. All play object classes now in their own code files.
+Much code was moved from PlayViewBase to specific playobject classes, but 
+there's probably more to do. Player shield and invincibility widgets are 
+now PlayerShip members.
+
+
+Version 1.7.4
+-------------------------------------------------------------------------------------
+Added "low power" warning flash to invincibility shield when its time 
+remaining is just a few seconds.
+
+Refactoring of play object classes started; some code broken out from 
+PlayViewBase to new .h and .cpp files.
+
+
+Version 1.7.3
+-------------------------------------------------------------------------------------
+Made all game objects use SpritePlayObject2D; ImagePlayObject2D is unnecessary
+because the former can imitate it. This will let us have a base PlayObject class 
+that is not a template and can be polymorphic using virtual methods. Another 
+approach is delegate members, which has the added flexibility that if we 
+want different behaviors within e.g. the same enemy class, that would be easy.
+
+The suffix 'Widget' was dropped from the SDaylonXXX classnames because 
+the 'S' prefix already indicates that, and it's more in keeping with 
+the UE coding style.
+
+
+Version 1.7.2
+-------------------------------------------------------------------------------------
+Added texture to show player ship being invincible when 
+related powerup obtained.
+
+Consolidated powerup readouts into vertical box.
+
+Consolidated asteroid textures into sprite atlases.
+
+
+Version 1.7.1
+-------------------------------------------------------------------------------------
+Fixed bug where scavengers exiting the screen with powerups 
+didn't remove the powerups from the scenegraph.
+
+
+Version 1.7
+-------------------------------------------------------------------------------------
+Scavenger enemies now appear every several seconds, looking 
+for powerups that have been freed from asteroids but not yet 
+picked up by the player. Only one scavenger is present at a time.
+
+The scavenger will spawn on the left edge at a random Y position, 
+and if a powerup is available, will move directly towards it. 
+If it acquires the powerup (by colliding with it), it will 
+target any next available powerup, and so on at which point 
+it will move horizontally towards the right edge of the screen 
+and disappear, taking all of its powerups with it.
+
+If the scavenger is destroyed, it will drop all of the 
+powerups it has picked up.
+
+
+Version 1.6.7
+-------------------------------------------------------------------------------------
+UMG playobject code moved to an #if 0... #endif section.
+All playobjects should use the Slate system.
+
+Player ship textures consolidated into a sprite atlas. 
+A new atlas method, SetCurrentCel(), lets the current cel 
+be set without using Update(), so the atlas can serve 
+both static and animated sprites. When alternating between 
+coasting and thrusting, the ship texture is selected by 
+cel indices 0 and 1 instead of calling SetBrush().
+
+Fixed another playership-assumed-to-exist bug that 
+caused a crash when the game ended.
+
+
+Version 1.6.6
+-------------------------------------------------------------------------------------
+Explosion play objects are now also Slate widgets.
+
+A "shield bonk damage" constant was added that deducts its number 
+of seconds from the player ship's shields whenever the ship 
+collides with something and the shields are active. It makes 
+the game harder, and one ends up scurrying for shield powerups 
+and using shields conservatively. If you set it to zero, of course, 
+then the shields only decrease when used.
+
+Fixed a bug where the collision checker assumed the player ship 
+to exist, which wasn't true after entering the game over state.
+
+
+Version 1.6.5
+-------------------------------------------------------------------------------------
+Except for explosions, all widgets have been migrated from UMG to Slate.
+So we get a little more performance both in speed and memory usage, and 
+the GC doesn't have to collect as many gameplay objects during the game loop.
+   Turns out the root UCanvas doesn't get its Slate widget installed until 
+after NativeOnInitalized finishes, so the player, player shield, and 
+torpedo creation code was moved to TransitionToState(Active).
+
+
+Version 1.6
+-------------------------------------------------------------------------------------
+Multiple enemy ships can appear on the screen together. 
+To disable this, set the FEATURE_MULTIPLE_ENEMIES macro to 0.
+   There's still a time delay between enemy respawn, so 
+the effect occurs more as the player score increases.
+If you want to see the effect early, set your initial 
+player score in the PlayView blueprint (in the Testing section)
+to e.g 95,000. You should also grab a shield powerup. :)
+
+An input action for ship aiming with the left gamepad joystick 
+was added, but not used. Thrust would probably need to be factored 
+in because when one aims with the stick, there's an instinctive 
+feeling that the ship should also move in that direction.
+   Aiming is also very "fussy" -- it's easy to make the ship 
+immediately point in some different direction. We'd likely 
+need to also add some dampening to make the ship rotate
+over time.
+   If you want to try it, access the PlayView's blueprint
+graph and connect up the input action pins to the OnAim node, 
+and disable the pins on the existing RotateShip action.
+ 
+
+Version 1.5
+-------------------------------------------------------------------------------------
+Switched input handling to the Enhanced Input subsystem 
+which was introduced with Unreal Engine 5.0 and made the 
+official system in UE 5.1.
+
+Added gamepad input support. The Help screen shows an 
+Xbox One controller in its button guide.
+
+Added MainGameMode asset which supercedes the 
+C++ SpaceRoxGameModeBase class.
+
+
+Version 1.41
+-------------------------------------------------------------------------------------
+Refactored the FPlayObject struct to be a template so that 
+only one UWidget-based member existed and is typesafe.
+It also inherits from a pure abstract IPlayObject struct.
+FPowerup became much simpler as a result.
+
+Several PlayViewBase methods became FPlayObject methods.
+
+Moved the ComputeTargetingSolution function to LocalUtils.

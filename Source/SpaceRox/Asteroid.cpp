@@ -1,6 +1,6 @@
 #include "Asteroid.h"
 #include "Constants.h"
-#include "PlayViewBase.h"
+#include "Arena.h"
 
 
 TSharedPtr<FAsteroid> FAsteroid::Create(UDaylonSpriteWidgetAtlas* Atlas)
@@ -24,7 +24,7 @@ bool FAsteroid::HasPowerup() const
 }
 
 
-TSharedPtr<FAsteroid> FAsteroid::Split(UPlayViewBase& Arena)
+TSharedPtr<FAsteroid> FAsteroid::Split(IArena& Arena)
 {
 	// Apparently we always split into two children.
 	// For efficiency, we reformulate the parent rock into one of the kids.
@@ -36,17 +36,17 @@ TSharedPtr<FAsteroid> FAsteroid::Split(UPlayViewBase& Arena)
 	switch(Value)
 	{
 		case ValueBigAsteroid:
-			NewAsteroidAtlas = Arena.MediumRockAtlas;
+			NewAsteroidAtlas = &Arena.GetMediumAsteroidAtlas();
 			Value = ValueMediumAsteroid;
-			SetAtlas(Arena.MediumRockAtlas->Atlas);
 			break;
 
 		case ValueMediumAsteroid:
-			NewAsteroidAtlas = Arena.SmallRockAtlas;
+			NewAsteroidAtlas = &Arena.GetSmallAsteroidAtlas();
 			Value = ValueSmallAsteroid;
-			SetAtlas(Arena.SmallRockAtlas->Atlas);
 			break;
 	}
+
+	SetAtlas(NewAsteroidAtlas->Atlas);
 
 	SetSize(NewAsteroidAtlas->Atlas.GetCelPixelSize());
 	UpdateWidgetSize();
@@ -62,13 +62,13 @@ TSharedPtr<FAsteroid> FAsteroid::Split(UPlayViewBase& Arena)
 
 	const bool BothKidsFast = FMath::RandRange(0, 10) < 9;
 
-	NewAsteroid.Inertia = Arena.MakeInertia(Inertia, MinAsteroidSplitAngle, MaxAsteroidSplitAngle);
+	NewAsteroid.Inertia = UDaylonUtils::DeviateVector(Inertia, MinAsteroidSplitAngle, MaxAsteroidSplitAngle);
 	NewAsteroid.Inertia *= FMath::RandRange(1.2f, 3.0f);
 
 	NewAsteroid.LifeRemaining = 1.0f;
 	NewAsteroid.SpinSpeed     = SpinSpeed * AsteroidSpinScale;// FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
 
-	Inertia = Arena.MakeInertia(Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
+	Inertia = UDaylonUtils::DeviateVector(Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
 	Inertia *= (BothKidsFast ? FMath::RandRange(1.2f, 3.0f) : FMath::RandRange(0.25f, 1.0f));
 
 	SpinSpeed *= AsteroidSpinScale;

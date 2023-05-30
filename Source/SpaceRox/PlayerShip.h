@@ -10,7 +10,7 @@
 #include "DaylonUtils.h"
 
 
-class UPlayViewBase;
+class IArena;
 
 
 class FPlayerShip : public FPlayObject
@@ -36,17 +36,12 @@ class FPlayerShip : public FPlayObject
 	void AdjustDoubleShotsLeft   (int32 Amount);
 	void AdjustShieldsLeft       (float Amount);
 	void AdjustInvincibilityLeft (float Amount);
-
-	void ReleaseResources   (UPlayViewBase& Arena);
-
-	void Initialize         (UPlayViewBase& Arena);
-	void InitializeDefenses (UPlayViewBase& Arena);
-
-	void Perform            (UPlayViewBase& Arena, float DeltaTime);
-	bool ProcessCollision   (UPlayViewBase& Arena);
-
-	void SpawnExplosion     (UPlayViewBase& Arena);
-
-	void FireTorpedo        (UPlayViewBase& Arena);
+	void ReleaseResources        (IArena& Arena);
+	void Initialize              (IArena& Arena);
+	void InitializeDefenses      (IArena& Arena);
+	bool ProcessCollision        (IArena& Arena);
+	void SpawnExplosion          (IArena& Arena);
+	void FireTorpedo             (IArena& Arena);
+	void Perform                 (IArena& Arena, float DeltaTime);
 };
 

@@ -1,5 +1,5 @@
 #include "Asteroids.h"
-#include "PlayViewBase.h"
+#include "Arena.h"
 
 #define FEATURE_SPINNING_ASTEROIDS  1
 
@@ -34,7 +34,7 @@ void FAsteroids::RemoveAll()
 }
 
 
-void FAsteroids::Update(UPlayViewBase& Arena, float DeltaTime)
+void FAsteroids::Update(IArena& Arena, float DeltaTime)
 {
 	for (auto& Elem : Asteroids)
 	{
@@ -42,7 +42,7 @@ void FAsteroids::Update(UPlayViewBase& Arena, float DeltaTime)
 
 		if (Asteroid.LifeRemaining > 0.0f)
 		{
-			Asteroid.Move(DeltaTime, Arena.WrapPositionToViewport);
+			Asteroid.Move(DeltaTime, Arena.GetWrapPositionFunction());
 
 			if(Asteroid.HasPowerup())
 			{
@@ -57,7 +57,7 @@ void FAsteroids::Update(UPlayViewBase& Arena, float DeltaTime)
 }
 
 
-void FAsteroids::Kill(UPlayViewBase& Arena, int32 AsteroidIndex, bool KilledByPlayer)
+void FAsteroids::Kill(IArena& Arena, int32 AsteroidIndex, bool KilledByPlayer)
 {
 	// Kill the rock. Split it if isn't a small rock.
 	// Slate style.
@@ -74,7 +74,7 @@ void FAsteroids::Kill(UPlayViewBase& Arena, int32 AsteroidIndex, bool KilledByPl
 		Arena.IncreasePlayerScoreBy(Asteroid.Value);
 	}
 
-	Arena.SpawnExplosion(Asteroid.UnwrappedNewPosition, Asteroid.Inertia);
+	Arena.GetExplosions().SpawnOne(Arena, Asteroid.UnwrappedNewPosition, Asteroid.Inertia);
 
 	int32 SoundIndex = 0;
 	
@@ -87,10 +87,7 @@ void FAsteroids::Kill(UPlayViewBase& Arena, int32 AsteroidIndex, bool KilledByPl
 		SoundIndex = 2;
 	}
 
-	if(Arena.ExplosionSounds.IsValidIndex(SoundIndex))
-	{
-		Arena.PlaySound(Arena.ExplosionSounds[SoundIndex]);
-	}
+	Arena.PlaySound(Arena.GetExplosionSound(SoundIndex));
 
 
 	// If asteroid was small, just delete it.
@@ -100,12 +97,12 @@ void FAsteroids::Kill(UPlayViewBase& Arena, int32 AsteroidIndex, bool KilledByPl
 
 		if(Asteroid.HasPowerup())
 		{
-			auto PowerupIndex = Arena.Powerups.Add(Asteroid.Powerup);
+			auto PowerupIndex = Arena.GetPowerups().Add(Asteroid.Powerup);
 			Asteroid.Powerup.Reset();
 
 			if(PowerupsCanMove)
 			{
-				Arena.Powerups[PowerupIndex]->Inertia = Asteroid.Inertia;
+				Arena.GetPowerups()[PowerupIndex]->Inertia = Asteroid.Inertia;
 			}
 		}
 

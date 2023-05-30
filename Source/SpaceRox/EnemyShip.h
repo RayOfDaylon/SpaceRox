@@ -9,7 +9,8 @@
 #include "PlayObject.h"
 
 
-class UPlayViewBase;
+//class UPlayViewBase;
+class IArena;
 
 
 class FEnemyShip : public FPlayObject
@@ -25,9 +26,9 @@ class FEnemyShip : public FPlayObject
 
 	FEnemyShip();
 
-	void Perform(UPlayViewBase& Arena, float DeltaTime);
+	void Perform(IArena& Arena, float DeltaTime);
 
-	void Shoot(UPlayViewBase& Arena);
+	void Shoot(IArena& Arena);
 };
 
 
@@ -56,7 +57,7 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 	void  SetShieldSegmentHealth   (int32 ShieldNumber, int32 SegmentIndex, float Health);
 	void  GetShieldSegmentGeometry (int32 ShieldNumber, int32 SegmentIndex, FVector2D& P1, FVector2D& P2) const;
 	float GetShieldThickness       () const;
-	void  SpawnExplosion           (UPlayViewBase& Arena);
-	void  Perform                  (UPlayViewBase& Arena, float DeltaTime);
-	void  Shoot                    (UPlayViewBase& Arena);
+	void  SpawnExplosion           (IArena& Arena);
+	void  Perform                  (IArena& Arena, float DeltaTime);
+	void  Shoot                    (IArena& Arena);
 };

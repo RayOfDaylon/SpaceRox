@@ -6,12 +6,12 @@
 
 
 #include "CoreMinimal.h"
-//#include "PlayObject.h"
 #include "Asteroid.h"
 #include "Constants.h"
 
 
 class UPlayViewBase;
+class IArena;
 
 
 class FAsteroids
@@ -37,6 +37,6 @@ class FAsteroids
 		void Remove     (int32 Index);
 		void RemoveAll  ();
 
-		void Update     (UPlayViewBase& Arena, float DeltaTime);
-		void Kill       (UPlayViewBase& Arena, int32 Index, bool KilledByPlayer);
+		void Update     (IArena& Arena, float DeltaTime);
+		void Kill       (IArena& Arena, int32 Index, bool KilledByPlayer);
 };

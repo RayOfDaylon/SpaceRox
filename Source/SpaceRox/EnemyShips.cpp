@@ -4,7 +4,7 @@
 
 #include "EnemyShips.h"
 #include "Constants.h"
-#include "PlayViewBase.h"
+#include "Arena.h"
 #include "DaylonUtils.h"
 
 
@@ -98,7 +98,7 @@ void FEnemyShips::RemoveAll()
 }
 
 
-void FEnemyShips::KillShip(UPlayViewBase& Arena, int32 Index)
+void FEnemyShips::KillShip(IArena/*UPlayViewBase*/& Arena, int32 Index)
 {
 	if(!Ships.IsValidIndex(Index))
 	{
@@ -131,7 +131,7 @@ void FEnemyShips::KillShip(UPlayViewBase& Arena, int32 Index)
 			80);
 
 */ 
-	Arena.Explosions.SpawnOne(
+	Arena.GetExplosions().SpawnOne(
 		Arena, 
 		Ship.GetPosition(),
 		 3.0f, 
@@ -144,12 +144,12 @@ void FEnemyShips::KillShip(UPlayViewBase& Arena, int32 Index)
 		60,
 		Ship.Inertia);
 
-	Arena.PlaySound(Arena.ExplosionSounds[Ship.Value == ValueBigEnemy ? 0 : 1]);
+	Arena.PlaySound(Arena.GetExplosionSound(Ship.Value == ValueBigEnemy ? 0 : 1));//.ExplosionSounds[]);
 	RemoveShip(Index);
 }
 
 
-void FEnemyShips::KillBoss(UPlayViewBase& Arena, int32 Index)
+void FEnemyShips::KillBoss(IArena& Arena, int32 Index)
 {
 	if(!Bosses.IsValidIndex(Index))
 	{
@@ -183,7 +183,7 @@ void FEnemyShips::KillBoss(UPlayViewBase& Arena, int32 Index)
 
 */ 
 	// Spawn explosion for the ship at the center.
-	Arena.Explosions.SpawnOne(
+	Arena.GetExplosions().SpawnOne(
 		Arena, 
 		Boss.GetPosition(),
 		 3.0f, 
@@ -196,7 +196,7 @@ void FEnemyShips::KillBoss(UPlayViewBase& Arena, int32 Index)
 		60,
 		Boss.Inertia);
 
-	Arena.PlaySound(Arena.ExplosionSounds[0], 0.5f); // todo: use specific sound
+	Arena.PlaySound(Arena.GetExplosionSound(0), 0.5f); // todo: use specific sound
 
 
 	// Spawn explosion for any surviving shields.
@@ -209,15 +209,15 @@ void FEnemyShips::KillBoss(UPlayViewBase& Arena, int32 Index)
 
 	for(auto& ShieldPtr : Boss.Shields)
 	{
-		for(int32 Index = 0; Index < ShieldPtr->GetNumSides(); Index++)
+		for(int32 SegmentIndex = 0; SegmentIndex < ShieldPtr->GetNumSides(); SegmentIndex++)
 		{
-			auto Health = ShieldPtr->GetSegmentHealth(Index);
+			auto Health = ShieldPtr->GetSegmentHealth(SegmentIndex);
 			if(Health <= 0.0f)
 			{
 				continue;
 			}
 
-			ShieldPtr->GetSegmentGeometry(Index, P1, P2);
+			ShieldPtr->GetSegmentGeometry(SegmentIndex, P1, P2);
 
 			Particle.Color = FLinearColor(Health, Health, Health, 1.0f);
 			Particle.Angle = UDaylonUtils::Vector2DToAngle(P2 - P1);
@@ -230,7 +230,7 @@ void FEnemyShips::KillBoss(UPlayViewBase& Arena, int32 Index)
 	}
 
 
-	Arena.ShieldExplosions.SpawnOne(
+	Arena.GetShieldExplosions().SpawnOne(
 		Arena,
 		Boss.GetPosition(),
 		Particles,
@@ -277,7 +277,7 @@ const FPowerupPlacement PowerupPlacements[] =
 };
 
 
-void FEnemyShips::KillScavenger(UPlayViewBase& Arena, int32 Index)
+void FEnemyShips::KillScavenger(IArena& Arena, int32 Index)
 {
 	if(!Scavengers.IsValidIndex(Index))
 	{
@@ -315,8 +315,8 @@ void FEnemyShips::KillScavenger(UPlayViewBase& Arena, int32 Index)
 			DroppedPowerupPtr->Show();
 			//DroppedPowerupPtr->SetPosition(Arena.WrapPositionToViewport(Scavenger.GetPosition() + (Direction * DroppedPowerupPtr->GetRadius() * 2.5f * PowerupIndex)));
 			const FVector2D CircleP = UDaylonUtils::AngleToVector2D(Placement.Angle) * PowerupDiameter * Placement.CircleRadius;
-			DroppedPowerupPtr->SetPosition(Arena.WrapPositionToViewport(Scavenger.GetPosition() + CircleP));
-			Arena.Powerups.Add(DroppedPowerupPtr);
+			DroppedPowerupPtr->SetPosition(Arena.WrapPosition(Scavenger.GetPosition() + CircleP));
+			Arena.GetPowerups().Add(DroppedPowerupPtr);
 		}
 		Scavenger.AcquiredPowerups.Empty();
 	}
@@ -325,7 +325,7 @@ void FEnemyShips::KillScavenger(UPlayViewBase& Arena, int32 Index)
 
 	const float ExplosionScale = FMath::Clamp(NumAcquiredPowerups, 0, 10) * 0.1f;
 
-	Arena.Explosions.SpawnOne(
+	Arena.GetExplosions().SpawnOne(
 		Arena,
 		Scavenger.GetPosition(), 
 		 FMath::Lerp(2.0f, 6.0f, ExplosionScale), 
@@ -339,28 +339,27 @@ void FEnemyShips::KillScavenger(UPlayViewBase& Arena, int32 Index)
 		Scavenger.Inertia);
 
 	// todo: have scavenger explosion sound
-	Arena.PlaySound(Arena.ExplosionSounds[0]);
+	Arena.PlaySound(Arena.GetExplosionSound(0));
 	RemoveScavenger(Index);
 }
 
 
-void FEnemyShips::SpawnShip(UPlayViewBase& Arena)
+void FEnemyShips::SpawnShip(IArena& Arena)
 {
 	// Generate a big enemy ship vs. small one based on player score.
 	// The higher the score, the likelier a small enemy will appear.
 	// Regardless of score, there's always a 10% chance of a big enemy ship.
 
-	const int32 ScoreTmp = FMath::Max(0, Arena.PlayerScore - 5000);
+	const int32 ScoreTmp = FMath::Max(0, Arena.GetPlayerScore() - 5000);
 
 	float BigEnemyProbability = pow(FMath::Lerp(1.0f, 0.1f,  FMath::Min(1.0f, ScoreTmp / 65'000.0f)), 2.0f);
 	BigEnemyProbability = FMath::Max(0.1f, BigEnemyProbability);
 
 	const bool IsBigEnemy = (FMath::FRand() <= BigEnemyProbability);
 
-
 	auto EnemyShipPtr = FEnemyShip::Create(
-		IsBigEnemy ? Arena.BigEnemyAtlas : Arena.SmallEnemyAtlas, 
-		IsBigEnemy ? ValueBigEnemy : ValueSmallEnemy,
+		IsBigEnemy ? &Arena.GetBigEnemyAtlas() : &Arena.GetSmallEnemyAtlas(), 
+		IsBigEnemy ? ValueBigEnemy             : ValueSmallEnemy,
 		0.375f);
 
 
@@ -375,7 +374,7 @@ void FEnemyShips::SpawnShip(UPlayViewBase& Arena)
 		P.X = ViewportSize.X - 1.0f; // avoid immediate removal
 	}
 
-	EnemyShipPtr->Spawn(Arena.WrapPositionToViewport(P), Inertia, 0.0f);
+	EnemyShipPtr->Spawn(Arena.WrapPosition(P), Inertia, 0.0f);
 
 	Ships.Add(EnemyShipPtr);
 
@@ -389,32 +388,32 @@ void FEnemyShips::SpawnShip(UPlayViewBase& Arena)
 	}
 
 	// Taper enemy ship volume quieter as player score increases.
-	float VolumeScale = FMath::Clamp(UDaylonUtils::Normalize(Arena.PlayerScore, 100'000, 30'000), 0.0f, 1.0f);
+	float VolumeScale = FMath::Clamp(UDaylonUtils::Normalize(Arena.GetPlayerScore(), 100'000, 30'000), 0.0f, 1.0f);
 	VolumeScale = FMath::Lerp(0.5f, 1.0f, VolumeScale);
 
 	if(IsBigEnemy)
 	{
 		if(NumBigEnemyShips == 1)
 		{
-			Arena.BigEnemyShipSoundLoop.Start(VolumeScale);
+			Arena.GetBigEnemySoundLoop().Start(VolumeScale);
 		}
 	}
 	else
 	{
 		if(NumSmallEnemyShips == 1)
 		{
-			Arena.SmallEnemyShipSoundLoop.Start(VolumeScale);
+			Arena.GetSmallEnemySoundLoop().Start(VolumeScale);
 		}
 	}
 }
 
 
-void FEnemyShips::SpawnBoss(UPlayViewBase& Arena)
+void FEnemyShips::SpawnBoss(IArena& Arena)
 {
 	// The higher the player score, the more likely the boss will have multiple shields.
 
 	// Don't spawn if score too low.
-	const int32 ScoreTmp = Arena.PlayerScore - 30'000;
+	const int32 ScoreTmp = Arena.GetPlayerScore() - 30'000;
 
 	if(ScoreTmp < 0)
 	{
@@ -432,8 +431,8 @@ void FEnemyShips::SpawnBoss(UPlayViewBase& Arena)
 
 	switch(NumShields)
 	{
-		case 1: BossShipPtr = FEnemyBoss::Create(Arena.Miniboss1Atlas, 32, ValueMiniBoss1, NumShields); break;
-		case 2: BossShipPtr = FEnemyBoss::Create(Arena.Miniboss2Atlas, 32, ValueMiniBoss2, NumShields); break;
+		case 1: BossShipPtr = FEnemyBoss::Create(&Arena.GetMiniboss1Atlas(), 32, ValueMiniBoss1, NumShields); break;
+		case 2: BossShipPtr = FEnemyBoss::Create(&Arena.GetMiniboss2Atlas(), 32, ValueMiniBoss2, NumShields); break;
 	}
 
 	// Like an asteroid, start at some random edge place with a random inertia.
@@ -456,7 +455,7 @@ void FEnemyShips::SpawnBoss(UPlayViewBase& Arena)
 }
 
 
-void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
+void FEnemyShips::Update(IArena& Arena, float DeltaTime)
 {
 	check(NumBigEnemyShips + NumSmallEnemyShips == Ships.Num());
 
@@ -465,7 +464,7 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 		auto& EnemyShip = GetShip(ShipIndex);
 
 		// If we've reached the opposite side of the viewport, remove us.
-		const auto P2 = Arena.WrapPositionToViewport(EnemyShip.UnwrappedNewPosition);
+		const auto P2 = Arena.WrapPosition(EnemyShip.UnwrappedNewPosition);
 
 		if(P2.X != EnemyShip.UnwrappedNewPosition.X)
 		{
@@ -484,14 +483,12 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 		// Time between enemy ship spawns depends on asteroid density (no ships if too many rocks)
 		// and while low density, spawn once every ten seconds down to two seconds depending on player score.
 
-		Arena.TimeUntilNextEnemyShip -= DeltaTime;
-
-		if(Arena.TimeUntilNextEnemyShip <= 0.0f)
+		if(Arena.AdjustTimeUntilNextEnemyShip(-DeltaTime) <= 0.0f)
 		{
 			SpawnShip(Arena);
 
 			// Reset the timer.
-			Arena.TimeUntilNextEnemyShip = FMath::Lerp(MaxTimeUntilEnemyRespawn, MinTimeUntilEnemyRespawn, (float)FMath::Min(ExpertPlayerScore, Arena.PlayerScore.GetValue()) / ExpertPlayerScore);
+			Arena.SetTimeUntilNextEnemyShip(FMath::Lerp(MaxTimeUntilEnemyRespawn, MinTimeUntilEnemyRespawn, (float)FMath::Min(ExpertPlayerScore, Arena.GetPlayerScore()) / ExpertPlayerScore));
 			// score = 10'000 --> 9 seconds
 			//         20'000 --> 8 seconds
 			//         50'000 --> 5 seconds
@@ -502,12 +499,12 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 
 	if(NumBigEnemyShips > 0)
 	{
-		Arena.BigEnemyShipSoundLoop.Tick(DeltaTime);
+		Arena.GetBigEnemySoundLoop().Tick(DeltaTime);
 	}
 
 	if(NumSmallEnemyShips > 0)
 	{
-		Arena.SmallEnemyShipSoundLoop.Tick(DeltaTime);
+		Arena.GetSmallEnemySoundLoop().Tick(DeltaTime);
 	}
 
 
@@ -517,12 +514,10 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 		BossPtr->Perform(Arena, DeltaTime);
 	}
 
-	Arena.TimeUntilNextBoss -= DeltaTime;
-
-	if(Arena.TimeUntilNextBoss <= 0.0f)
+	if(Arena.AdjustTimeUntilNextBoss(-DeltaTime) <= 0.0f)
 	{
 		SpawnBoss(Arena);
-		Arena.TimeUntilNextBoss = FMath::Lerp(MaxTimeUntilBossRespawn, MinTimeUntilBossRespawn, (float)FMath::Min(ExpertPlayerScore, Arena.PlayerScore.GetValue()) / ExpertPlayerScore);
+		Arena.SetTimeUntilNextBoss(FMath::Lerp(MaxTimeUntilBossRespawn, MinTimeUntilBossRespawn, (float)FMath::Min(ExpertPlayerScore, Arena.GetPlayerScore()) / ExpertPlayerScore));
 	}
 
 
@@ -537,13 +532,13 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 		if(Scavenger.CurrentTarget.IsValid())
 		{
 			// Keep moving toward target.
-			Scavenger.Move(DeltaTime, Arena.WrapPositionToViewport);
+			Scavenger.Move(DeltaTime, Arena.GetWrapPositionFunction());
 		}
 		else
 		{
 			// No current target.
 
-			if(!Arena.Powerups.IsEmpty())
+			if(!Arena.GetPowerups().IsEmpty())
 			{
 				// Powerups exist, assign ourselves one as a target.
 				// Pick the one closest to us.
@@ -553,7 +548,7 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 				int32 NearestPowerupIndex = 0;
 				int32 Index = 0;
 
-				for(auto PowerupPtr : Arena.Powerups)
+				for(auto PowerupPtr : Arena.GetPowerups())
 				{
 					const auto Distance = FVector2D::Distance(Scavenger.GetPosition(), PowerupPtr.Get()->GetPosition());
 					
@@ -565,10 +560,10 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 					Index++;
 				}
 
-				Scavenger.CurrentTarget = Arena.Powerups[NearestPowerupIndex];
+				Scavenger.CurrentTarget = Arena.GetPowerups()[NearestPowerupIndex];
 
 				// Point the scavenger at the powerup.
-				Scavenger.Inertia = (Arena.Powerups[NearestPowerupIndex].Get()->GetPosition() - Scavenger.GetPosition());
+				Scavenger.Inertia = (Arena.GetPowerups()[NearestPowerupIndex].Get()->GetPosition() - Scavenger.GetPosition());
 				Scavenger.Inertia.Normalize();
 				Scavenger.Inertia *= MaxScavengerSpeed;
 				Scavenger.SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger.Inertia));
@@ -582,10 +577,10 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 					Scavenger.SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger.Inertia));
 				}
 
-				Scavenger.Move(DeltaTime, Arena.WrapPositionToViewport);
+				Scavenger.Move(DeltaTime, Arena.GetWrapPositionFunction());
 
 				// If we've reached the opposite side of the viewport, remove us.
-				const auto P2 = Arena.WrapPositionToViewport(Scavenger.UnwrappedNewPosition);
+				const auto P2 = Arena.WrapPosition(Scavenger.UnwrappedNewPosition);
 
 				if(P2.X != Scavenger.UnwrappedNewPosition.X)
 				{
@@ -600,13 +595,11 @@ void FEnemyShips::Update(UPlayViewBase& Arena, float DeltaTime)
 
 	if(Scavengers.IsEmpty())
 	{
-		Arena.TimeUntilNextScavenger -= DeltaTime;
-
-		if(Arena.TimeUntilNextScavenger <= 0.0f)
+		if(Arena.AdjustTimeUntilNextScavenger(-DeltaTime) <= 0.0f)
 		{
-			Arena.TimeUntilNextScavenger = MaxTimeUntilNextScavenger;
+			Arena.SetTimeUntilNextScavenger(MaxTimeUntilNextScavenger);
 
-			auto ScavengerPtr = FScavenger::Create(Arena.ScavengerAtlas, FVector2D(32));
+			auto ScavengerPtr = FScavenger::Create(&Arena.GetScavengerAtlas(), FVector2D(32));
 
 			ScavengerPtr->SetPosition(FVector2D(0, FMath::FRandRange(ViewportSize.Y * 0.1, ViewportSize.Y * 0.9)));
 			ScavengerPtr->Inertia.Set(MaxScavengerSpeed, 0);

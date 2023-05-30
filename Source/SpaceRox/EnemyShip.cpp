@@ -5,7 +5,9 @@
 
 #include "EnemyShip.h"
 #include "DaylonUtils.h"
-#include "PlayViewBase.h"
+#include "Torpedo.h"
+#include "Arena.h"
+#include "PlayerShip.h"
 #include "Constants.h"
 
 
@@ -43,13 +45,13 @@ FEnemyShip::FEnemyShip()
 }
 
 
-void FEnemyShip::Perform(UPlayViewBase& Arena, float DeltaTime)
+void FEnemyShip::Perform(IArena& Arena, float DeltaTime)
 {
 	// Don't call Super::Update(DeltaTime) because we are a static sprite.
 
 	const bool WereBig = (Value == ValueBigEnemy);
 
-	Move(DeltaTime, Arena.WrapPositionToViewport);
+	Move(DeltaTime, Arena.GetWrapPositionFunction());
 
 
 	// Fire a torpedo if we've finished reloading.
@@ -89,7 +91,7 @@ void FEnemyShip::Perform(UPlayViewBase& Arena, float DeltaTime)
 
 
 
-void FEnemyShip::Shoot(UPlayViewBase& Arena)
+void FEnemyShip::Shoot(IArena& Arena)
 {
 	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
 	// For now, just use wild and leaded.
@@ -99,14 +101,14 @@ void FEnemyShip::Shoot(UPlayViewBase& Arena)
 		return;
 	}
 
-	const int32 TorpedoIdx = Arena.GetAvailableTorpedo();
+	auto TorpedoPtr = Arena.GetAvailableTorpedo();
 
-	if(TorpedoIdx == INDEX_NONE)
+	if(!TorpedoPtr)
 	{
 		return;
 	}
 
-	auto& Torpedo = *Arena.Torpedos[TorpedoIdx].Get();
+	auto& Torpedo = *TorpedoPtr.Get();
 
 	Torpedo.FiredByPlayer = false;
 
@@ -123,7 +125,7 @@ void FEnemyShip::Shoot(UPlayViewBase& Arena)
 		// Shot vector is random.
 		Direction = UDaylonUtils::RandVector2D();
 		LaunchP += Direction * (GetSize().X / 2 + 2);
-		LaunchP = Arena.WrapPositionToViewport(LaunchP);
+		LaunchP = Arena.WrapPosition(LaunchP);
 
 		Speed = BigEnemyTorpedoSpeed;
 	}
@@ -140,21 +142,21 @@ void FEnemyShip::Shoot(UPlayViewBase& Arena)
 
 		bShootAtPlayer = !bShootAtPlayer;
 
-		if(bShootAtPlayer || Arena.Asteroids.IsEmpty())
+		if(bShootAtPlayer || Arena.GetAsteroids().IsEmpty())
 		{
-			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Arena.PlayerShip->GetPosition(), Arena.PlayerShip->Inertia);
+			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Arena.GetPlayerShip().GetPosition(), Arena.GetPlayerShip().Inertia);
 		}
 		else
 		{
 			// Shoot at an asteroid.
-			const auto& Asteroid = Arena.Asteroids.Get(FMath::RandRange(0, Arena.Asteroids.Num() - 1));
+			const auto& Asteroid = Arena.GetAsteroids().Get(FMath::RandRange(0, Arena.GetAsteroids().Num() - 1));
 			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Asteroid.GetPosition(), Asteroid.Inertia);
 		}
 	}
 
 	Torpedo.Spawn(LaunchP, Direction * Speed, MaxTorpedoLifeTime);
 
-	Arena.PlaySound(Arena.TorpedoSound);
+	Arena.PlaySound(Arena.GetTorpedoSound());
 }
 
 
@@ -359,13 +361,13 @@ void FEnemyBoss::SetShieldSegmentHealth(int32 ShieldNumber, int32 SegmentIndex, 
 }
 
 
-void FEnemyBoss::SpawnExplosion(UPlayViewBase& Arena)
+void FEnemyBoss::SpawnExplosion(IArena& Arena)
 {
 	// todo: this never gets called, FEnemyShips::KillBoss() is handling it.
 	const auto P = GetPosition();
 	const auto ShipInertia = Inertia;
 
-	Arena.Explosions.SpawnOne(Arena, P, 
+	Arena.GetExplosions().SpawnOne(Arena, P, 
 		4.5f,
 		9.0f,
 		45.0f,
@@ -378,7 +380,7 @@ void FEnemyBoss::SpawnExplosion(UPlayViewBase& Arena)
 }
 
 
-void FEnemyBoss::Perform(UPlayViewBase& Arena, float DeltaTime)
+void FEnemyBoss::Perform(IArena& Arena, float DeltaTime)
 {
 	TimeRemainingToNextMove -= DeltaTime;
 
@@ -395,7 +397,7 @@ void FEnemyBoss::Perform(UPlayViewBase& Arena, float DeltaTime)
 		Inertia = UDaylonUtils::AngleToVector2D(NewAngle) * GetSpeed();
 	}
 
-	Move(DeltaTime, Arena.WrapPositionToViewport);
+	Move(DeltaTime, Arena.GetWrapPositionFunction());
 
 
 	TimeRemainingToNextShot -= DeltaTime;
@@ -408,7 +410,7 @@ void FEnemyBoss::Perform(UPlayViewBase& Arena, float DeltaTime)
 }
 
 
-void FEnemyBoss::Shoot(UPlayViewBase& Arena)
+void FEnemyBoss::Shoot(IArena& Arena)
 {
 	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
 	// For now, just use wild and leaded.
@@ -418,43 +420,44 @@ void FEnemyBoss::Shoot(UPlayViewBase& Arena)
 		return;
 	}
 
-	const int32 TorpedoIdx = Arena.GetAvailableTorpedo();
+	auto TorpedoPtr = Arena.GetAvailableTorpedo();
 
-	if(TorpedoIdx == INDEX_NONE)
+	if(!TorpedoPtr)
 	{
 		return;
 	}
 
-	auto& Torpedo = *Arena.Torpedos[TorpedoIdx].Get();
+	auto& Torpedo = *TorpedoPtr.Get();
 
 	Torpedo.FiredByPlayer = false;
 
 
 	// Interpolate between a random shot and an accurate shot.
 
-
-	auto DirectionToPlayer = Arena.PlayerShip->GetPosition() - GetPosition();
+	auto DirectionToPlayer = Arena.GetPlayerShip().GetPosition() - GetPosition();
 	DirectionToPlayer.Normalize();
-	const auto FiringPoint = Arena.WrapPositionToViewport(GetPosition() + DirectionToPlayer * (Shields.Last(0)->GetSize().X / 2 + 10.0f));
+	const auto FiringPoint = Arena.WrapPosition(GetPosition() + DirectionToPlayer * (Shields.Last(0)->GetSize().X / 2 + 10.0f));
 
 	// The random direction has to be away from us. It can vary by -90 to +90 degrees from DirectionToPlayer.
 	const auto AngleToPlayer = UDaylonUtils::Vector2DToAngle(DirectionToPlayer);
 	const auto RandomAngle = AngleToPlayer + FMath::FRandRange(-90.0f, 90.0f);
 
-	const auto PerfectDirection = UDaylonUtils::ComputeFiringSolution(FiringPoint, BossTorpedoSpeed, Arena.PlayerShip->GetPosition(), Arena.PlayerShip->Inertia);
+	const auto PerfectDirection = UDaylonUtils::ComputeFiringSolution(FiringPoint, BossTorpedoSpeed, Arena.GetPlayerShip().GetPosition(), Arena.GetPlayerShip().Inertia);
 	const auto PerfectAngle = UDaylonUtils::Vector2DToAngle(PerfectDirection);
 
-	const float Aim = FMath::Min(1.0f, UDaylonUtils::Normalize(Arena.PlayerScore, ScoreForBossSpawn, ScoreForBossAimPerfect));
+	const float Aim = FMath::Min(1.0f, UDaylonUtils::Normalize(Arena.GetPlayerScore(), ScoreForBossSpawn, ScoreForBossAimPerfect));
 	const auto Angle = FMath::Lerp(RandomAngle, PerfectAngle, Aim);
 
 	const auto Direction = UDaylonUtils::AngleToVector2D(Angle);
 
 	Torpedo.Spawn(FiringPoint, Direction * BossTorpedoSpeed, MaxTorpedoLifeTime);
 
-	Arena.PlaySound(Arena.TorpedoSound);
+	Arena.PlaySound(Arena.GetTorpedoSound());
 }
 
 
 #if(DEBUG_MODULE == 1)
 #pragma optimize("", on)
 #endif
+
+#undef DEBUG_MODULE

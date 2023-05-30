@@ -1,5 +1,6 @@
 #include "PlayerShip.h"
-#include "PlayViewBase.h"
+#include "Arena.h"
+#include "Torpedo.h"
 #include "Constants.h"
 
 
@@ -17,7 +18,7 @@ TSharedPtr<FPlayerShip> FPlayerShip::Create(UDaylonSpriteWidgetAtlas* Atlas, con
 }
 
 
-void FPlayerShip::ReleaseResources(UPlayViewBase& Arena)
+void FPlayerShip::ReleaseResources(IArena& Arena)
 {
 	if(Shield)
 	{
@@ -33,11 +34,11 @@ void FPlayerShip::ReleaseResources(UPlayViewBase& Arena)
 }
 
 
-void FPlayerShip::Initialize(UPlayViewBase& Arena)
+void FPlayerShip::Initialize(IArena& Arena)
 {
 	IsUnderThrust      = false;
 	IsSpawning         = false;
-	DoubleShotsLeft    = Arena.bGodMode ? 10000 : 0;
+	DoubleShotsLeft    = Arena.IsGodModeActive() ? 10000 : 0;
 	ShieldsLeft        = 0.0f;
 	InvincibilityLeft  = 0.0f;
 
@@ -46,15 +47,15 @@ void FPlayerShip::Initialize(UPlayViewBase& Arena)
 }
 
 
-void FPlayerShip::InitializeDefenses(UPlayViewBase& Arena)
+void FPlayerShip::InitializeDefenses(IArena& Arena)
 {
 	Shield = SNew(Daylon::SpritePlayObject2D);
 
 	Daylon::Install<SDaylonSprite>(Shield, 0.5f);
 
-	Shield->SetAtlas(Arena.DefensesAtlas->Atlas);
+	Shield->SetAtlas(Arena.GetDefensesAtlas().Atlas);
 	Shield->SetCurrentCel(ShieldDefenseAtlasCel);
-	Shield->SetSize(Arena.DefensesAtlas->Atlas.GetCelPixelSize());
+	Shield->SetSize(Arena.GetDefensesAtlas().Atlas.GetCelPixelSize());
 	Shield->UpdateWidgetSize();
 
 	Shield->Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
@@ -65,9 +66,9 @@ void FPlayerShip::InitializeDefenses(UPlayViewBase& Arena)
 
 	Daylon::Install<SDaylonSprite>(InvincibilityShield, 0.5f);
 
-	InvincibilityShield->SetAtlas(Arena.DefensesAtlas->Atlas);
+	InvincibilityShield->SetAtlas(Arena.GetDefensesAtlas().Atlas);
 	InvincibilityShield->SetCurrentCel(InvincibilityDefenseAtlasCel);
-	InvincibilityShield->SetSize(Arena.DefensesAtlas->Atlas.GetCelPixelSize());
+	InvincibilityShield->SetSize(Arena.GetDefensesAtlas().Atlas.GetCelPixelSize());
 	InvincibilityShield->UpdateWidgetSize();
 	InvincibilityShield->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
 	InvincibilityShield->Hide();
@@ -75,7 +76,7 @@ void FPlayerShip::InitializeDefenses(UPlayViewBase& Arena)
 
 
 
-void FPlayerShip::Perform(UPlayViewBase& Arena, float DeltaTime)
+void FPlayerShip::Perform(IArena/*UPlayViewBase*/& Arena, float DeltaTime)
 {
 	// Update rotation.
 
@@ -83,26 +84,26 @@ void FPlayerShip::Perform(UPlayViewBase& Arena, float DeltaTime)
 
 	//UE_LOG(LogGame, Log, TEXT("Rotation force: %.5f"), Arena.RotationForce);
 
-	SetAngle(UDaylonUtils::WrapAngle(GetAngle() + Amt * Arena.RotationForce));
+	SetAngle(UDaylonUtils::WrapAngle(GetAngle() + Amt * Arena.GetRotationForce()));
 
 
 	// Change sprite cel only if the thrust state actually changed.
 
-	const bool bThrustStateChanged = (IsUnderThrust != Arena.bThrustActive);
+	const bool bThrustStateChanged = (IsUnderThrust != Arena.IsThrustActive());
 
-	IsUnderThrust = Arena.bThrustActive;
+	IsUnderThrust = Arena.IsThrustActive();
 
-	if (Arena.bThrustActive)
+	if(Arena.IsThrustActive())
 	{
 		if(bThrustStateChanged)
 		{
 			SetCurrentCel(PlayerShipThrustingAtlasCel);
-			Arena.PlayerShipThrustSoundLoop.Start();
+			Arena.GetPlayerShipThrustSoundLoop().Start();
 		}
 		else
 		{
 			// Still thrusting.
-			Arena.PlayerShipThrustSoundLoop.Tick(DeltaTime);
+			Arena.GetPlayerShipThrustSoundLoop().Tick(DeltaTime);
 		}
 
 		const float Thrust = PlayerThrustForce * DeltaTime;
@@ -127,12 +128,12 @@ void FPlayerShip::Perform(UPlayViewBase& Arena, float DeltaTime)
 		}
 	}
 
-	Move(DeltaTime, Arena.WrapPositionToViewport);
+	Move(DeltaTime, Arena.GetWrapPositionFunction());
 
 
 	// Update shield power levels.
 
-	Shield->Show(Arena.bShieldActive && ShieldsLeft > 0.0f);
+	Shield->Show(Arena.IsShieldActive() && ShieldsLeft > 0.0f);
 
 	if(Shield->IsVisible())
 	{
@@ -176,12 +177,12 @@ void FPlayerShip::Perform(UPlayViewBase& Arena, float DeltaTime)
 }
 
 
-void FPlayerShip::SpawnExplosion(UPlayViewBase& Arena)
+void FPlayerShip::SpawnExplosion(IArena/*UPlayViewBase*/& Arena)
 {
-	const auto P = GetPosition();
+	const auto P           = GetPosition();
 	const auto ShipInertia = Inertia * 0; // Don't use any inertia 
 
-	Arena.Explosions.SpawnOne(Arena, P, 
+	Arena.GetExplosions().SpawnOne(Arena, P, 
 		3.0f,
 		6.0f,
 		30.0f,
@@ -195,18 +196,7 @@ void FPlayerShip::SpawnExplosion(UPlayViewBase& Arena)
 
 	// Set up second explosion event for 3/4 second later
 
-	Daylon::FScheduledTask Task;
-
-	Task.When = 0.66f;
-
-	Task.What = [P, ShipInertia, ArenaPtr = TWeakObjectPtr<UPlayViewBase>(&Arena)]()
-	{
-		if(!ArenaPtr.IsValid() || ArenaPtr->GameState != EGameState::Active)
-		{
-			return;
-		}
-
-		ArenaPtr->Explosions.SpawnOne(*ArenaPtr.Get(), P, 
+	Arena.ScheduleExplosion(0.66f, P, ShipInertia, 
 			4.5f,
 			9.0f,
 			45.0f,
@@ -214,28 +204,25 @@ void FPlayerShip::SpawnExplosion(UPlayViewBase& Arena)
 			0.5f,
 			4.0f,
 			0.25f,
-			80,
-			ShipInertia);
-	};
-
-	Arena.ScheduledTasks.Add(Task);
+			80
+		);
 }
 
 
-bool FPlayerShip::ProcessCollision(UPlayViewBase& Arena)
+bool FPlayerShip::ProcessCollision(IArena& Arena)
 {
 	// Return true if we didn't get destroyed.
 
-	if(Arena.bGodMode || InvincibilityLeft > 0.0f)
+	if(Arena.IsGodModeActive() || InvincibilityLeft > 0.0f)
 	{
-		Arena.PlaySound(Arena.ShieldBonkSound);
+		Arena.PlaySound(Arena.GetShieldBonkSound());
 		return true;
 	}
 
 	if(Shield->IsVisible())
 	{
 		AdjustShieldsLeft(-ShieldBonkDamage);
-		Arena.PlaySound(Arena.ShieldBonkSound);
+		Arena.PlaySound(Arena.GetShieldBonkSound());
 		return true;
 	}
 
@@ -261,7 +248,7 @@ void FPlayerShip::AdjustDoubleShotsLeft(int32 Amount)
 }
 
 
-void FPlayerShip::FireTorpedo(UPlayViewBase& Arena)
+void FPlayerShip::FireTorpedo(IArena& Arena)
 {
 	const FVector2D PlayerFwd = GetDirectionVector();
 
@@ -270,27 +257,30 @@ void FPlayerShip::FireTorpedo(UPlayViewBase& Arena)
 	// Position torpedo at nose of player ship.
 
 
-	int32 TorpedoIndex = Arena.GetAvailableTorpedo();
+	auto TorpedoPtr = Arena.GetAvailableTorpedo();
 
-	if(TorpedoIndex == INDEX_NONE)
+	if(!TorpedoPtr)
 	{
 		return;
 	}
 
-	Arena.PlaySound(Arena.TorpedoSound);
+	auto& Torpedo = *TorpedoPtr.Get();
+
+
+	Arena.PlaySound(Arena.GetTorpedoSound());
 
     if(DoubleShotsLeft == 0)
 	{
 		// Find an available torpedo, spawn it at the nose of the player ship,
 		// and give it an inertia which is player ship intertia + player ship fwd * MaxTorpedoSpeed
 
-		auto& Torpedo = *Arena.Torpedos[TorpedoIndex].Get();
+		//auto& Torpedo = *Arena.Torpedos[TorpedoIndex].Get();
 
 		Torpedo.FiredByPlayer = true;
 
 		auto P = GetPosition();
 		P += PlayerFwd * (GetSize().Y / 2 + /*Inertia.Length()*/ 2.0); // The last offset is so that the bullet doesn't start off accidentally overlapping the player ship
-		P = Arena.WrapPositionToViewport(P);
+		P = Arena.WrapPosition(P);
 
 		Torpedo.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
 	}
@@ -298,32 +288,32 @@ void FPlayerShip::FireTorpedo(UPlayViewBase& Arena)
 	{
 		AdjustDoubleShotsLeft(-1);
 
-		auto& Torpedo1 = *Arena.Torpedos[TorpedoIndex].Get();
-		Torpedo1.FiredByPlayer = true;
+		Torpedo.FiredByPlayer = true;
 
 		auto P = PlayerFwd * (GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
 		P = UDaylonUtils::Rotate(P, 90.0f);
 		P += GetPosition();
 		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
-		P = Arena.WrapPositionToViewport(P);
+		P = Arena.WrapPosition(P);
 
-		Torpedo1.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
+		Torpedo.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
 
-		TorpedoIndex = Arena.GetAvailableTorpedo();
+		auto TorpedoPtr2 = Arena.GetAvailableTorpedo();
 
-		if(TorpedoIndex == INDEX_NONE)
+		if(!TorpedoPtr2)
 		{
 			return;
 		}
 
-		auto& Torpedo2 = *Arena.Torpedos[TorpedoIndex].Get();
+		auto& Torpedo2 = *TorpedoPtr2.Get();
+
 		Torpedo2.FiredByPlayer = true;
 
 		P = PlayerFwd * (GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
 		P = UDaylonUtils::Rotate(P, -90.0f);
 		P += GetPosition();
 		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
-		P = Arena.WrapPositionToViewport(P);
+		P = Arena.WrapPosition(P);
 
 		Torpedo2.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
 	}

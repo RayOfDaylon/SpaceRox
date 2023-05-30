@@ -82,6 +82,11 @@ float UDaylonUtils::WrapAngle(float Angle)
 }
 
 
+FVector2D UDaylonUtils::DeviateVector(const FVector2D& VectorOld, float MinDeviation, float MaxDeviation)
+{
+	return UDaylonUtils::Rotate(VectorOld, FMath::RandRange(MinDeviation, MaxDeviation));
+}
+
 
 bool UDaylonUtils::DoCirclesIntersect(const FVector2D& C1, float R1, const FVector2D& C2, float R2)
 {

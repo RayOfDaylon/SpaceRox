@@ -10,8 +10,7 @@
 #include "DaylonUtils.h"
 
 
-class UPlayViewBase;
-
+class IArena; 
 
 class FExplosion : public Daylon::PlayObject2D<SDaylonParticles>  
 {
@@ -42,9 +41,11 @@ struct FExplosions
 	float                            InertialFactor = 1.0f;
 
 
+	void SpawnOne(IArena& Arena, const FVector2D& P, const FVector2D& Inertia = FVector2D(0));
+
 	void SpawnOne
 	(
-		UPlayViewBase&   Arena,
+		IArena&          Arena,
 		const FVector2D& P,
 		float            MinParticleSize,
 		float            MaxParticleSize,
@@ -57,9 +58,9 @@ struct FExplosions
 		const FVector2D& Inertia = FVector2D(0)
 	);
 
-	void Update    (UPlayViewBase& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
+	void Update    (IArena& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
 
-	void RemoveAll (UPlayViewBase& Arena);
+	void RemoveAll (IArena& Arena);
 };
 
 // ---------------------------------------------------------------------------------------------------------
@@ -93,7 +94,7 @@ struct FShieldExplosions
 
 	void SpawnOne
 	(
-		UPlayViewBase&                     Arena,
+		IArena&                            Arena,
 		const FVector2D&                   P,
 		const TArray<FDaylonLineParticle>& Particles,
 		float                              ShieldThickness,
@@ -105,7 +106,7 @@ struct FShieldExplosions
 		const FVector2D&                   Inertia = FVector2D(0)
 	);
 
-	void Update    (UPlayViewBase& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
+	void Update    (IArena& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
 
-	void RemoveAll (UPlayViewBase& Arena);
+	void RemoveAll (IArena& Arena);
 };

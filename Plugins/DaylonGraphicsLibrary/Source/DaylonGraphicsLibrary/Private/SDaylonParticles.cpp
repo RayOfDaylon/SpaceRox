@@ -225,3 +225,5 @@ FVector2D SDaylonLineParticles::ComputeDesiredSize(float) const
 #if(DEBUG_MODULE == 1)
 #pragma optimize("", on)
 #endif
+
+#undef DEBUG_MODULE

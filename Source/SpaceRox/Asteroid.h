@@ -10,8 +10,7 @@
 #include "Powerup.h"
 
 
-class UPlayViewBase;
-
+class IArena;
 
 class FAsteroid : public FPlayObject
 {
@@ -23,5 +22,5 @@ class FAsteroid : public FPlayObject
 
 		static TSharedPtr<FAsteroid> Create(UDaylonSpriteWidgetAtlas* Atlas);
 	
-		TSharedPtr<FAsteroid> Split(UPlayViewBase& Arena);
+		TSharedPtr<FAsteroid> Split(IArena& Arena);
 };

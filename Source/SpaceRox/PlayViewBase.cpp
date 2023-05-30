@@ -51,10 +51,10 @@ DEFINE_LOG_CATEGORY(LogGame)
 
 // ------------------------------------------------------------------------------------------------------------------
 
-FVector2D UPlayViewBase::MakeInertia(const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation)
+/*FVector2D UPlayViewBase::MakeInertia(const FVector2D& InertiaOld, float MinDeviation, float MaxDeviation)
 {
 	return UDaylonUtils::Rotate(InertiaOld, FMath::RandRange(MinDeviation, MaxDeviation));
-}
+}*/
 
 
 FVector2D UPlayViewBase::WrapPositionToViewport(const FVector2D& P)
@@ -285,6 +285,49 @@ void UPlayViewBase::NativeOnInitialized()
 	LoadHighScores();
 
 	IsInitialized = true;
+}
+
+
+void UPlayViewBase::ScheduleExplosion
+(
+	float When,
+	const FVector2D& P, 
+	const FVector2D& Inertia, 
+	float MinParticleSize,
+	float MaxParticleSize,
+	float MinParticleVelocity,
+	float MaxParticleVelocity,
+	float MinParticleLifetime,
+	float MaxParticleLifetime,
+	float FinalOpacity,
+	int32 NumParticles
+)
+{
+	Daylon::FScheduledTask Task;
+
+	Task.When = When;
+
+	Task.What = [P, Inertia, MinParticleSize, MaxParticleSize, MinParticleVelocity, MaxParticleVelocity, MinParticleLifetime, MaxParticleLifetime, FinalOpacity, NumParticles,
+                 ArenaPtr = TWeakObjectPtr<UPlayViewBase>(this)]()
+	{
+		if(!ArenaPtr.IsValid() || !ArenaPtr->CanExplosionOccur())
+		{
+			return;
+		}
+
+		ArenaPtr->GetExplosions().SpawnOne(*ArenaPtr.Get(), P, 
+			MinParticleSize,
+			MaxParticleSize,
+			MinParticleVelocity,
+			MaxParticleVelocity,
+			MinParticleLifetime,
+			MaxParticleLifetime,
+			FinalOpacity,
+			NumParticles,
+			Inertia);
+	};
+
+	AddScheduledTask(Task);
 }
 
 
@@ -1296,7 +1339,7 @@ void UPlayViewBase::UpdatePowerups(float DeltaTime)
 
 void UPlayViewBase::SpawnExplosion(const FVector2D& P, const FVector2D& Inertia)
 {
-	Explosions.SpawnOne(*this, P, 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40, Inertia);
+	Explosions.SpawnOne(*this, P, Inertia);
 }
 
 
@@ -1946,7 +1989,16 @@ void UPlayViewBase::UpdateTorpedos(float DeltaTime)
 }
 
 
-int32 UPlayViewBase::GetAvailableTorpedo() const
+TSharedPtr<FTorpedo> UPlayViewBase::GetAvailableTorpedo()
+{
+	auto Index = GetIndexOfAvailableTorpedo();
+
+	return (Index == INDEX_NONE ? nullptr : Torpedos[Index]);
+}
+
+
+
+int32 UPlayViewBase::GetIndexOfAvailableTorpedo() const
 {
 	int32 Result = -1;
 

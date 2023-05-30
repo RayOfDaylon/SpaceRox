@@ -1,5 +1,5 @@
 #include "Explosions.h"
-#include "PlayViewBase.h"
+#include "Arena.h"
 
 
 TSharedPtr<FExplosion> FExplosion::Create
@@ -40,9 +40,15 @@ TSharedPtr<FExplosion> FExplosion::Create
 }
 
 
+void FExplosions::SpawnOne(IArena& Arena, const FVector2D& P, const FVector2D& Inertia)
+{
+	SpawnOne(Arena, P, 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40, Inertia);
+}
+
+
 void FExplosions::SpawnOne
 (
-	UPlayViewBase&   Arena,
+	IArena&          Arena,
 	const FVector2D& P,
 	float            MinParticleSize,
 	float            MaxParticleSize,
@@ -56,7 +62,7 @@ void FExplosions::SpawnOne
 )
 {
 	auto ExplosionPtr = FExplosion::Create(
-		Arena.TorpedoBrush,
+		Arena.GetExplosionParticleBrush(),
 		P,
 		MinParticleSize,
 		MaxParticleSize,
@@ -73,7 +79,7 @@ void FExplosions::SpawnOne
 }
 
 
-void FExplosions::Update(UPlayViewBase& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime)
+void FExplosions::Update(IArena& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime)
 {
 	for(int32 Index = Explosions.Num() - 1; Index >= 0; Index--)
 	{
@@ -85,18 +91,18 @@ void FExplosions::Update(UPlayViewBase& Arena, const TFunction<FVector2D(const F
 		
 		if(!Widget->Update(DeltaTime))
 		{
-			Arena.RootCanvas->GetCanvasWidget()->RemoveSlot(ExplosionPtr.ToSharedRef());
+			UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(ExplosionPtr.ToSharedRef());
 			Explosions.RemoveAtSwap(Index);
 		}
 	}
 }
 
 
-void FExplosions::RemoveAll(UPlayViewBase& Arena)
+void FExplosions::RemoveAll(IArena& Arena)
 {
 	while(!Explosions.IsEmpty())
 	{
-		Arena.RootCanvas->GetCanvasWidget()->RemoveSlot(Explosions.Last(0).ToSharedRef());
+		UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(Explosions.Last(0).ToSharedRef());
 		Explosions.Pop();
 	}
 }
@@ -139,7 +145,7 @@ TSharedPtr<FShieldExplosion> FShieldExplosion::Create
 
 void FShieldExplosions::SpawnOne
 (
-	UPlayViewBase&                     Arena,
+	IArena&                            Arena,
 	const FVector2D&                   P,
 	const TArray<FDaylonLineParticle>& Particles,
 	float                              ShieldThickness,
@@ -167,7 +173,7 @@ void FShieldExplosions::SpawnOne
 }
 
 
-void FShieldExplosions::Update(UPlayViewBase& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime)
+void FShieldExplosions::Update(IArena& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime)
 {
 	for(int32 Index = Explosions.Num() - 1; Index >= 0; Index--)
 	{
@@ -179,19 +185,19 @@ void FShieldExplosions::Update(UPlayViewBase& Arena, const TFunction<FVector2D(c
 		
 		if(!Widget->Update(DeltaTime))
 		{
-			Arena.RootCanvas->GetCanvasWidget()->RemoveSlot(ExplosionPtr.ToSharedRef());
+			Daylon::UninstallImpl(ExplosionPtr);
+			//UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(ExplosionPtr.ToSharedRef());
 			Explosions.RemoveAtSwap(Index);
 		}
 	}
 }
 
 
-void FShieldExplosions::RemoveAll(UPlayViewBase& Arena)
+void FShieldExplosions::RemoveAll(IArena& Arena)
 {
 	while(!Explosions.IsEmpty())
 	{
 		Daylon::UninstallImpl(Explosions.Last(0));
-		//Arena.RootCanvas->GetCanvasWidget()->RemoveSlot(Explosions.Last(0).ToSharedRef());
 		Explosions.Pop();
 	}
 }
