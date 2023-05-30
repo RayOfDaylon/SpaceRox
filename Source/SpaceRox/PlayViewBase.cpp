@@ -246,7 +246,7 @@ void UPlayViewBase::InitializeTitleGraphics()
 
 		TSharedPtr<FAnimSpriteCel> Cel = SNew(FAnimSpriteCel);
 		Daylon::Install<SImage>(Cel, 0.5f);
-		Cel->Init(TitleSheet, SrcUV, SrcPx, DstPx, Index * 0.2f, MaxIntroStateLifetime / 8);
+		Cel->Init(this, TitleSheet, SrcUV, SrcPx, DstPx, Index * 0.2f, MaxIntroStateLifetime / 8);
 
 		TitleCels.Add(Cel);
 
@@ -277,8 +277,6 @@ void UPlayViewBase::NativeOnInitialized()
 	InitializeVariables    ();
 	InitializeAtlases      ();
 	InitializeSoundLoops   ();
-
-
 
 	TransitionToState(EGameState::Intro);
 
@@ -836,7 +834,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			}
 
 			UDaylonUtils::Show(IntroContent);
-			TitleGraphic->SetOpacity(0.0f);
+			//TitleGraphic->SetOpacity(0.0f);
 
 
 			// Fade in the title graphic and version number while explosions rage

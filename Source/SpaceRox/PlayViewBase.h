@@ -90,10 +90,15 @@ class FAnimSpriteCel : public Daylon::ImagePlayObject2D
 	FInt32Rect  DstPx;
 	float       OriginalLifepsan;
 	float       StartAge;
+	IArena*     ArenaPtr = nullptr;
+	bool        bMadeSound = false;
 
 
-	void Init(const FSlateBrush& InBrush, const FBox2d& SrcUVs, const FInt32Rect& InSrcPx, const FInt32Rect& InDstPx, float InStartAge, float InAge)
+	void Init(IArena* Arena, const FSlateBrush& InBrush, const FBox2d& SrcUVs, const FInt32Rect& InSrcPx, const FInt32Rect& InDstPx, float InStartAge, float InAge)
 	{
+		check(Arena);
+		ArenaPtr = Arena;
+
 		check(Slot);
 		SetRenderTransformPivot(FVector2D(0));
 		Slot->SetAutoSize(false);
@@ -117,6 +122,12 @@ class FAnimSpriteCel : public Daylon::ImagePlayObject2D
 		{
 			SetRenderOpacity(0.0f);
 			return;
+		}
+
+		if(!bMadeSound)
+		{
+			ArenaPtr->PlaySound(ArenaPtr->GetTorpedoSound());
+			bMadeSound = true;
 		}
 
 		LifeRemaining = FMath::Max(0.0f, LifeRemaining - DeltaTime);
@@ -338,8 +349,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 
 	protected:
 
-	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
-	UImage* TitleGraphic;
+	//UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
+	//UImage* TitleGraphic;
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UTextBlock* VersionReadout;
