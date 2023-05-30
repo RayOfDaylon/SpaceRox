@@ -76,7 +76,7 @@ void FPlayerShip::InitializeDefenses(IArena& Arena)
 
 
 
-void FPlayerShip::Perform(IArena/*UPlayViewBase*/& Arena, float DeltaTime)
+void FPlayerShip::Perform(IArena& Arena, float DeltaTime)
 {
 	// Update rotation.
 
@@ -177,12 +177,13 @@ void FPlayerShip::Perform(IArena/*UPlayViewBase*/& Arena, float DeltaTime)
 }
 
 
-void FPlayerShip::SpawnExplosion(IArena/*UPlayViewBase*/& Arena)
+void FPlayerShip::SpawnExplosion(IArena& Arena)
 {
 	const auto P           = GetPosition();
 	const auto ShipInertia = Inertia * 0; // Don't use any inertia 
 
-	Arena.GetExplosions().SpawnOne(Arena, P, 
+	const static FDaylonParticlesParams Params =
+	{
 		3.0f,
 		6.0f,
 		30.0f,
@@ -190,22 +191,26 @@ void FPlayerShip::SpawnExplosion(IArena/*UPlayViewBase*/& Arena)
 		0.5f,
 		3.0f,
 		0.25f,
-		80,
-		ShipInertia);
+		80
+	};
 
+	Arena.GetExplosions().SpawnOne(Arena, P, Params, ShipInertia);
 
 	// Set up second explosion event for 3/4 second later
 
-	Arena.ScheduleExplosion(0.66f, P, ShipInertia, 
-			4.5f,
-			9.0f,
-			45.0f,
-			240.0f,
-			0.5f,
-			4.0f,
-			0.25f,
-			80
-		);
+	const static FDaylonParticlesParams Params2 =
+	{
+		4.5f,
+		9.0f,
+		45.0f,
+		240.0f,
+		0.5f,
+		4.0f,
+		0.25f,
+		80
+	};
+
+	Arena.ScheduleExplosion(0.66f, P, ShipInertia, Params2);
 }
 
 

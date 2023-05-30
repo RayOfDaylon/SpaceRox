@@ -98,7 +98,7 @@ void FEnemyShips::RemoveAll()
 }
 
 
-void FEnemyShips::KillShip(IArena/*UPlayViewBase*/& Arena, int32 Index)
+void FEnemyShips::KillShip(IArena& Arena, int32 Index)
 {
 	if(!Ships.IsValidIndex(Index))
 	{
@@ -131,9 +131,9 @@ void FEnemyShips::KillShip(IArena/*UPlayViewBase*/& Arena, int32 Index)
 			80);
 
 */ 
-	Arena.GetExplosions().SpawnOne(
-		Arena, 
-		Ship.GetPosition(),
+
+	const static FDaylonParticlesParams Params = 
+	{
 		 3.0f, 
 		 8.0f, 
 		30.0f, 
@@ -142,9 +142,10 @@ void FEnemyShips::KillShip(IArena/*UPlayViewBase*/& Arena, int32 Index)
 		 1.5f, 
 		 0.25f, 
 		60,
-		Ship.Inertia);
+	};
 
-	Arena.PlaySound(Arena.GetExplosionSound(Ship.Value == ValueBigEnemy ? 0 : 1));//.ExplosionSounds[]);
+	Arena.GetExplosions().SpawnOne(Arena, Ship.GetPosition(), Params, Ship.Inertia);
+	Arena.PlaySound(Arena.GetExplosionSound(Ship.Value == ValueBigEnemy ? 0 : 1));
 	RemoveShip(Index);
 }
 
@@ -183,9 +184,9 @@ void FEnemyShips::KillBoss(IArena& Arena, int32 Index)
 
 */ 
 	// Spawn explosion for the ship at the center.
-	Arena.GetExplosions().SpawnOne(
-		Arena, 
-		Boss.GetPosition(),
+
+	const static FDaylonParticlesParams Params = 
+	{
 		 3.0f, 
 		 8.0f, 
 		30.0f, 
@@ -193,10 +194,12 @@ void FEnemyShips::KillBoss(IArena& Arena, int32 Index)
 		 0.33f, 
 		 1.5f, 
 		 0.25f, 
-		60,
-		Boss.Inertia);
+		60
+	};
 
-	Arena.PlaySound(Arena.GetExplosionSound(0), 0.5f); // todo: use specific sound
+	Arena.GetExplosions().SpawnOne(Arena, Boss.GetPosition(), Params, Boss.Inertia);
+
+	Arena.PlaySound(Arena.GetExplosionSound(0)); // todo: use specific sound
 
 
 	// Spawn explosion for any surviving shields.
@@ -325,18 +328,18 @@ void FEnemyShips::KillScavenger(IArena& Arena, int32 Index)
 
 	const float ExplosionScale = FMath::Clamp(NumAcquiredPowerups, 0, 10) * 0.1f;
 
-	Arena.GetExplosions().SpawnOne(
-		Arena,
-		Scavenger.GetPosition(), 
-		 FMath::Lerp(2.0f, 6.0f, ExplosionScale), 
-		 FMath::Lerp(6.0f, 12.0f, ExplosionScale), 
-		30.0f, 
-       FMath::Lerp(120.0f, 180.0f, ExplosionScale),
-		 FMath::Lerp(0.33f, 0.67f, ExplosionScale), 
-		 FMath::Lerp(1.25f, 2.0f, ExplosionScale), 
-		 0.25f, 
-		FMath::Lerp(60, 120, ExplosionScale),
-		Scavenger.Inertia);
+	FDaylonParticlesParams Params;
+
+	Params.MinParticleSize     = FMath::Lerp(2.0f, 6.0f, ExplosionScale);
+	Params.MaxParticleSize     = FMath::Lerp(6.0f, 12.0f, ExplosionScale);
+	Params.MinParticleVelocity = 30.0f;
+	Params.MaxParticleVelocity = FMath::Lerp(120.0f, 180.0f, ExplosionScale);
+	Params.MinParticleLifetime = FMath::Lerp(0.33f, 0.67f, ExplosionScale);
+	Params.MaxParticleLifetime = FMath::Lerp(1.25f, 2.0f, ExplosionScale);
+	Params.FinalOpacity        = 0.25f;
+	Params.NumParticles        = FMath::Lerp(60, 120, ExplosionScale);
+
+	Arena.GetExplosions().SpawnOne(Arena, Scavenger.GetPosition(), Params, Scavenger.Inertia);
 
 	// todo: have scavenger explosion sound
 	Arena.PlaySound(Arena.GetExplosionSound(0));

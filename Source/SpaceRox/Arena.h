@@ -18,6 +18,7 @@
 
 class FTorpedo;
 class FPlayerShip;
+struct FDaylonParticlesParams;
 
 namespace Daylon { struct FScheduledTask; struct FLoopedSound; }
 
@@ -31,11 +32,7 @@ class IArena
 		virtual FVector2D                  WrapPosition               (const FVector2D& P) = 0;
 
 		virtual void                       AddScheduledTask           (Daylon::FScheduledTask&) = 0;
-		virtual void                       ScheduleExplosion          (float When, const FVector2D& P, const FVector2D& Inertia, 
-                                                                       float MinParticleSize,      float MaxParticleSize,
-                                                                       float MinParticleVelocity,  float MaxParticleVelocity,
-                                                                       float MinParticleLifetime,  float MaxParticleLifetime,
-                                                                       float FinalOpacity,         int32 NumParticles) = 0;
+		virtual void                       ScheduleExplosion          (float When, const FVector2D& P, const FVector2D& Inertia, const FDaylonParticlesParams& Params) = 0;
 
 		virtual Daylon::FLoopedSound&      GetBigEnemySoundLoop       () = 0;
 		virtual Daylon::FLoopedSound&      GetSmallEnemySoundLoop     () = 0;

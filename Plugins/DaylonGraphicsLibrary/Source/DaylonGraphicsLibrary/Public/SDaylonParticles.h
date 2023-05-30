@@ -5,6 +5,18 @@
 #include "SlateCore/Public/Widgets/SLeafWidget.h"
 
 
+struct DAYLONGRAPHICSLIBRARY_API FDaylonParticlesParams
+{
+	float MinParticleSize;
+	float MaxParticleSize;
+	float MinParticleVelocity;
+	float MaxParticleVelocity;
+	float MinParticleLifetime;
+	float MaxParticleLifetime;
+	float FinalOpacity;
+	int32 NumParticles;
+};
+
 
 // SDaylonParticles - a Slate widget with a custom Paint event.
 

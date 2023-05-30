@@ -367,7 +367,8 @@ void FEnemyBoss::SpawnExplosion(IArena& Arena)
 	const auto P = GetPosition();
 	const auto ShipInertia = Inertia;
 
-	Arena.GetExplosions().SpawnOne(Arena, P, 
+	const static FDaylonParticlesParams Params = 
+	{
 		4.5f,
 		9.0f,
 		45.0f,
@@ -375,8 +376,10 @@ void FEnemyBoss::SpawnExplosion(IArena& Arena)
 		0.5f,
 		4.0f,
 		0.25f,
-		80,
-		ShipInertia);
+		80
+	};
+
+	Arena.GetExplosions().SpawnOne(Arena, P,  Params, ShipInertia);
 }
 
 

@@ -15,11 +15,14 @@
 #include "UMG/Public/Components/EditableTextBox.h"
 #include "Runtime/SlateCore/Public/Widgets/SOverlay.h"
 #include "Runtime/Engine/Classes/Sound/SoundBase.h"
+
 #include "UDaylonParticlesWidget.h"
 #include "UDaylonSpriteWidget.h"
 #include "DaylonUtils.h"
 #include "PlayObject.h"
+
 #include "Arena.h"
+#include "AnimSpriteCel.h"
 #include "Powerup.h"
 #include "PlayerShip.h"
 #include "EnemyShip.h"
@@ -33,7 +36,6 @@
 
 
 
-
 enum class EMenuItem : uint8
 {
 	StartPlaying   = 0,
@@ -44,8 +46,6 @@ enum class EMenuItem : uint8
 
 	Count
 };
-
-
 
 
 enum class EGameState : uint8
@@ -82,72 +82,6 @@ enum class EGameState : uint8
 };
 
 
-class FAnimSpriteCel : public Daylon::ImagePlayObject2D
-{
-	public:
-
-	FInt32Rect  SrcPx;
-	FInt32Rect  DstPx;
-	float       OriginalLifepsan;
-	float       StartAge;
-	IArena*     ArenaPtr = nullptr;
-	bool        bMadeSound = false;
-
-
-	void Init(IArena* Arena, const FSlateBrush& InBrush, const FBox2d& SrcUVs, const FInt32Rect& InSrcPx, const FInt32Rect& InDstPx, float InStartAge, float InAge)
-	{
-		check(Arena);
-		ArenaPtr = Arena;
-
-		check(Slot);
-		SetRenderTransformPivot(FVector2D(0));
-		Slot->SetAutoSize(false);
-		Slot->SetAlignment(FVector2D(0));
-
-		SetBrush(InBrush);
-		Brush.SetUVRegion(SrcUVs);
-
-		SrcPx = InSrcPx;
-		DstPx = InDstPx;
-		OriginalLifepsan = LifeRemaining = InAge;
-		StartAge = InStartAge;
-	}
-
-
-	virtual void Update(float DeltaTime) override
-	{
-		StartAge -= DeltaTime;
-
-		if(StartAge > 0.0f)
-		{
-			SetRenderOpacity(0.0f);
-			return;
-		}
-
-		if(!bMadeSound)
-		{
-			ArenaPtr->PlaySound(ArenaPtr->GetTorpedoSound());
-			bMadeSound = true;
-		}
-
-		LifeRemaining = FMath::Max(0.0f, LifeRemaining - DeltaTime);
-
-		const float T = 1.0f - (LifeRemaining / OriginalLifepsan);
-		const float Opacity = T;
-
-		SetRenderOpacity(Opacity);
-
-		FInt32Rect CurrentRect(
-			FMath::RoundHalfFromZero(FMath::Lerp((float)SrcPx.Min.X, (float)DstPx.Min.X, T)),
-			FMath::RoundHalfFromZero(FMath::Lerp((float)SrcPx.Min.Y, (float)DstPx.Min.Y, T)),
-			FMath::RoundHalfFromZero(FMath::Lerp((float)SrcPx.Max.X, (float)DstPx.Max.X, T)),
-			FMath::RoundHalfFromZero(FMath::Lerp((float)SrcPx.Max.Y, (float)DstPx.Max.Y, T))
-		);
-
-		SetPosition    (CurrentRect.Min);
-		SetSizeInSlot  (FVector2D(CurrentRect.Width(), CurrentRect.Height()));
-	};
-};
 
 
 // Base view class of the SpaceRox game arena.
@@ -200,13 +134,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> ThrustSound;
 
-	public:
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TArray<TObjectPtr<USoundBase>> ExplosionSounds;
-
-
-	protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> DoubleTorpedoSound;
@@ -232,9 +161,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> ForwardSound;
 
-
-	public:
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Audio")
 	TObjectPtr<USoundBase> ShieldBonkSound;
 
@@ -242,11 +168,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	TObjectPtr<USoundBase> TorpedoSound;
 
 
-	protected:
-
 	// -- Textures --------------------------------------------------------------
-
-	public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* SmallRockAtlas;
@@ -281,8 +203,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	FSlateBrush TitleSheet;
 
-	protected:
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* PlayerShipAtlas;
 
@@ -292,7 +212,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* TorpedoAtlas;
-
 
 
 	// -- USpriteWidgetAtlas animated textures -------------------------------------
@@ -308,7 +227,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	// The animation flipbook for the asteroids' invincibility powerup badge 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Objects)
 	UDaylonSpriteWidgetAtlas* InvincibilityPowerupAtlas;
-
 
 
 	// -- Fonts -------------------------------------------------
@@ -342,7 +260,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 
 	
 	// -- Design-time widgets -----------------------------------------------------------
-
 
 	UPROPERTY(BlueprintReadWrite, meta = (BindWidget))
 	UCanvasPanel* RootCanvas;
@@ -441,6 +358,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 
 	// -- IArena implementation --------------------------------------------------------------------------------------------------------
 
+	protected:
+
 	virtual TFunction<FVector2D(const FVector2D&)> GetWrapPositionFunction() const { return WrapPositionToViewport; }
 
 	virtual void                          AddScheduledTask             (Daylon::FScheduledTask& Task) { ScheduledTasks.Add(Task); }
@@ -495,16 +414,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	virtual void                          SetTimeUntilNextBoss         (float Value) override { TimeUntilNextBoss = Value; }
 
 									      
-	virtual void                          ScheduleExplosion            (float When, const FVector2D& P, const FVector2D& Inertia, 
-                                                                        float MinParticleSize,     float MaxParticleSize,
-                                                                        float MinParticleVelocity, float MaxParticleVelocity,
-                                                                        float MinParticleLifetime, float MaxParticleLifetime,
-                                                                        float FinalOpacity,        int32 NumParticles) override;
+	virtual void                          ScheduleExplosion            (float When, const FVector2D& P, const FVector2D& Inertia, const FDaylonParticlesParams& Params) override;
 
-	protected:
-
-
-	// -- Class methods --------------------------------------------------
+	// -- Class methods ----------------------------------------------------------------------------------------------------------------------------
 
 	void      TransitionToState          (EGameState State);
 	void      StopRunning                (const FString& Reason, bool bFatal = false);
@@ -548,8 +460,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 
 	void      UpdateRoundedReadout(UTextBlock* Readout, float Value, int32& OldValue);
 
-	public:
-
 	static FVector2D WrapPositionToViewport  (const FVector2D& P);
 
 	int32     GetIndexOfAvailableTorpedo () const;
@@ -564,8 +474,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	FShieldExplosions                 ShieldExplosions;
 
 
-	protected:
-
 	// -- Called every frame -----------------------------------------------------------
 
 	void ProcessWaveTransition     (float DeltaTime);
@@ -574,15 +482,12 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	void CheckCollisions           ();
 	void ProcessPlayerCollision    ();
 
-	//void UpdateAsteroids           (float DeltaTime);
 	void UpdateTorpedos            (float DeltaTime);
 	void UpdatePowerups            (float DeltaTime);
 	void UpdateTasks               (float DeltaTime);
 
 
 	// -- Member variables -----------------------------------------------------------
-
-	public:
 
 	Daylon::TBindableValue<int32>   PlayerScore;
 	Daylon::FLoopedSound            PlayerShipThrustSoundLoop;
@@ -596,29 +501,25 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	float                           TimeUntilNextBoss;
 	float                           TimeUntilNextScavenger;
 
-	TArray<TSharedPtr<FAnimSpriteCel>>    TitleCels; // Used to animate intro screen
-
-
-	protected:
-
 	FEnemyShips                     EnemyShips;
 
 	Daylon::FHighScoreTable         HighScores;
 	Daylon::FHighScore              MostRecentHighScore;
 	UTextBlock*                     MostRecentHighScoreTextBlock[2];
 
+	TArray<TSharedPtr<FAnimSpriteCel>>    TitleCels; // Used to animate intro screen
 
-	EMenuItem    SelectedMenuItem;
-	int32        NumPlayerShips;
-	int32        WaveNumber;
-	float        TimeUntilNextWave;
-	float        ThrustSoundTimeRemaining;
-	float        StartMsgAnimationAge;
-	float        TimeUntilIntroStateEnds;
-	float        TimeUntilNextPlayerShip;
-	float        TimeUntilGameOverStateEnds;
-	float        MruHighScoreAnimationAge;
-	bool         IsInitialized;
-	bool         bHighScoreWasEntered;
+	EMenuItem                       SelectedMenuItem;
+	int32                           NumPlayerShips;
+	int32                           WaveNumber;
+	float                           TimeUntilNextWave;
+	float                           ThrustSoundTimeRemaining;
+	float                           StartMsgAnimationAge;
+	float                           TimeUntilIntroStateEnds;
+	float                           TimeUntilNextPlayerShip;
+	float                           TimeUntilGameOverStateEnds;
+	float                           MruHighScoreAnimationAge;
+	bool                            IsInitialized;
+	bool                            bHighScoreWasEntered;
 };
 

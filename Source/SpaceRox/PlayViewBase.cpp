@@ -288,41 +288,24 @@ void UPlayViewBase::NativeOnInitialized()
 
 void UPlayViewBase::ScheduleExplosion
 (
-	float When,
-	const FVector2D& P, 
-	const FVector2D& Inertia, 
-	float MinParticleSize,
-	float MaxParticleSize,
-	float MinParticleVelocity,
-	float MaxParticleVelocity,
-	float MinParticleLifetime,
-	float MaxParticleLifetime,
-	float FinalOpacity,
-	int32 NumParticles
+	float                         When,
+	const FVector2D&              P, 
+	const FVector2D&              Inertia, 
+	const FDaylonParticlesParams& Params
 )
 {
 	Daylon::FScheduledTask Task;
 
 	Task.When = When;
 
-	Task.What = [P, Inertia, MinParticleSize, MaxParticleSize, MinParticleVelocity, MaxParticleVelocity, MinParticleLifetime, MaxParticleLifetime, FinalOpacity, NumParticles,
-                 ArenaPtr = TWeakObjectPtr<UPlayViewBase>(this)]()
+	Task.What = [P, Inertia, Params, ArenaPtr = TWeakObjectPtr<UPlayViewBase>(this)]()
 	{
 		if(!ArenaPtr.IsValid() || !ArenaPtr->CanExplosionOccur())
 		{
 			return;
 		}
 
-		ArenaPtr->GetExplosions().SpawnOne(*ArenaPtr.Get(), P, 
-			MinParticleSize,
-			MaxParticleSize,
-			MinParticleVelocity,
-			MaxParticleVelocity,
-			MinParticleLifetime,
-			MaxParticleLifetime,
-			FinalOpacity,
-			NumParticles,
-			Inertia);
+		ArenaPtr->GetExplosions().SpawnOne(*ArenaPtr.Get(), P, Params, Inertia);
 	};
 
 	AddScheduledTask(Task);
@@ -865,8 +848,8 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 					{
 						ExploCountAge = FMath::FRandRange(0.05f, 0.2f);
 
-						Explosions.SpawnOne(*this,
-							UDaylonUtils::RandomPtWithinBox(Box),
+						const static FDaylonParticlesParams Params =
+						{
 							4.5f,   // MinParticleSize
 							9.0f,   // MaxParticleSize
 							45.0f,  // MinParticleVelocity
@@ -875,7 +858,9 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 							4.0f,   // MaxParticleLifetime
 							0.25f,  // FinalOpacity
 							80      // NumParticles
-							);
+						};
+
+						Explosions.SpawnOne(*this, UDaylonUtils::RandomPtWithinBox(Box), Params);
 
 						if(FMath::RandRange(0, 5) == 0)
 						{

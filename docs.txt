@@ -63,6 +63,7 @@ Source
         Powerup.*              Powerup class
         Scavenger.*            The scavenger enemy
         Torpedo.*              The bullets fired by all shooters
+        AnimSpriteCel.h        Widget used to animate title graphic
 
 
 Setting Up

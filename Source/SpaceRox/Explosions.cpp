@@ -4,28 +4,21 @@
 
 TSharedPtr<FExplosion> FExplosion::Create
 (
-	FSlateBrush&     Brush,
-	const FVector2D& P,
-	float            MinParticleSize,
-	float            MaxParticleSize,
-	float            MinParticleVelocity,
-	float            MaxParticleVelocity,
-	float            MinParticleLifetime,
-	float            MaxParticleLifetime,
-	float            FinalOpacity,
-	int32            NumParticles,
-	const FVector2D& Inertia
+	FSlateBrush&                  Brush,
+	const FVector2D&              P,
+	const FDaylonParticlesParams& Params,
+	const FVector2D&              Inertia
 )
 {
 	auto Widget = SNew(FExplosion)
-		.MinParticleSize     ( MinParticleSize)
-		.MaxParticleSize     ( MaxParticleSize)
-		.MinParticleVelocity ( MinParticleVelocity)
-		.MaxParticleVelocity ( MaxParticleVelocity)
-		.MinParticleLifetime ( MinParticleLifetime)
-		.MaxParticleLifetime ( MaxParticleLifetime)
-		.FinalOpacity        ( FinalOpacity)
-		.NumParticles(NumParticles);
+		.MinParticleSize     (Params.MinParticleSize)
+		.MaxParticleSize     (Params.MaxParticleSize)
+		.MinParticleVelocity (Params.MinParticleVelocity)
+		.MaxParticleVelocity (Params.MaxParticleVelocity)
+		.MinParticleLifetime (Params.MinParticleLifetime)
+		.MaxParticleLifetime (Params.MaxParticleLifetime)
+		.FinalOpacity        (Params.FinalOpacity)
+		.NumParticles        (Params.NumParticles);
 
 	Daylon::Install<SDaylonParticles>(Widget, 0.5f);
 
@@ -42,38 +35,18 @@ TSharedPtr<FExplosion> FExplosion::Create
 
 void FExplosions::SpawnOne(IArena& Arena, const FVector2D& P, const FVector2D& Inertia)
 {
-	SpawnOne(Arena, P, 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40, Inertia);
+	// Spawn a default explosion.
+	// This one mimics the original Asteroids arcade explosion; small unfading particles with a small dispersal radius.
+
+	const static FDaylonParticlesParams Params = { 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40 };
+
+	SpawnOne(Arena, P, Params, Inertia);
 }
 
 
-void FExplosions::SpawnOne
-(
-	IArena&          Arena,
-	const FVector2D& P,
-	float            MinParticleSize,
-	float            MaxParticleSize,
-	float            MinParticleVelocity,
-	float            MaxParticleVelocity,
-	float            MinParticleLifetime,
-	float            MaxParticleLifetime,
-	float            FinalOpacity,
-	int32            NumParticles,
-	const FVector2D& Inertia
-)
+void FExplosions::SpawnOne(IArena& Arena, const FVector2D& P, const FDaylonParticlesParams& Params, const FVector2D& Inertia)
 {
-	auto ExplosionPtr = FExplosion::Create(
-		Arena.GetExplosionParticleBrush(),
-		P,
-		MinParticleSize,
-		MaxParticleSize,
-		MinParticleVelocity,
-		MaxParticleVelocity,
-		MinParticleLifetime,
-		MaxParticleLifetime,
-		FinalOpacity,
-		NumParticles,
-		Inertia * InertialFactor
-	);
+	auto ExplosionPtr = FExplosion::Create(Arena.GetExplosionParticleBrush(), P, Params, Inertia * InertialFactor);
 
 	Explosions.Add(ExplosionPtr);
 }
