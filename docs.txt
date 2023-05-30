@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 29, 2023
+May 30, 2023
 
 
 
@@ -116,6 +116,13 @@ playfield will be clear of asteroids.
     When a small enemy ship appears, do not sit still or drift, or you will 
 be shot.
 
+Minibosses were added in version 1.8. These are shielded enemies that will 
+fire randomly at first, then get more accurate. Bosses with a single shield 
+layer will appear first, then dual-shielded bosses will become more common.
+The shields are composed of multiple rotating segments that darken when hit, 
+and your best strategy is to fly around to keep aiming at the darkest segments.
+Their shields also drain when hit by asteroids and other enemy torpedos.
+
 Powerups were added in version 1.4. One in four large asteroids will spawn 
 containing a double-gun or shield powerup. The powerup will be transferred 
 to one of the child rocks when the asteroid is split, until the asteroid 
@@ -127,10 +134,22 @@ I made them just hold their position. The powerup value readouts are in
 the upper right corner of the screen.
 
 The shield powerup grants 20 seconds of shield time. Hold down the space bar 
-to raise the shield.
+to raise the shield. If your shield is hit, a few seconds of shield time 
+will be deducted.
 
 The double-gun (or power) powerup grants 100 double-shot rounds. The player ship 
 will automatically switch to double guns if any such rounds have been acquired.
+Double guns make a huge difference in destroying big and medium-sized asteroids, 
+and overall improve your chances of hitting targets.
+
+The invincibility (or star) powerup grants 30 seconds of invincibility 
+taking effect immediately upon acquisition. A bright form-fitting shield 
+will surround your ship. No time is removed for collisions. During the 
+final five seconds, the shield will blink to alert you that it will soon collapse. 
+A good strategy is to acquire this powerup as late as you can in the early waves, 
+otherwise they will get used up when you don't really need them. In later waves, 
+you want to prioritize them over everything else. You can use the normal shield 
+at the same time, but it's redundant to do so.
 
 
 
