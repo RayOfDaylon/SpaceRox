@@ -22,5 +22,5 @@ class FScavenger : public FPlayObject
 	TWeakPtr<FPowerup> CurrentTarget;
 
 
-	static TSharedPtr<FScavenger> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S);
+	static TSharedPtr<FScavenger> Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S);
 };

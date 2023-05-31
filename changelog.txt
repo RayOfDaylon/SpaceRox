@@ -1,8 +1,17 @@
 Change log for Stellar Mayhem
 
 
+IArena sprite atlas getters return const FDaylonSpriteAtlas& instead of 
+UDaylonSpriteWidgetAtlas*, since the latter was just a thin wrapper 
+around the former. IArena users don't need to know about UDaylonSpriteWidgetAtlas.
+
+Replaced IArena& arguments to play object methods and their collections' methods
+with an IArena* class member which is initialized after object creation, 
+so the calling code is less verbose.
+
 Explosion spawn parameters consolidated into FDaylonParticlesParams, 
 spawn callers now use mostly static const vars of that type.
+Same for shield explosions.
 
 
 Version 1.8.4

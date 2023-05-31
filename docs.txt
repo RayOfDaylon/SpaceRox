@@ -45,6 +45,7 @@ Plugins
     DaylonGraphicsLibrary      Reusable code for widget-based 2D games
         DaylonUtils.*              Library routines and types
         SDaylonParticles.*         A widget used to efficiently draw explosions
+        SDaylonLineParticles.*     A widget that draws explosions of lines
         SDaylonSprite.*            A widget used to draw animated textures
         docs.txt                   Plugin-specific documentation
 
@@ -355,10 +356,11 @@ and the high score table as well.
 
 It would be good to add component members to FPlayObject2D to avoid 
 doing the subclasses' features entirely by inheritance, to have 
-class dtors automatically remove widgets from the canvas, and have 
-"subscribable variables" so that things like player score and the 
-powerup readouts automatically update their widgets when the 
-related value variable changes.
+class dtors automatically remove widgets from the canvas.
+
+We could have all the torpedos be drawn by a single 
+Slate widget similar to how SDaylonParticles works, 
+removing 20-30 widgets from the scenegraph.
 
 There's still some duplicate code so we want patterns or function consolidation.
 

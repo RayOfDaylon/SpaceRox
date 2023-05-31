@@ -7,13 +7,13 @@
 #include "Constants.h"
 
 
-TSharedPtr<FScavenger> FScavenger::Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S)
+TSharedPtr<FScavenger> FScavenger::Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S)
 {
 	auto Widget = SNew(FScavenger);
 
 	Daylon::Install<SDaylonSprite>(Widget, 0.5f);
 
-	Widget->SetAtlas(Atlas->Atlas);
+	Widget->SetAtlas(Atlas);
 	Widget->SetSize(S);
 	Widget->UpdateWidgetSize();
 

@@ -33,26 +33,26 @@ TSharedPtr<FExplosion> FExplosion::Create
 }
 
 
-void FExplosions::SpawnOne(IArena& Arena, const FVector2D& P, const FVector2D& Inertia)
+void FExplosions::SpawnOne(const FVector2D& P, const FVector2D& Inertia)
 {
 	// Spawn a default explosion.
 	// This one mimics the original Asteroids arcade explosion; small unfading particles with a small dispersal radius.
 
 	const static FDaylonParticlesParams Params = { 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40 };
 
-	SpawnOne(Arena, P, Params, Inertia);
+	SpawnOne(P, Params, Inertia);
 }
 
 
-void FExplosions::SpawnOne(IArena& Arena, const FVector2D& P, const FDaylonParticlesParams& Params, const FVector2D& Inertia)
+void FExplosions::SpawnOne(const FVector2D& P, const FDaylonParticlesParams& Params, const FVector2D& Inertia)
 {
-	auto ExplosionPtr = FExplosion::Create(Arena.GetExplosionParticleBrush(), P, Params, Inertia * InertialFactor);
+	auto ExplosionPtr = FExplosion::Create(Arena->GetExplosionParticleBrush(), P, Params, Inertia * InertialFactor);
 
 	Explosions.Add(ExplosionPtr);
 }
 
 
-void FExplosions::Update(IArena& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime)
+void FExplosions::Update(const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime)
 {
 	for(int32 Index = Explosions.Num() - 1; Index >= 0; Index--)
 	{
@@ -71,7 +71,7 @@ void FExplosions::Update(IArena& Arena, const TFunction<FVector2D(const FVector2
 }
 
 
-void FExplosions::RemoveAll(IArena& Arena)
+void FExplosions::RemoveAll()
 {
 	while(!Explosions.IsEmpty())
 	{
@@ -85,23 +85,11 @@ void FExplosions::RemoveAll(IArena& Arena)
 TSharedPtr<FShieldExplosion> FShieldExplosion::Create
 (
 	const FVector2D&                   P,
-	const TArray<FDaylonLineParticle>& Particles,
-	float                              ShieldThickness,
-	float                              MinParticleVelocity,
-	float                              MaxParticleVelocity,
-	float                              MinParticleLifetime,
-	float                              MaxParticleLifetime,
-	float                              FinalOpacity,
+	const FDaylonLineParticlesParams&  Params,
 	const FVector2D&                   Inertia
 )
 {
-	auto Widget = SNew(FShieldExplosion)
-		.MinParticleVelocity (MinParticleVelocity)
-		.MaxParticleVelocity (MaxParticleVelocity)
-		.MinParticleLifetime (MinParticleLifetime)
-		.MaxParticleLifetime (MaxParticleLifetime)
-		.LineThickness       (ShieldThickness)
-		.FinalOpacity        (FinalOpacity);
+	auto Widget = SNew(FShieldExplosion);
 
 	Daylon::Install<SDaylonLineParticles>(Widget, 0.5f);
 
@@ -110,7 +98,7 @@ TSharedPtr<FShieldExplosion> FShieldExplosion::Create
 	Widget->SetRenderTransformPivot(FVector2D(0.5f));
 	Widget->SetPosition(P);
 	Widget->UpdateWidgetSize();
-	Widget->SetParticles(Particles);
+	Widget->Set(Params);
 
 	return Widget;
 }
@@ -118,35 +106,18 @@ TSharedPtr<FShieldExplosion> FShieldExplosion::Create
 
 void FShieldExplosions::SpawnOne
 (
-	IArena&                            Arena,
 	const FVector2D&                   P,
-	const TArray<FDaylonLineParticle>& Particles,
-	float                              ShieldThickness,
-	float                              MinParticleVelocity,
-	float                              MaxParticleVelocity,
-	float                              MinParticleLifetime,
-	float                              MaxParticleLifetime,
-	float                              FinalOpacity,
+	const FDaylonLineParticlesParams&  Params,
 	const FVector2D&                   Inertia
 )
 {
-	auto ExplosionPtr = FShieldExplosion::Create(
-		P,
-		Particles,
-		ShieldThickness,
-		MinParticleVelocity,
-		MaxParticleVelocity,
-		MinParticleLifetime,
-		MaxParticleLifetime,
-		FinalOpacity,
-		Inertia * InertialFactor
-	);
+	auto ExplosionPtr = FShieldExplosion::Create(P, Params, Inertia * InertialFactor);
 
 	Explosions.Add(ExplosionPtr);
 }
 
 
-void FShieldExplosions::Update(IArena& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime)
+void FShieldExplosions::Update(const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime)
 {
 	for(int32 Index = Explosions.Num() - 1; Index >= 0; Index--)
 	{
@@ -159,14 +130,13 @@ void FShieldExplosions::Update(IArena& Arena, const TFunction<FVector2D(const FV
 		if(!Widget->Update(DeltaTime))
 		{
 			Daylon::UninstallImpl(ExplosionPtr);
-			//UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(ExplosionPtr.ToSharedRef());
 			Explosions.RemoveAtSwap(Index);
 		}
 	}
 }
 
 
-void FShieldExplosions::RemoveAll(IArena& Arena)
+void FShieldExplosions::RemoveAll()
 {
 	while(!Explosions.IsEmpty())
 	{

@@ -9,7 +9,6 @@
 #include "PlayObject.h"
 
 
-//class UPlayViewBase;
 class IArena;
 
 
@@ -17,18 +16,20 @@ class FEnemyShip : public FPlayObject
 {
 	public:
 
+	IArena* Arena = nullptr;
+
 	float TimeRemainingToNextShot = 0.0f;
 	float TimeRemainingToNextMove = 0.0f;
 	bool  bShootAtPlayer          = false;
 
 
-	static TSharedPtr<FEnemyShip> Create(UDaylonSpriteWidgetAtlas* Atlas, int Value, float RadiusFactor);
+	static TSharedPtr<FEnemyShip> Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas, int Value, float RadiusFactor);
 
 	FEnemyShip();
 
-	void Perform(IArena& Arena, float DeltaTime);
+	void Perform(float DeltaTime);
 
-	void Shoot(IArena& Arena);
+	void Shoot();
 };
 
 
@@ -39,6 +40,8 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 
 	public:
 
+	IArena* Arena = nullptr;
+
 	float                                 TimeRemainingToNextShot = 0.0f;
 	float                                 TimeRemainingToNextMove = 0.0f;
 	int32                                 NumShields = 0;
@@ -48,7 +51,7 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 	TArray<TSharedPtr<SDaylonPolyShield>> Shields;
 	TArray<FOverlaySlot*>                 ShieldSlots;
 
-	static TSharedPtr<FEnemyBoss> Create(UDaylonSpriteWidgetAtlas* Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed = 100.0f);
+	static TSharedPtr<FEnemyBoss> Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed = 100.0f);
 
 	void  Update                   (float DeltaTime);
 	int32 CheckCollision           (const FVector2D& P1, const FVector2D &P2, int32& ShieldSegmentIndex) const;
@@ -57,7 +60,7 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 	void  SetShieldSegmentHealth   (int32 ShieldNumber, int32 SegmentIndex, float Health);
 	void  GetShieldSegmentGeometry (int32 ShieldNumber, int32 SegmentIndex, FVector2D& P1, FVector2D& P2) const;
 	float GetShieldThickness       () const;
-	void  SpawnExplosion           (IArena& Arena);
-	void  Perform                  (IArena& Arena, float DeltaTime);
-	void  Shoot                    (IArena& Arena);
+	void  SpawnExplosion           ();
+	void  Perform                  (float DeltaTime);
+	void  Shoot                    ();
 };

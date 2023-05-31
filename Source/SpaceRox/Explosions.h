@@ -7,6 +7,7 @@
 
 #include "CoreMinimal.h"
 #include "SDaylonParticles.h"
+#include "SDaylonLineParticles.h"
 #include "DaylonUtils.h"
 
 
@@ -24,14 +25,16 @@ class FExplosion : public Daylon::PlayObject2D<SDaylonParticles>
 
 struct FExplosions
 {
+	IArena* Arena = nullptr;
+
 	TArray<TSharedPtr<FExplosion>>   Explosions; 
 	float                            InertialFactor = 1.0f;
 
 
-	void  SpawnOne  (IArena& Arena, const FVector2D& P, const FVector2D& Inertia = FVector2D(0));
-	void  SpawnOne  (IArena& Arena, const FVector2D& P, const FDaylonParticlesParams& Params, const FVector2D& Inertia = FVector2D(0));
-	void  Update    (IArena& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
-	void  RemoveAll (IArena& Arena);
+	void  SpawnOne  (const FVector2D& P, const FVector2D& Inertia = FVector2D(0));
+	void  SpawnOne  (const FVector2D& P, const FDaylonParticlesParams& Params, const FVector2D& Inertia = FVector2D(0));
+	void  Update    (const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
+	void  RemoveAll ();
 };
 
 // ---------------------------------------------------------------------------------------------------------
@@ -42,13 +45,7 @@ class FShieldExplosion : public Daylon::PlayObject2D<SDaylonLineParticles>
 
 		static TSharedPtr<FShieldExplosion> Create(
 			const FVector2D&                   P,
-			const TArray<FDaylonLineParticle>& Particles,
-			float                              ShieldThickness,
-			float                              MinParticleVelocity,
-			float                              MaxParticleVelocity,
-			float                              MinParticleLifetime,
-			float                              MaxParticleLifetime,
-			float                              FinalOpacity,
+			const FDaylonLineParticlesParams&  Params,
 			const FVector2D&                   Inertia = FVector2D(0)
 		);
 
@@ -59,25 +56,19 @@ class FShieldExplosion : public Daylon::PlayObject2D<SDaylonLineParticles>
 
 struct FShieldExplosions
 {
+	IArena* Arena = nullptr;
+
 	TArray<TSharedPtr<FShieldExplosion>>   Explosions; 
 	float                                  InertialFactor = 1.0f;
 
 
 	void SpawnOne
 	(
-		IArena&                            Arena,
 		const FVector2D&                   P,
-		const TArray<FDaylonLineParticle>& Particles,
-		float                              ShieldThickness,
-		float                              MinParticleVelocity,
-		float                              MaxParticleVelocity,
-		float                              MinParticleLifetime,
-		float                              MaxParticleLifetime,
-		float                              FinalOpacity,
+		const FDaylonLineParticlesParams&  Params,
 		const FVector2D&                   Inertia = FVector2D(0)
 	);
 
-	void Update    (IArena& Arena, const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
-
-	void RemoveAll (IArena& Arena);
+	void Update    (const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
+	void RemoveAll ();
 };

@@ -3,16 +3,19 @@
 #include "Arena.h"
 
 
-TSharedPtr<FAsteroid> FAsteroid::Create(UDaylonSpriteWidgetAtlas* Atlas)
+TSharedPtr<FAsteroid> FAsteroid::Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas)
 {
+	check(InArena);
+
 	auto Widget = SNew(FAsteroid);
 
 	Daylon::Install<SDaylonSprite>(Widget, 0.5f);
 
-	Widget->SetAtlas(Atlas->Atlas);
-	Widget->SetSize(Atlas->Atlas.AtlasBrush.GetImageSize() / 2);
+	Widget->Arena = InArena;
+	Widget->SetAtlas(Atlas);
+	Widget->SetSize(Atlas.AtlasBrush.GetImageSize() / 2);
 	Widget->UpdateWidgetSize();
-	Widget->SetCurrentCel(FMath::RandRange(0, Atlas->Atlas.NumCels - 1));
+	Widget->SetCurrentCel(FMath::RandRange(0, Atlas.NumCels - 1));
 
 	return Widget;
 }
@@ -24,37 +27,38 @@ bool FAsteroid::HasPowerup() const
 }
 
 
-TSharedPtr<FAsteroid> FAsteroid::Split(IArena& Arena)
+TSharedPtr<FAsteroid> FAsteroid::Split()
 {
 	// Apparently we always split into two children.
 	// For efficiency, we reformulate the parent rock into one of the kids.
 	// For the new inertias, we want the kids to generally be faster but 
 	// once in a while, one of the kids can be slower.
 
-	UDaylonSpriteWidgetAtlas* NewAsteroidAtlas = nullptr;
+	const FDaylonSpriteAtlas* NewAsteroidAtlasPtr = nullptr;
 
 	switch(Value)
 	{
 		case ValueBigAsteroid:
-			NewAsteroidAtlas = &Arena.GetMediumAsteroidAtlas();
+			NewAsteroidAtlasPtr = &Arena->GetMediumAsteroidAtlas();
 			Value = ValueMediumAsteroid;
 			break;
 
 		case ValueMediumAsteroid:
-			NewAsteroidAtlas = &Arena.GetSmallAsteroidAtlas();
+			NewAsteroidAtlasPtr = &Arena->GetSmallAsteroidAtlas();
 			Value = ValueSmallAsteroid;
 			break;
 	}
 
-	SetAtlas(NewAsteroidAtlas->Atlas);
+	check(NewAsteroidAtlasPtr);
+	SetAtlas(*NewAsteroidAtlasPtr);
 
-	SetSize(NewAsteroidAtlas->Atlas.GetCelPixelSize());
+	SetSize(NewAsteroidAtlasPtr->GetCelPixelSize());
 	UpdateWidgetSize();
 
-	SetCurrentCel(FMath::RandRange(0, NewAsteroidAtlas->Atlas.NumCels - 1));
+	SetCurrentCel(FMath::RandRange(0, NewAsteroidAtlasPtr->NumCels - 1));
 
 
-	auto NewAsteroidPtr = FAsteroid::Create(NewAsteroidAtlas);
+	auto NewAsteroidPtr = FAsteroid::Create(Arena, *NewAsteroidAtlasPtr);
 	auto& NewAsteroid   = *NewAsteroidPtr.Get();
 
 	NewAsteroid.Value = Value;

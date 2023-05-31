@@ -360,25 +360,26 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 
 	protected:
 
-	virtual TFunction<FVector2D(const FVector2D&)> GetWrapPositionFunction() const { return WrapPositionToViewport; }
+	virtual TFunction<FVector2D(const FVector2D&)> GetWrapPositionFunction() const override { return WrapPositionToViewport; }
 
-	virtual void                          AddScheduledTask             (Daylon::FScheduledTask& Task) { ScheduledTasks.Add(Task); }
+	virtual void                          AddScheduledTask             (Daylon::FScheduledTask& Task) override { ScheduledTasks.Add(Task); }
+	virtual void                          ScheduleExplosion            (float When, const FVector2D& P, const FVector2D& Inertia, const FDaylonParticlesParams& Params) override;
 										    						    
-	virtual FVector2D                     WrapPosition                 (const FVector2D& P) { return WrapPositionToViewport(P); }
+	virtual FVector2D                     WrapPosition                 (const FVector2D& P) override { return WrapPositionToViewport(P); }
 	virtual void                          PlaySound                    (USoundBase* Sound, float VolumeScale = 1.0f) override;
-	virtual bool                          CanExplosionOccur            () const { return GameState == EGameState::Active; }
+	virtual bool                          CanExplosionOccur            () const override { return GameState == EGameState::Active; }
 
 	virtual Daylon::FLoopedSound&         GetBigEnemySoundLoop         () override { return BigEnemyShipSoundLoop; }
 	virtual Daylon::FLoopedSound&         GetSmallEnemySoundLoop       () override { return SmallEnemyShipSoundLoop; }
-										    						    
-	virtual UDaylonSpriteWidgetAtlas&     GetBigEnemyAtlas             () override { return *BigEnemyAtlas; }
-	virtual UDaylonSpriteWidgetAtlas&     GetSmallEnemyAtlas           () override { return *SmallEnemyAtlas; }
-	virtual UDaylonSpriteWidgetAtlas&     GetScavengerAtlas            () override { return *ScavengerAtlas; }
-	virtual UDaylonSpriteWidgetAtlas&     GetMiniboss1Atlas            () override { return *Miniboss1Atlas; }
-	virtual UDaylonSpriteWidgetAtlas&     GetMiniboss2Atlas            () override { return *Miniboss2Atlas; }
-	virtual UDaylonSpriteWidgetAtlas&     GetMediumAsteroidAtlas       () override { return *MediumRockAtlas; }
-	virtual UDaylonSpriteWidgetAtlas&     GetSmallAsteroidAtlas        () override { return *SmallRockAtlas; }
-	virtual UDaylonSpriteWidgetAtlas&     GetDefensesAtlas             () override { return *DefensesAtlas; }
+
+	virtual const FDaylonSpriteAtlas&     GetBigEnemyAtlas             () const override { return BigEnemyAtlas   ->Atlas; }
+	virtual const FDaylonSpriteAtlas&     GetSmallEnemyAtlas           () const override { return SmallEnemyAtlas ->Atlas; }
+	virtual const FDaylonSpriteAtlas&     GetScavengerAtlas            () const override { return ScavengerAtlas  ->Atlas; }
+	virtual const FDaylonSpriteAtlas&     GetMiniboss1Atlas            () const override { return Miniboss1Atlas  ->Atlas; }
+	virtual const FDaylonSpriteAtlas&     GetMiniboss2Atlas            () const override { return Miniboss2Atlas  ->Atlas; }
+	virtual const FDaylonSpriteAtlas&     GetMediumAsteroidAtlas       () const override { return MediumRockAtlas ->Atlas; }
+	virtual const FDaylonSpriteAtlas&     GetSmallAsteroidAtlas        () const override { return SmallRockAtlas  ->Atlas; }
+	virtual const FDaylonSpriteAtlas&     GetDefensesAtlas             () const override { return DefensesAtlas   ->Atlas; }
 																    
 	virtual FAsteroids&                   GetAsteroids                 () override { return Asteroids; }
 	virtual TArray<TSharedPtr<FPowerup>>& GetPowerups                  () override { return Powerups; }
@@ -394,11 +395,11 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	virtual bool                          IsPlayerPresent              () const override;
 	virtual FPlayerShip&                  GetPlayerShip                () override { return *PlayerShip; }
 	virtual int32                         GetPlayerScore               () const override { return PlayerScore; }
-	virtual Daylon::FLoopedSound&         GetPlayerShipThrustSoundLoop () { return PlayerShipThrustSoundLoop; }
-	virtual float                         GetRotationForce             () const { return RotationForce; }
-	virtual bool                          IsThrustActive               () const { return bThrustActive; }
-	virtual bool                          IsShieldActive               () const { return bShieldActive; }
-	virtual bool                          IsGodModeActive              () const { return bGodMode; }
+	virtual Daylon::FLoopedSound&         GetPlayerShipThrustSoundLoop () override { return PlayerShipThrustSoundLoop; }
+	virtual float                         GetPlayerRotationForce       () const override { return RotationForce; }
+	virtual bool                          IsPlayerThrustActive         () const override { return bThrustActive; }
+	virtual bool                          IsPlayerShieldActive         () const override { return bShieldActive; }
+	virtual bool                          IsGodModeActive              () const override { return bGodMode; }
 	virtual void                          IncreasePlayerScoreBy        (int32 Amount) override;
 
 	virtual float                         AdjustTimeUntilNextEnemyShip (float Amount) override { TimeUntilNextEnemyShip += Amount; return TimeUntilNextEnemyShip; }
@@ -414,7 +415,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	virtual void                          SetTimeUntilNextBoss         (float Value) override { TimeUntilNextBoss = Value; }
 
 									      
-	virtual void                          ScheduleExplosion            (float When, const FVector2D& P, const FVector2D& Inertia, const FDaylonParticlesParams& Params) override;
 
 	// -- Class methods ----------------------------------------------------------------------------------------------------------------------------
 

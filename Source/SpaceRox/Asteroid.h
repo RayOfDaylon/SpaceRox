@@ -16,11 +16,13 @@ class FAsteroid : public FPlayObject
 {
 	public:
 
+		IArena* Arena = nullptr;
+
 		TSharedPtr<FPowerup> Powerup;
 
 		bool HasPowerup() const;
 
-		static TSharedPtr<FAsteroid> Create(UDaylonSpriteWidgetAtlas* Atlas);
+		static TSharedPtr<FAsteroid> Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas);
 	
-		TSharedPtr<FAsteroid> Split(IArena& Arena);
+		TSharedPtr<FAsteroid> Split();
 };

@@ -21,15 +21,18 @@
 
 
 
-TSharedPtr<FEnemyShip> FEnemyShip::Create(UDaylonSpriteWidgetAtlas* Atlas, int Value, float RadiusFactor)
+TSharedPtr<FEnemyShip> FEnemyShip::Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas, int Value, float RadiusFactor)
 {
+	check(InArena);
+
 	auto Widget = SNew(FEnemyShip);
 
 	Daylon::Install<SDaylonSprite>(Widget, RadiusFactor);
 
-	Widget->SetAtlas(Atlas->Atlas);
+	Widget->Arena = InArena;
+	Widget->SetAtlas(Atlas);
 	Widget->SetCurrentCel(0);
-	Widget->SetSize(Atlas->Atlas.GetCelPixelSize());
+	Widget->SetSize(Atlas.GetCelPixelSize());
 	Widget->UpdateWidgetSize();
 
 	Widget->Value = Value;
@@ -45,13 +48,13 @@ FEnemyShip::FEnemyShip()
 }
 
 
-void FEnemyShip::Perform(IArena& Arena, float DeltaTime)
+void FEnemyShip::Perform(float DeltaTime)
 {
 	// Don't call Super::Update(DeltaTime) because we are a static sprite.
 
 	const bool WereBig = (Value == ValueBigEnemy);
 
-	Move(DeltaTime, Arena.GetWrapPositionFunction());
+	Move(DeltaTime, Arena->GetWrapPositionFunction());
 
 
 	// Fire a torpedo if we've finished reloading.
@@ -61,7 +64,7 @@ void FEnemyShip::Perform(IArena& Arena, float DeltaTime)
 	if(TimeRemainingToNextShot <= 0.0f)
 	{
 		TimeRemainingToNextShot = (WereBig ? BigEnemyReloadTime : SmallEnemyReloadTime);
-		Shoot(Arena);
+		Shoot();
 	}
 
 	TimeRemainingToNextMove -= DeltaTime;
@@ -91,17 +94,17 @@ void FEnemyShip::Perform(IArena& Arena, float DeltaTime)
 
 
 
-void FEnemyShip::Shoot(IArena& Arena)
+void FEnemyShip::Shoot()
 {
 	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
 	// For now, just use wild and leaded.
 
-	if(!Arena.IsPlayerPresent())
+	if(!Arena->IsPlayerPresent())
 	{
 		return;
 	}
 
-	auto TorpedoPtr = Arena.GetAvailableTorpedo();
+	auto TorpedoPtr = Arena->GetAvailableTorpedo();
 
 	if(!TorpedoPtr)
 	{
@@ -125,7 +128,7 @@ void FEnemyShip::Shoot(IArena& Arena)
 		// Shot vector is random.
 		Direction = UDaylonUtils::RandVector2D();
 		LaunchP += Direction * (GetSize().X / 2 + 2);
-		LaunchP = Arena.WrapPosition(LaunchP);
+		LaunchP = Arena->WrapPosition(LaunchP);
 
 		Speed = BigEnemyTorpedoSpeed;
 	}
@@ -142,35 +145,36 @@ void FEnemyShip::Shoot(IArena& Arena)
 
 		bShootAtPlayer = !bShootAtPlayer;
 
-		if(bShootAtPlayer || Arena.GetAsteroids().IsEmpty())
+		if(bShootAtPlayer || Arena->GetAsteroids().IsEmpty())
 		{
-			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Arena.GetPlayerShip().GetPosition(), Arena.GetPlayerShip().Inertia);
+			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia);
 		}
 		else
 		{
 			// Shoot at an asteroid.
-			const auto& Asteroid = Arena.GetAsteroids().Get(FMath::RandRange(0, Arena.GetAsteroids().Num() - 1));
+			const auto& Asteroid = Arena->GetAsteroids().Get(FMath::RandRange(0, Arena->GetAsteroids().Num() - 1));
 			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Asteroid.GetPosition(), Asteroid.Inertia);
 		}
 	}
 
 	Torpedo.Spawn(LaunchP, Direction * Speed, MaxTorpedoLifeTime);
 
-	Arena.PlaySound(Arena.GetTorpedoSound());
+	Arena->PlaySound(Arena->GetTorpedoSound());
 }
 
 
 // ------------------------------------------------------------------------------------------------------------------
 
 
-TSharedPtr<FEnemyBoss> FEnemyBoss::Create(UDaylonSpriteWidgetAtlas* Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed)
+TSharedPtr<FEnemyBoss> FEnemyBoss::Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed)
 {
-	check(Atlas);
+	check(InArena);
 	check(NumShields > 0);
 	check(SpinSpeed >= 0.0f);
 
 	auto Widget = SNew(FEnemyBoss);
 
+	Widget->Arena = InArena;
 	Widget->Value = Value;
 
 	auto SlotSprite = Widget->AddSlot();
@@ -180,7 +184,7 @@ TSharedPtr<FEnemyBoss> FEnemyBoss::Create(UDaylonSpriteWidgetAtlas* Atlas, float
 
 	SlotSprite[SAssignNew(Widget->Sprite, SDaylonSprite).Size(S)];
 
-	Widget->Sprite->SetAtlas(Atlas->Atlas);
+	Widget->Sprite->SetAtlas(Atlas);
 	Daylon::Install<SOverlay>(Widget, 0.5f);
 
 	Widget->NumShields = NumShields;
@@ -361,7 +365,7 @@ void FEnemyBoss::SetShieldSegmentHealth(int32 ShieldNumber, int32 SegmentIndex, 
 }
 
 
-void FEnemyBoss::SpawnExplosion(IArena& Arena)
+void FEnemyBoss::SpawnExplosion()
 {
 	// todo: this never gets called, FEnemyShips::KillBoss() is handling it.
 	const auto P = GetPosition();
@@ -379,11 +383,11 @@ void FEnemyBoss::SpawnExplosion(IArena& Arena)
 		80
 	};
 
-	Arena.GetExplosions().SpawnOne(Arena, P,  Params, ShipInertia);
+	Arena->GetExplosions().SpawnOne(P,  Params, ShipInertia);
 }
 
 
-void FEnemyBoss::Perform(IArena& Arena, float DeltaTime)
+void FEnemyBoss::Perform(float DeltaTime)
 {
 	TimeRemainingToNextMove -= DeltaTime;
 
@@ -400,7 +404,7 @@ void FEnemyBoss::Perform(IArena& Arena, float DeltaTime)
 		Inertia = UDaylonUtils::AngleToVector2D(NewAngle) * GetSpeed();
 	}
 
-	Move(DeltaTime, Arena.GetWrapPositionFunction());
+	Move(DeltaTime, Arena->GetWrapPositionFunction());
 
 
 	TimeRemainingToNextShot -= DeltaTime;
@@ -408,22 +412,22 @@ void FEnemyBoss::Perform(IArena& Arena, float DeltaTime)
 	if(TimeRemainingToNextShot <= 0.0f)
 	{
 		TimeRemainingToNextShot = FMath::FRandRange(1.0f, 2.0f);
-		Shoot(Arena);
+		Shoot();
 	}
 }
 
 
-void FEnemyBoss::Shoot(IArena& Arena)
+void FEnemyBoss::Shoot()
 {
 	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
 	// For now, just use wild and leaded.
 
-	if(!Arena.IsPlayerPresent())
+	if(!Arena->IsPlayerPresent())
 	{
 		return;
 	}
 
-	auto TorpedoPtr = Arena.GetAvailableTorpedo();
+	auto TorpedoPtr = Arena->GetAvailableTorpedo();
 
 	if(!TorpedoPtr)
 	{
@@ -437,25 +441,25 @@ void FEnemyBoss::Shoot(IArena& Arena)
 
 	// Interpolate between a random shot and an accurate shot.
 
-	auto DirectionToPlayer = Arena.GetPlayerShip().GetPosition() - GetPosition();
+	auto DirectionToPlayer = Arena->GetPlayerShip().GetPosition() - GetPosition();
 	DirectionToPlayer.Normalize();
-	const auto FiringPoint = Arena.WrapPosition(GetPosition() + DirectionToPlayer * (Shields.Last(0)->GetSize().X / 2 + 10.0f));
+	const auto FiringPoint = Arena->WrapPosition(GetPosition() + DirectionToPlayer * (Shields.Last(0)->GetSize().X / 2 + 10.0f));
 
 	// The random direction has to be away from us. It can vary by -90 to +90 degrees from DirectionToPlayer.
 	const auto AngleToPlayer = UDaylonUtils::Vector2DToAngle(DirectionToPlayer);
 	const auto RandomAngle = AngleToPlayer + FMath::FRandRange(-90.0f, 90.0f);
 
-	const auto PerfectDirection = UDaylonUtils::ComputeFiringSolution(FiringPoint, BossTorpedoSpeed, Arena.GetPlayerShip().GetPosition(), Arena.GetPlayerShip().Inertia);
+	const auto PerfectDirection = UDaylonUtils::ComputeFiringSolution(FiringPoint, BossTorpedoSpeed, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia);
 	const auto PerfectAngle = UDaylonUtils::Vector2DToAngle(PerfectDirection);
 
-	const float Aim = FMath::Min(1.0f, UDaylonUtils::Normalize(Arena.GetPlayerScore(), ScoreForBossSpawn, ScoreForBossAimPerfect));
+	const float Aim = FMath::Min(1.0f, UDaylonUtils::Normalize(Arena->GetPlayerScore(), ScoreForBossSpawn, ScoreForBossAimPerfect));
 	const auto Angle = FMath::Lerp(RandomAngle, PerfectAngle, Aim);
 
 	const auto Direction = UDaylonUtils::AngleToVector2D(Angle);
 
 	Torpedo.Spawn(FiringPoint, Direction * BossTorpedoSpeed, MaxTorpedoLifeTime);
 
-	Arena.PlaySound(Arena.GetTorpedoSound());
+	Arena->PlaySound(Arena->GetTorpedoSound());
 }
 
 

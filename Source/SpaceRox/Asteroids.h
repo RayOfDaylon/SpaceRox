@@ -18,6 +18,8 @@ class FAsteroids
 {
 	public:
 
+		IArena* Arena = nullptr;
+
 		TArray<TSharedPtr<FAsteroid>>     Asteroids;
 
 		FAsteroids()
@@ -37,6 +39,6 @@ class FAsteroids
 		void Remove     (int32 Index);
 		void RemoveAll  ();
 
-		void Update     (IArena& Arena, float DeltaTime);
-		void Kill       (IArena& Arena, int32 Index, bool KilledByPlayer);
+		void Update     (float DeltaTime);
+		void Kill       (int32 Index, bool KilledByPlayer);
 };

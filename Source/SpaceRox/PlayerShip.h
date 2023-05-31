@@ -17,6 +17,8 @@ class FPlayerShip : public FPlayObject
 {
 	public:
 
+	IArena* Arena = nullptr;
+
 	bool   IsUnderThrust;
 	bool   IsSpawning;
 
@@ -33,15 +35,15 @@ class FPlayerShip : public FPlayObject
 
 	static TSharedPtr<FPlayerShip> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S, float RadiusFactor);
 
+	void Initialize              (IArena*);
 	void AdjustDoubleShotsLeft   (int32 Amount);
 	void AdjustShieldsLeft       (float Amount);
 	void AdjustInvincibilityLeft (float Amount);
-	void ReleaseResources        (IArena& Arena);
-	void Initialize              (IArena& Arena);
-	void InitializeDefenses      (IArena& Arena);
-	bool ProcessCollision        (IArena& Arena);
-	void SpawnExplosion          (IArena& Arena);
-	void FireTorpedo             (IArena& Arena);
-	void Perform                 (IArena& Arena, float DeltaTime);
+	void ReleaseResources        ();
+	void InitializeDefenses      ();
+	bool ProcessCollision        ();
+	void SpawnExplosion          ();
+	void FireTorpedo             ();
+	void Perform                 (float DeltaTime);
 };
 

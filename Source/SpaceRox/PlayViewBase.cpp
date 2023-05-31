@@ -121,7 +121,7 @@ void UPlayViewBase::CreatePlayerShip()
 	PlayerShip->ShieldsLeft       .Bind([this](int32){ UpdatePlayerShipReadout(EPowerup::Shields);       });
 	PlayerShip->InvincibilityLeft .Bind([this](float){ UpdatePlayerShipReadout(EPowerup::Invincibility); });
 
-	PlayerShip->Initialize(*this);
+	PlayerShip->Initialize(this);
 }
 
 
@@ -129,7 +129,7 @@ void UPlayViewBase::CreateTorpedos()
 {
 	for(int32 Index = 0; Index < TorpedoCount; Index++)
 	{
-		auto TorpedoPtr = FTorpedo::Create(TorpedoAtlas, 0.5f);
+		auto TorpedoPtr = FTorpedo::Create(TorpedoAtlas->Atlas, 0.5f);
 
 		TorpedoPtr->Inertia = FVector2D(0);
 		TorpedoPtr->LifeRemaining = 0.0f;
@@ -158,6 +158,11 @@ void UPlayViewBase::InitializeVariables()
 	TimeUntilGameOverStateEnds    = 0.0f;
 	MruHighScoreAnimationAge      = 0.0f;
 	TimeUntilNextScavenger        = 5.0f;
+
+	Asteroids.Arena               =
+	Explosions.Arena              = 
+	ShieldExplosions.Arena        = 
+	EnemyShips.Arena              = this;
 
 	Explosions.InertialFactor       = ExplosionInertialFactor;
 	ShieldExplosions.InertialFactor = ExplosionInertialFactor;
@@ -305,7 +310,7 @@ void UPlayViewBase::ScheduleExplosion
 			return;
 		}
 
-		ArenaPtr->GetExplosions().SpawnOne(*ArenaPtr.Get(), P, Params, Inertia);
+		ArenaPtr->GetExplosions().SpawnOne(P, Params, Inertia);
 	};
 
 	AddScheduledTask(Task);
@@ -369,7 +374,7 @@ void UPlayViewBase::OnAbortButtonPressed()
 {
 	if(PlayerShip)
 	{
-		PlayerShip->ReleaseResources(*this);
+		PlayerShip->ReleaseResources();
 		Daylon::Uninstall(PlayerShip);
 		PlayerShip.Reset();
 	}
@@ -589,8 +594,8 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			UDaylonUtils::Hide (GameOverMessage);
 			UDaylonUtils::Hide (HighScoreEntryContent);
 			
-			Explosions.RemoveAll       (*this);
-			ShieldExplosions.RemoveAll (*this);
+			Explosions.RemoveAll       ();
+			ShieldExplosions.RemoveAll ();
 			RemoveTorpedos             ();
 			EnemyShips.RemoveAll       ();
 			RemovePowerups             ();
@@ -622,7 +627,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			if(!PlayerShip)
 			{
 				CreatePlayerShip               ();
-				PlayerShip->InitializeDefenses (*this);
+				PlayerShip->InitializeDefenses ();
 			}
 
 			if(Torpedos.IsEmpty())
@@ -630,9 +635,9 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				CreateTorpedos         ();
 			}
 
+			PlayerShip->Initialize    (this);
 			InitializeScore           ();
 			InitializePlayerShipCount ();
-			PlayerShip->Initialize    (*this);
 
 			Asteroids.RemoveAll();
 			EnemyShips.RemoveAll();
@@ -648,44 +653,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 
 #if(FEATURE_MINIBOSS == 1)
-			{
-				EnemyShips.SpawnBoss(*this);
-				//EnemyBoss = FEnemyBoss::Create(PlayerShipAtlas, 32, ValueMiniBoss, 3, BossShieldSpinSpeed);
-				//EnemyBoss->SetPosition(FVector2D(400, 400));
-				//EnemyBoss->Show();
-
-				/*
-				PolyShieldPtrs.Add(SNew(SDaylonPolyShield)
-					.NumSides(9)
-					.Thickness(3)
-					.Size(100)
-					.SpinSpeed(30.0f));
-
-				PolyShieldPtrs.Add(SNew(SDaylonPolyShield)
-					.NumSides(6)
-					.Thickness(3)
-					.Size(70)
-					.SpinSpeed(-30.0f));
-
-				int Index = 0;
-				for(auto& PolyShieldPtr : PolyShieldPtrs)
-				{
-					auto SlotArgs = RootCanvas->GetCanvasWidget()->AddSlot();
-					SlotArgs[PolyShieldPtr.ToSharedRef()];
-					SlotArgs.Anchors(FAnchors());
-					SlotArgs.AutoSize(true);
-					SlotArgs.Alignment(FVector2D(0.5));
-					FMargin Margin;
-					Margin.Left = 250.0f;
-					Margin.Top = 250.0f;
-					Margin.Right = Margin.Bottom = (Index == 0 ? 100 : 70);
-					SlotArgs.GetSlot()->SetOffset(Margin);
-
-					PolyShieldPtr->SetRenderTransform(FSlateRenderTransform(FVector2D(0.5)));
-					UDaylonUtils::Show(PolyShieldPtr.Get());
-					Index++;
-				}*/
-			}
+			EnemyShips.SpawnBoss();
 #endif
 
 			break;
@@ -698,7 +666,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering game over state"), (int32)PreviousState);
 			}
 
-			PlayerShip->ReleaseResources(*this);
+			PlayerShip->ReleaseResources();
 			Daylon::Uninstall(PlayerShip);
 			PlayerShip.Reset();
 
@@ -860,7 +828,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 							80      // NumParticles
 						};
 
-						Explosions.SpawnOne(*this, UDaylonUtils::RandomPtWithinBox(Box), Params);
+						Explosions.SpawnOne(UDaylonUtils::RandomPtWithinBox(Box), Params);
 
 						if(FMath::RandRange(0, 5) == 0)
 						{
@@ -874,7 +842,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				}
 			}
 
-			Explosions.Update(*this, WrapPositionToViewport, InDeltaTime);
+			Explosions.Update(WrapPositionToViewport, InDeltaTime);
 
 			TimeUntilIntroStateEnds -= InDeltaTime;
 
@@ -883,7 +851,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 		case EGameState::MainMenu:
 
-			Asteroids.Update          (*this, InDeltaTime);
+			Asteroids.Update          (InDeltaTime);
 			UpdatePowerups            (InDeltaTime);
 
 			break;
@@ -893,15 +861,15 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			if(IsPlayerPresent())
 			{
-				PlayerShip->Perform     (*this, InDeltaTime);
+				PlayerShip->Perform     (InDeltaTime);
 			}
 
-			EnemyShips.Update         (*this, InDeltaTime);
-			Asteroids.Update          (*this, InDeltaTime);
+			EnemyShips.Update         (InDeltaTime);
+			Asteroids.Update          (InDeltaTime);
 			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
-			Explosions.Update         (*this, WrapPositionToViewport, InDeltaTime);
-			ShieldExplosions.Update   (*this, WrapPositionToViewport, InDeltaTime);
+			Explosions.Update         (WrapPositionToViewport, InDeltaTime);
+			ShieldExplosions.Update   (WrapPositionToViewport, InDeltaTime);
 
 			CheckCollisions();
 
@@ -917,12 +885,12 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 		case EGameState::Over:
 
-			EnemyShips.Update         (*this, InDeltaTime);
-			Asteroids.Update          (*this, InDeltaTime);
+			EnemyShips.Update         (InDeltaTime);
+			Asteroids.Update          (InDeltaTime);
 			UpdatePowerups            (InDeltaTime);
 			UpdateTorpedos            (InDeltaTime);
-			Explosions.Update         (*this, WrapPositionToViewport, InDeltaTime);
-			ShieldExplosions.Update   (*this, WrapPositionToViewport, InDeltaTime);
+			Explosions.Update         (WrapPositionToViewport, InDeltaTime);
+			ShieldExplosions.Update   (WrapPositionToViewport, InDeltaTime);
 
 			CheckCollisions(); // In case any late torpedos or enemies hit something
 
@@ -950,7 +918,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 		case EGameState::HighScores:
 
-			Asteroids.Update          (*this, InDeltaTime);
+			Asteroids.Update          (InDeltaTime);
 			UpdatePowerups            (InDeltaTime);
 
 			if(MostRecentHighScoreTextBlock[0] != nullptr)
@@ -973,7 +941,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		case EGameState::Help:
 
 			//EnemyShips.Update       (InDeltaTime);
-			Asteroids.Update          (*this, InDeltaTime);
+			Asteroids.Update          (InDeltaTime);
 			UpdatePowerups            (InDeltaTime);
 			break;
 
@@ -1180,7 +1148,7 @@ void UPlayViewBase::SpawnPowerup(TSharedPtr<FPowerup>& PowerupPtr, const FVector
 
 	check(!PowerupPtr);
 
-	PowerupPtr = FPowerup::Create(Atlas, FVector2D(32));
+	PowerupPtr = FPowerup::Create(Atlas->Atlas, FVector2D(32));
 
 	auto& Powerup = *PowerupPtr.Get();
 
@@ -1250,7 +1218,7 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 				break;
 		}
 
-		auto Asteroid = FAsteroid::Create(AsteroidAtlas);
+		auto Asteroid = FAsteroid::Create(this, AsteroidAtlas->Atlas);
 		Asteroid->Value = AsteroidValue;
 		Asteroid->LifeRemaining = 1.0f;
 		Asteroid->SpinSpeed = FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
@@ -1322,7 +1290,7 @@ void UPlayViewBase::UpdatePowerups(float DeltaTime)
 
 void UPlayViewBase::SpawnExplosion(const FVector2D& P, const FVector2D& Inertia)
 {
-	Explosions.SpawnOne(*this, P, Inertia);
+	Explosions.SpawnOne(P, Inertia);
 }
 
 
@@ -1334,7 +1302,7 @@ void UPlayViewBase::PlaySound(USoundBase* Sound, float VolumeScale)
 
 void UPlayViewBase::KillPlayerShip()
 {
-	PlayerShip->SpawnExplosion(*this);
+	PlayerShip->SpawnExplosion();
 
 	PlaySound(PlayerShipDestroyedSound);
 
@@ -1431,13 +1399,11 @@ void UPlayViewBase::UpdatePlayerShipReadout(EPowerup PowerupKind)
 }
 
 
-
-
 void UPlayViewBase::ProcessPlayerCollision()
 {
 	check(PlayerShip);
 
-	if(!PlayerShip->ProcessCollision(*this))
+	if(!PlayerShip->ProcessCollision())
 	{
 		KillPlayerShip();
 	}
@@ -1517,7 +1483,7 @@ void UPlayViewBase::CheckCollisions()
 				// A torpedo hit a rock.
 
 				Torpedo.Kill();
-				Asteroids.Kill(*this, AsteroidIndex, Torpedo.FiredByPlayer);
+				Asteroids.Kill(AsteroidIndex, Torpedo.FiredByPlayer);
 
 				// We don't need to check any other asteroids.
 				break;
@@ -1548,7 +1514,7 @@ void UPlayViewBase::CheckCollisions()
 				{
 					Torpedo.Kill();
 					IncreasePlayerScoreBy(EnemyShip.Value);
-					EnemyShips.KillShip(*this, EnemyIndex);
+					EnemyShips.KillShip(EnemyIndex);
 					break;
 				}
 			}
@@ -1564,7 +1530,7 @@ void UPlayViewBase::CheckCollisions()
 					{
 						Torpedo.Kill();
 						IncreasePlayerScoreBy(Scavenger.Value);
-						EnemyShips.KillScavenger(*this, ScavengerIndex);
+						EnemyShips.KillScavenger(ScavengerIndex);
 						break;
 					}
 				}
@@ -1594,7 +1560,7 @@ void UPlayViewBase::CheckCollisions()
 						{
 							IncreasePlayerScoreBy(Boss.Value);
 						}
-						EnemyShips.KillBoss(*this, BossIndex);
+						EnemyShips.KillBoss(BossIndex);
 					} 
 					else
 					{
@@ -1659,7 +1625,7 @@ void UPlayViewBase::CheckCollisions()
 
 				ProcessPlayerCollision();
 				// todo: should we credit player if he used his shields?
-				Asteroids.Kill(*this, AsteroidIndex, CreditPlayerForKill);
+				Asteroids.Kill(AsteroidIndex, CreditPlayerForKill);
 
 				break;
 			}
@@ -1681,7 +1647,7 @@ void UPlayViewBase::CheckCollisions()
 				// Enemy ship collided with player ship.
 
 				IncreasePlayerScoreBy(EnemyShip.Value);
-				EnemyShips.KillShip(*this, EnemyIndex);
+				EnemyShips.KillShip(EnemyIndex);
 
 				ProcessPlayerCollision();
 
@@ -1705,7 +1671,7 @@ void UPlayViewBase::CheckCollisions()
 				// Enemy ship collided with player ship.
 
 				IncreasePlayerScoreBy(Scavenger.Value);
-				EnemyShips.KillScavenger(*this, ScavengerIndex);
+				EnemyShips.KillScavenger(ScavengerIndex);
 
 				ProcessPlayerCollision();
 
@@ -1742,7 +1708,7 @@ void UPlayViewBase::CheckCollisions()
 			if(Part == 0) 
 			{ 
 				IncreasePlayerScoreBy(Boss.Value);
-				EnemyShips.KillBoss(*this, BossIndex);
+				EnemyShips.KillBoss(BossIndex);
 				break;
 			} 
 
@@ -1843,8 +1809,8 @@ void UPlayViewBase::CheckCollisions()
 			{
 				// Enemy ship collided with a rock.
 
-				EnemyShips.KillShip(*this, EnemyIndex);
-				Asteroids.Kill(*this, AsteroidIndex, DontCreditPlayerForKill);
+				EnemyShips.KillShip(EnemyIndex);
+				Asteroids.Kill(AsteroidIndex, DontCreditPlayerForKill);
 
 				break;
 			}
@@ -1864,8 +1830,8 @@ void UPlayViewBase::CheckCollisions()
 			{
 				// Scavenger collided with a rock.
 
-				EnemyShips.KillScavenger(*this, ScavengerIndex);
-				Asteroids.Kill(*this, AsteroidIndex, DontCreditPlayerForKill);
+				EnemyShips.KillScavenger(ScavengerIndex);
+				Asteroids.Kill(AsteroidIndex, DontCreditPlayerForKill);
 
 				break;
 			}
@@ -1891,12 +1857,12 @@ void UPlayViewBase::CheckCollisions()
 				continue;
 			}
 
-			Asteroids.Kill(*this, AsteroidIndex, DontCreditPlayerForKill);
+			Asteroids.Kill(AsteroidIndex, DontCreditPlayerForKill);
 
 			if(Part == 0)
 			{
 				// Asteroid hit boss center.
-				EnemyShips.KillBoss(*this, BossIndex);
+				EnemyShips.KillBoss(BossIndex);
 				break;
 			}
 
@@ -2047,7 +2013,7 @@ void UPlayViewBase::OnFireTorpedo()
 		return;
 	}
 
-	PlayerShip->FireTorpedo(*this);
+	PlayerShip->FireTorpedo();
 }
 
 

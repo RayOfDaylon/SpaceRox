@@ -6,15 +6,15 @@
 #include "Torpedo.h"
 
 
-TSharedPtr<FTorpedo> FTorpedo::Create(UDaylonSpriteWidgetAtlas* Atlas, float RadiusFactor)
+TSharedPtr<FTorpedo> FTorpedo::Create(const FDaylonSpriteAtlas& Atlas, float RadiusFactor)
 {
 	auto Widget = SNew(FTorpedo);
 
 	Daylon::Install<SDaylonSprite>(Widget, RadiusFactor);
 
-	Widget->SetAtlas(Atlas->Atlas);
+	Widget->SetAtlas(Atlas);
 	Widget->SetCurrentCel(0);
-	Widget->SetSize(Atlas->Atlas.GetCelPixelSize());
+	Widget->SetSize(Atlas.GetCelPixelSize());
 	Widget->UpdateWidgetSize();
 
 	return Widget;

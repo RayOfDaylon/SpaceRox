@@ -14,6 +14,8 @@ class IArena;
 
 struct FEnemyShips
 {
+	IArena* Arena = nullptr;
+
 	TArray<TSharedPtr<FEnemyShip>> Ships;
 	TArray<TSharedPtr<FEnemyBoss>> Bosses;
 	TArray<TSharedPtr<FScavenger>> Scavengers;
@@ -39,13 +41,13 @@ struct FEnemyShips
 	void RemoveScavenger (int32 Index);
 	void RemoveAll       ();
 
-	void KillShip        (IArena& Arena, int32 Index);
-	void KillBoss        (IArena& Arena, int32 Index);
-	void KillScavenger   (IArena& Arena, int32 Index);
+	void KillShip        (int32 Index);
+	void KillBoss        (int32 Index);
+	void KillScavenger   (int32 Index);
 
-	void SpawnShip       (IArena& Arena);
-	void SpawnBoss	     (IArena& Arena);
-	void Update          (IArena& Arena, float DeltaTime);
+	void SpawnShip       ();
+	void SpawnBoss	     ();
+	void Update          (float DeltaTime);
 };
 
 

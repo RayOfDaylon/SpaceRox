@@ -34,15 +34,17 @@ void FAsteroids::RemoveAll()
 }
 
 
-void FAsteroids::Update(IArena& Arena, float DeltaTime)
+void FAsteroids::Update(float DeltaTime)
 {
+	check(Arena);
+
 	for (auto& Elem : Asteroids)
 	{
 		auto& Asteroid = *Elem.Get();
 
 		if (Asteroid.LifeRemaining > 0.0f)
 		{
-			Asteroid.Move(DeltaTime, Arena.GetWrapPositionFunction());
+			Asteroid.Move(DeltaTime, Arena->GetWrapPositionFunction());
 
 			if(Asteroid.HasPowerup())
 			{
@@ -57,7 +59,7 @@ void FAsteroids::Update(IArena& Arena, float DeltaTime)
 }
 
 
-void FAsteroids::Kill(IArena& Arena, int32 AsteroidIndex, bool KilledByPlayer)
+void FAsteroids::Kill(int32 AsteroidIndex, bool KilledByPlayer)
 {
 	// Kill the rock. Split it if isn't a small rock.
 	// Slate style.
@@ -71,10 +73,10 @@ void FAsteroids::Kill(IArena& Arena, int32 AsteroidIndex, bool KilledByPlayer)
 
 	if(KilledByPlayer)
 	{
-		Arena.IncreasePlayerScoreBy(Asteroid.Value);
+		Arena->IncreasePlayerScoreBy(Asteroid.Value);
 	}
 
-	Arena.GetExplosions().SpawnOne(Arena, Asteroid.UnwrappedNewPosition, Asteroid.Inertia);
+	Arena->GetExplosions().SpawnOne(Asteroid.UnwrappedNewPosition, Asteroid.Inertia);
 
 	int32 SoundIndex = 0;
 	
@@ -87,7 +89,7 @@ void FAsteroids::Kill(IArena& Arena, int32 AsteroidIndex, bool KilledByPlayer)
 		SoundIndex = 2;
 	}
 
-	Arena.PlaySound(Arena.GetExplosionSound(SoundIndex));
+	Arena->PlaySound(Arena->GetExplosionSound(SoundIndex));
 
 
 	// If asteroid was small, just delete it.
@@ -97,12 +99,12 @@ void FAsteroids::Kill(IArena& Arena, int32 AsteroidIndex, bool KilledByPlayer)
 
 		if(Asteroid.HasPowerup())
 		{
-			auto PowerupIndex = Arena.GetPowerups().Add(Asteroid.Powerup);
+			auto PowerupIndex = Arena->GetPowerups().Add(Asteroid.Powerup);
 			Asteroid.Powerup.Reset();
 
 			if(PowerupsCanMove)
 			{
-				Arena.GetPowerups()[PowerupIndex]->Inertia = Asteroid.Inertia;
+				Arena->GetPowerups()[PowerupIndex]->Inertia = Asteroid.Inertia;
 			}
 		}
 
@@ -113,5 +115,5 @@ void FAsteroids::Kill(IArena& Arena, int32 AsteroidIndex, bool KilledByPlayer)
 
 	// Asteroid was not small, so split it up.
 
-	Add(Asteroid.Split(Arena));
+	Add(Asteroid.Split());
 }
