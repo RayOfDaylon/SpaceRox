@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 30, 2023
+May 31, 2023
 
 
 
@@ -222,9 +222,9 @@ pivot of (0.5, 0.5).
 All the play objects at runtime are TSharedPtr instances.
 
 The player ship is its own UPlayViewBase member variable, while asteroids, 
-enemies, and torpedos have their own TArray containers. Torpedos are 
-preallocated in a fixed quantity since they are frequently getting 
-created/destroyed. Explosions are a TArray of UParticleWidget* instead 
+enemies, torpedos etc. have their own classes wrapping TArray containers. 
+Torpedos are preallocated in a fixed quantity since they are frequently getting 
+created/destroyed. Explosions are a TArray of SDaylonParticleWidget* instead 
 of being play objects because they don't need any logic besides appearing
 on the screen. The player ship shield is its own widget as well. 
 The player ship's thrust exhaust is implemented by just changing to 
@@ -232,11 +232,12 @@ a different overall brush for the ship.
 
 Each play object class like FPlayerShip, FAsteroid, etc. have their 
 own static Create() method to make new instances, and they just 
-call SNew(). Daylon::Destroy() is used to remove the widget from 
-the canvas, and usually that's the last reference to the widget 
-so the widget goes away as well. Internally, SNew and TSharedPtr's 
-resource releaser default to operator new/delete (although, like 
-stdlib, they do allow custom allocators).
+call SNew() and then Daylon::Install() to add the widget to the canvas. 
+Daylon::Uninstall() is used to remove the widget from the canvas, 
+and the TSharedPtr that was in the array is then erased or reset, 
+and as the last reference to the widget, the widget is truly gone. 
+Internally, SNew and TSharedPtr's resource allocator/releaser default to 
+operator new/delete (although, like stdlib, they do allow custom allocators).
 
 The UPlayViewBase class is a UUserWidget holding the game logic. A blueprint 
 subclass "PlayView" is used to hold design-time objects like menus, info displays, etc.
@@ -244,13 +245,17 @@ the "BindWidget" meta tag is used on several class UWidget members so that
 the C++ code can manipulate these design-time objects. There are also audio 
 and texture (brush) members, and some properties for testing.
 
+UPlayViewBase mixes in the IArena interface class, so that tightly coupled 
+classes like FExplosions, FEnemyShips, etc. don't need to know about UPlayViewBase.
+
 There's barely any Blueprint script (I started off using it, but it soon 
 became unwieldy). Instead, BP script is used to simply forward input events to 
 the C++ code. Speaking of which, the input actions are mapped only to keyboard 
-keys for now.
+keys for now. Being inside binary files, BP script is also impossible to 
+simultaneously edit in team environments.
 
 The UPlayerController, UGameInstance, UGameMode, APawn, etc. classes aren't used 
-(or are hardly used at all), and neither are actors. While a game is normally 
+(or are hardly used at all), and neither are Actors. While a game is normally 
 structured along those lines, for better or worse I just found it easier to
 skip all that, and it's a testament to UE that one can implement things in 
 many different ways.
