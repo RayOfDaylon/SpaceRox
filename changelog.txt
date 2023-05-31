@@ -9,6 +9,8 @@ Replaced IArena& arguments to play object methods and their collections' methods
 with an IArena* class member which is initialized after object creation, 
 so the calling code is less verbose.
 
+Moved SDaylonLineParticles code to its own files.
+
 Explosion spawn parameters consolidated into FDaylonParticlesParams, 
 spawn callers now use mostly static const vars of that type.
 Same for shield explosions.
