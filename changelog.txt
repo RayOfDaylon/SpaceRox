@@ -1,6 +1,11 @@
 Change log for Stellar Mayhem
 
 
+Moved FAnimSpriteCel from game to plugin.
+Replaced FAnimSpriteCel::Arena with delegate so that 
+UPlayViewBase takes care of making torpedo sounds during intro screen, 
+and FAnimSpriteCel can be generic.
+
 IArena sprite atlas getters return const FDaylonSpriteAtlas& instead of 
 UDaylonSpriteWidgetAtlas*, since the latter was just a thin wrapper 
 around the former. IArena users don't need to know about UDaylonSpriteWidgetAtlas.

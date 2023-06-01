@@ -249,9 +249,13 @@ void UPlayViewBase::InitializeTitleGraphics()
 		FInt32Rect DstPx = DstPxs[Index];
 		DstPx.Max += DstPx.Min;
 
-		TSharedPtr<FAnimSpriteCel> Cel = SNew(FAnimSpriteCel);
+		TSharedPtr<Daylon::FAnimSpriteCel> Cel = SNew(Daylon::FAnimSpriteCel);
 		Daylon::Install<SImage>(Cel, 0.5f);
-		Cel->Init(this, TitleSheet, SrcUV, SrcPx, DstPx, Index * 0.2f, MaxIntroStateLifetime / 8);
+
+		Cel->Init(TitleSheet, SrcUV, SrcPx, DstPx, Index * 0.2f, MaxIntroStateLifetime / 8,
+			[WeakThis = TWeakObjectPtr<UPlayViewBase>(this)](Daylon::FAnimSpriteCel&)
+			{ if(auto This = WeakThis.Get()) { This->PlaySound(This->GetTorpedoSound()); } }
+			);
 
 		TitleCels.Add(Cel);
 

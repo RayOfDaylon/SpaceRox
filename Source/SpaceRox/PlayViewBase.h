@@ -507,7 +507,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	Daylon::FHighScore              MostRecentHighScore;
 	UTextBlock*                     MostRecentHighScoreTextBlock[2];
 
-	TArray<TSharedPtr<FAnimSpriteCel>>    TitleCels; // Used to animate intro screen
+	TArray<TSharedPtr<Daylon::FAnimSpriteCel>>    TitleCels; // Used to animate intro screen
 
 	EMenuItem                       SelectedMenuItem;
 	int32                           NumPlayerShips;
