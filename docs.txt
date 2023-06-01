@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-May 31, 2023
+June 1, 2023
 
 Chapters:
 
@@ -58,6 +58,7 @@ Plugins
         SDaylonParticles.*         A widget used to efficiently draw explosions
         SDaylonLineParticles.*     A widget that draws explosions of lines
         SDaylonSprite.*            A widget used to draw animated textures
+        AnimSpriteCel.*            Widget used to animate title graphic
         docs.txt                   Plugin-specific documentation
 
 Source
@@ -75,7 +76,6 @@ Source
         Powerup.*              Powerup class
         Scavenger.*            The scavenger enemy
         Torpedo.*              The bullets fired by all shooters
-        AnimSpriteCel.h        Widget used to animate title graphic
 
 
 Setting Up
