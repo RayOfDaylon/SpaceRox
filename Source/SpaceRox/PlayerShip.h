@@ -33,7 +33,7 @@ class FPlayerShip : public FPlayObject
 	TSharedPtr<Daylon::SpritePlayObject2D>     InvincibilityShield;
 
 
-	static TSharedPtr<FPlayerShip> Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S, float RadiusFactor);
+	static TSharedPtr<FPlayerShip> Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float RadiusFactor);
 
 	void Initialize              (IArena*);
 	void AdjustDoubleShotsLeft   (int32 Amount);

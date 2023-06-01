@@ -21,20 +21,20 @@ struct FEnemyShips
 	TArray<TSharedPtr<FScavenger>> Scavengers;
 
 	int32  NumSmallEnemyShips = 0;
-	int32  NumBigEnemyShips = 0;
+	int32  NumBigEnemyShips   = 0;
 
-	int32 NumShips() const { return Ships.Num(); }
-	int32 NumBosses() const { return Bosses.Num(); }
-	int32 NumScavengers() const { return Scavengers.Num(); }
+	int32 NumShips      () const { return Ships.Num(); }
+	int32 NumBosses     () const { return Bosses.Num(); }
+	int32 NumScavengers () const { return Scavengers.Num(); }
 
-	TSharedPtr<FEnemyShip> GetShipPtr(int32 Index) { return Ships[Index]; }
-	FEnemyShip&            GetShip(int32 Index) { return *GetShipPtr(Index).Get(); }
+	TSharedPtr<FEnemyShip> GetShipPtr      (int32 Index) { return Ships[Index]; }
+	FEnemyShip&            GetShip         (int32 Index) { return *GetShipPtr(Index).Get(); }
+									       
+	TSharedPtr<FEnemyBoss> GetBossPtr      (int32 Index) { return Bosses[Index]; }
+	FEnemyBoss&            GetBoss         (int32 Index) { return *GetBossPtr(Index).Get(); }
 
-	TSharedPtr<FEnemyBoss> GetBossPtr(int32 Index) { return Bosses[Index]; }
-	FEnemyBoss&            GetBoss(int32 Index) { return *GetBossPtr(Index).Get(); }
-
-	TSharedPtr<FScavenger> GetScavengerPtr(int32 Index) { return Scavengers[Index]; }
-	FScavenger&            GetScavenger(int32 Index) { return *GetScavengerPtr(Index).Get(); }
+	TSharedPtr<FScavenger> GetScavengerPtr (int32 Index) { return Scavengers[Index]; }
+	FScavenger&            GetScavenger    (int32 Index) { return *GetScavengerPtr(Index).Get(); }
 
 	void RemoveShip      (int32 Index);
 	void RemoveBoss      (int32 Index);

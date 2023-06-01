@@ -333,7 +333,7 @@ namespace Daylon
 
 		SConstraintCanvas::FSlot* Slot = nullptr; // We need this because we cannot get a slot directly from an SWidget.
 
-		FWidgetTransform RenderTransform;
+		FWidgetTransform RenderTransform; // Easy way to support GetAngle/SetAngle.
 
 
 		public:

@@ -4,6 +4,17 @@ Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
 May 31, 2023
 
+Chapters:
+
+Introduction
+Project Structure
+Setting Up
+How the Game is Played
+Keyboard Issues
+How the Game Works
+Code Architecture
+Future Work
+
 
 
 Introduction
@@ -350,6 +361,145 @@ High scores are kept in a highscores.txt file.
 In development mode, this will be in the project's 
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
+
+
+Code Architecture
+-------------------------------------------------------------------------------------
+The most salient feature of Stellar Mayhem is that it takes 
+place entirely on the UI layer of the Unreal Engine renderer.
+There's no Actor objects, and even the camera isn't defined or used, 
+nor a proper GameMode, GameInstance, Pawn, etc.
+
+This is by design. The project was meant to test how a 2D game 
+could be implemented using UI widgets and to see if it would 
+run fast enough. The answer to both questions, it turns out, is yes.
+While there is some nervousness about the authoritative game state 
+being ahead of the renderer by one or two frames (because it is 
+running on its own thread), in practice it turns out not to be 
+an issue (or at least, not for a game like this).
+
+All the graphics take place on a single UUserWidget subclass 
+named UPlayViewBase (and its blueprint subclass). It might be 
+worth adding a second UUserWidget to the viewport just for 
+the gameplay arena.
+
+UPlayViewBase implements an interface class called IArena, 
+so that other classes which need access to things like sounds, 
+textures, input state, etc. don't need to know about UPlayViewBase 
+nor have friend-level access to its members. A pointer to IArena 
+is set into every object that needs to access arena data.
+"Arena" is the name because it embodies the object where the 
+gameplay is happening. A global IArena pointer var would work too, 
+but isn't as scalable.
+
+UMG is used for non-gameloop widgets that benefit from being 
+laid out in the Widget Designer, such as menus, HUD elements, 
+credits, the help screen, etc. Some of that stuff, like the 
+highscore table, is also driven programatically.
+
+Slate is used for gameloop widgets like asteroids, player ship, 
+enemy ships, torpedos, etc. By not using UMG, we save some 
+overhead (one scenegraph instead of two), and the UE garbage collector 
+also doesn't have to worry about those UWidgets. Slate widgets 
+are managed using shared pointers (TSharedPtr) that abstract 
+calls to operator new/delete.
+
+The PlayObject2D template class is similar to UWidget in that 
+it extends a Slate widget. But inheritance was used instead of 
+having an SWidget member, so it's possible to treat a 
+PlayObject2D class as an SWidget.
+
+PlayObject2D maintains a slot because SWidget doesn't, and 
+the slot is needed for e.g. implementing helper methods like 
+SetPosition. In both UMG and Slate, there's no explicit concept 
+of widget position; it depends entirely on what panel widget 
+a widget has as a parent. To support positioning, all widgets 
+are placed inside the SConstraintCanvas that is wrapped by 
+the UPlayViewBase's RootCanvas (a UCanvasPanel). So the slot 
+is always of type SConstraintCanvas::FSlot, the slot anchors 
+are always set for the full viewport, and the position
+of a widget is easily managed using the slot's Offset's left 
+and top members. The slot's alignment is also set to 0.5, 0.5 
+to refer to the widget's center, by default.
+
+It helps to keep UMG and Slate as details that shouldn't 
+be known to the rest of the game code. So classes like 
+PlayObject2D and functions like UDaylonUtils::Show try 
+to abstract those details away. In case we want to port 
+the game to a different engine, it'll be easier.
+
+Because we don't use Actors, we don't get easy access to 
+physics, so a custom collision detector was implemented 
+in the UPlayViewBase::CheckCollisions method.
+
+It's technically possible to implement the entire gameplay 
+scenegraph in a single Slate widget. At this point though, 
+the performance benefits are probably too slim to be worthwhile.
+Worst case, there are about 130 gameplay widgets at once, 
+which is nothing even for an older computer to go through.
+
+Custom Slate widgets like SDaylonParticles improve performance 
+by drawing many particles inside a single OnPaint call instead of 
+having a widget for each one.
+
+Except for the player ship, all widget types like FEnemyShip, etc. 
+are part of a collection having a TArray<TSharedPtr<widget-type>> member.
+The collection classes manage creation and disposal of list elements.
+So until a widget is truly destroyed, it will normally have a reference 
+inside the SConstraintCanvas tree and another in the collection.
+Typically, a static Create function in a widget class will call SNew() 
+to instance the widget, then call Daylon::Install() to place a 
+reference inside the canvas, and return another reference to 
+Create()'s caller, who then (presumably) adds it to the collection 
+using TArray::Add(). When we're done with a widget, a removal 
+function will call Daylon::Uninstall() to take it out of the 
+canvas, and then also take it out of the collection using 
+TArray::RemoveAtSwap(). The TSharedPtr refcount will reach zero 
+and operator delete will immediately reclaim the memory.
+
+A collection class may manage multiple TArray's e.g. FEnemyShips 
+handles FEnemyShip, FEnemyBoss, and FScavanger arrays.
+
+The player's ship and its two shield types are done using 
+three separate but overlaid widgets. Maybe a single widget 
+would have been better. However, from the POV of the game, 
+all those things are self-contained inside the FPlayerShip class.
+
+Configurable parameters (like an explosion's particle parameters) 
+are kept in Constants.h. It would be nice to have them in an .ini 
+file or something similar, but if someone is customizing the game, 
+they probably have a compiler anyway and at that point a header file 
+is just as convenient.
+
+UE's check() function is used to assert various conditions.
+Normally a game is coded to not halt during errors because it 
+causes the editor to exit in DevelopmentEditor builds, making 
+artists' lives harder, but at this stage, 99% of development 
+occurs in the code. If there's an error, one has to drop back 
+down to the IDE anyway.
+
+UPlayViewBase::NativeTick drives the game loop. The provided 
+time delta is forwarded to any downstream objects that need it 
+to e.g. animate their appearance, move around, etc.
+
+Daylon::FScheduledTask is used to perform stuff that needs to 
+happen in the future. For example, the player ship's explosion 
+is actually two explosions, the second one delayed for a moment. 
+The player-death code simply schedules the second explosion 
+as a task to be run a bit later, providing a lambda function 
+that handles the task details.
+
+While player score isn't displayed in a non-arcade game, 
+it's useful as a measure of player experience, and is used 
+as such in several places e.g. timing the introduction of 
+more difficult enemies. 
+
+All generic/reusable code is placed in the DaylonGraphicsLibrary plugin.
+Mostly helper routines like vector/trig math and reusable widgets.
+
+As much code as possible is in C++. Blueprint script needs to be 
+carefully allotted only where the benefit (e.g. designer turnaround) 
+outweighs being able to easily share C++ code amongst multiple developers.
 
 
 Future Work

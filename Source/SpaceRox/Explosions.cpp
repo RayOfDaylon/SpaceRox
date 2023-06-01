@@ -24,7 +24,7 @@ TSharedPtr<FExplosion> FExplosion::Create
 
 	Widget->Inertia = Inertia;
 	UDaylonUtils::Show(&Widget.Get());
-	Widget->SetRenderTransformPivot(FVector2D(0.5f));
+	//Widget->SetRenderTransformPivot(FVector2D(0.5f));
 	Widget->SetPosition(P);
 	Widget->UpdateWidgetSize();
 	Widget->SetParticleBrush(Brush);
@@ -91,7 +91,7 @@ TSharedPtr<FShieldExplosion> FShieldExplosion::Create
 
 	Widget->Inertia = Inertia;
 	UDaylonUtils::Show(&Widget.Get());
-	Widget->SetRenderTransformPivot(FVector2D(0.5f));
+	//Widget->SetRenderTransformPivot(FVector2D(0.5f));
 	Widget->SetPosition(P);
 	Widget->UpdateWidgetSize();
 	Widget->Set(Params);

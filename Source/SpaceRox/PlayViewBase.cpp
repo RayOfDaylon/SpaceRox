@@ -115,7 +115,7 @@ void UPlayViewBase::InitializePlayerShipCount()
 
 void UPlayViewBase::CreatePlayerShip()
 {
-	PlayerShip = FPlayerShip::Create(PlayerShipAtlas, FVector2D(32), 0.4f);
+	PlayerShip = FPlayerShip::Create(PlayerShipAtlas->Atlas, FVector2D(32), 0.4f);
 
 	PlayerShip->DoubleShotsLeft   .Bind([this](int32){ UpdatePlayerShipReadout(EPowerup::DoubleGuns);    });
 	PlayerShip->ShieldsLeft       .Bind([this](int32){ UpdatePlayerShipReadout(EPowerup::Shields);       });

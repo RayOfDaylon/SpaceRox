@@ -4,13 +4,13 @@
 #include "Constants.h"
 
 
-TSharedPtr<FPlayerShip> FPlayerShip::Create(UDaylonSpriteWidgetAtlas* Atlas, const FVector2D& S, float RadiusFactor)
+TSharedPtr<FPlayerShip> FPlayerShip::Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float RadiusFactor)
 {
 	auto Widget = SNew(FPlayerShip);
 
 	Daylon::Install<SDaylonSprite>(Widget, RadiusFactor);
 
-	Widget->SetAtlas(Atlas->Atlas);
+	Widget->SetAtlas(Atlas);
 	Widget->SetSize(S);
 	Widget->UpdateWidgetSize();
 
