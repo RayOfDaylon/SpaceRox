@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "SDaylonParticles.h"
+
 
 // Constants.
 // todo: put them where they can be easily modded at design time.
@@ -57,8 +59,25 @@ const float MaxTimeUntilNextEnemyShip      = 20.0f;  // Let each wave start with
 const float MaxTimeUntilEnemyRespawn       = 10.0f;  // Longest delay between successive enemy ship spawns. Favored when player score is low.
 const float MinTimeUntilEnemyRespawn       =  2.0f;  // Shortest delay between successive enemy ship spawns. Favored more as player score increases.
 
+const float MinTimeTilNextEnemyShipMove    = 2.5f;
+const float MaxTimeTilNextEnemyShipMove    = 3.5f;
+
+const float MinEnemyShipSpeed              = 250.0f;
+const float MaxEnemyShipSpeed              = 350.0f;
+
+const float MinMinibossSpeed               =  90.0f;
+const float MaxMinibossSpeed               = 175.0f;
+
+const float BigEnemyLowestProbability      = 0.33f;  // Lowest chance of a big enemy spwaning vs. a small enemy.
+
+const int32 ScoreForBigEnemyAimWorst       =       0;  // Player score at which big enemy ships fire worst.
+const int32 ScoreForBigEnemyAimPerfect     = 400'000;  // Player score at which big enemy ships fires perfectly.
+const int32 ScoreForSmallEnemyAimWorst     =  25'000;  // Player score at which small enemy ships fire worst.
+const int32 ScoreForSmallEnemyAimPerfect   = 200'000;  // Player score at which small enemy ships fires perfectly.
 const int32 ScoreForBossSpawn              =  30'000;  // Player score must be this high for bosses to appear.
 const int32 ScoreForBossAimPerfect         = 150'000; // At this score, bosses aim perfectly.
+const int32 ScoreForBossToHaveDualShields  = 100'000;
+
 const float MaxTimeUntilNextBoss           = 22.0f;  // Let each wave start with a breather.
 const float MaxTimeUntilBossRespawn        = 20.0f;  
 const float MinTimeUntilBossRespawn        = 10.0f;  
@@ -79,6 +98,7 @@ const float ShieldPowerupIncrease          = 20.0f; // Number of seconds of shie
 const int32 DoubleGunsPowerupIncrease      = 100;   // Number of double shots given when double guns powerup gained.
 const float MaxInvincibilityTime           = 30.0f; // Number of seconds player ship is invincible after powerup gained.       
 const float MaxInvincibilityWarnTime       = 0.5f;  // Number of seconds between succesive "low invincibility" on/off flashes.
+const float WarnWhenInvincibilityGoingAway = 5.0f;  // Number of seconds of remaining invincibility to start warning player that it will end
 
 const float ShieldBonkDamage               = 4.0f;  // Number of seconds to take from shield life when shields impact something.
 
@@ -92,3 +112,76 @@ const int32 InvincibilityDefenseAtlasCel   = 1;
 
 const float ExplosionInertialFactor        = 0.5f; // Original game had 0.0f, larger values make explosion particles retain target's inertia
 const float BossShieldSpinSpeed            = 100.0f; // degrees/sec
+
+const float PlayerShipSecondExplosionDelay = 0.66f;
+
+const FDaylonParticlesParams IntroExplosionParams =
+{
+	4.5f,   // MinParticleSize
+	9.0f,   // MaxParticleSize
+	45.0f,  // MinParticleVelocity
+	240.0f, // MaxParticleVelocity
+	0.5f,   // MinParticleLifetime
+	4.0f,   // MaxParticleLifetime
+	0.25f,  // FinalOpacity
+	80      // NumParticles
+};
+
+
+// Default explosion is used for asteroids and miniboss shield bonks.
+// Mimics the original Asteroids arcade explosion; small unfading particles with a small dispersal radius.
+const FDaylonParticlesParams DefaultExplosionParams = 
+{	
+	3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40 
+};
+
+
+const FDaylonParticlesParams EnemyShipExpolosionParams = 
+{
+     3.0f, 
+     8.0f, 
+    30.0f, 
+   180.0f, 
+     0.33f, 
+     1.5f, 
+     0.25f, 
+    60,
+};
+
+
+const static FDaylonParticlesParams MiniBossExplosionParams = 
+{
+ 	 3.0f, 
+ 	 8.0f, 
+	30.0f, 
+    180.0f, 
+	0.33f, 
+	1.5f, 
+	0.25f, 
+	60
+};
+
+
+const FDaylonParticlesParams PlayerShipFirstExplosionParams =
+{
+	3.0f,
+	6.0f,
+	30.0f,
+	160.0f,
+	0.5f,
+	3.0f,
+	0.25f,
+	80
+};
+
+const FDaylonParticlesParams PlayerShipSecondExplosionParams =
+{
+	4.5f,
+	9.0f,
+	45.0f,
+	240.0f,
+	0.5f,
+	4.0f,
+	0.25f,
+	80
+};

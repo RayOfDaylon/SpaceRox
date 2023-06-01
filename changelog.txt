@@ -1,6 +1,18 @@
 Change log for Stellar Mayhem
 
 
+Version 1.8.5
+-------------------------------------------------------------------------------------
+Big enemy ships improve their aim over time, but take longer to do so
+than the small enemy ships. Small enemy ships also start with poor aim 
+against the player ship.
+
+Replaced several constant literals with named global constant vars.
+
+Removed several unnecessary todo comments.
+
+Moved local const FParticlesParams declarations to constants.h.
+
 Moved FAnimSpriteCel from game to plugin.
 Replaced FAnimSpriteCel::Arena with delegate so that 
 UPlayViewBase takes care of making torpedo sounds during intro screen, 

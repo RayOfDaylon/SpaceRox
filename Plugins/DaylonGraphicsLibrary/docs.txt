@@ -2,7 +2,7 @@ Documentation for DaylonGraphicsLibrary plug-in for Unreal Engine
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox (inside Plugins folder)
-May 28, 2023
+June 1, 2023
 
 
 
@@ -38,6 +38,8 @@ containing several static functions.
 
   Rotate           Rotates a 2D point around a given angle (in degrees).
                    The pivot point is the origin (0, 0).
+
+  DeviateVector    Randomly perturbs a vector by an angular range.
 
   Vector2DToAngle  Converts a 2D vector to an angle, in degrees.
                    A vector of [0, -y] corresponds to zero degrees, 
@@ -117,6 +119,13 @@ If you are using the atlas to occasionally change the appearance of
 the widget, call the SetCurrentCel() method instead.
 
 
+FAnimSpriteCel
+-------------------------------------------------------------------------------------
+A gameplay object that holds a static brush but can animate its quad from one 
+size and position to another. Used by the intro to make the game title 
+letters emerge one-by-one from the center of the screen.
+
+
 SDaylonParticlesWidget
 -------------------------------------------------------------------------------------
 This SWidget draws particles moving away randomly from the widget's center.
@@ -128,3 +137,7 @@ the animation has ended and the widget can be disposed or hidden.
 Call the Reset method to set the animation for another replay.
 
 
+SDaylonLineParticlesWidget
+-------------------------------------------------------------------------------------
+Similar to SDaylonParticlesWidget, but uses a provided array of line segments.
+Used by the miniboss explosion to show the shield segments blowing apart.

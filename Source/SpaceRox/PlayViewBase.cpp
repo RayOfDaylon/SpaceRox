@@ -804,12 +804,11 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 				if(TimeUntilIntroStateEnds > 0.0f)
 				{
-#if 1
 					for(auto& CelPtr : TitleCels)
 					{
 						CelPtr->Update(InDeltaTime);
 					}
-#endif
+
 					// TitleGraphic->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 1.5f) / MaxIntroStateLifetime));
 
 					VersionReadout->SetOpacity(FMath::Max(0.0f, 1.0f - (TimeUntilIntroStateEnds * 3.0f) / MaxIntroStateLifetime));
@@ -820,19 +819,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 					{
 						ExploCountAge = FMath::FRandRange(0.05f, 0.2f);
 
-						const static FDaylonParticlesParams Params =
-						{
-							4.5f,   // MinParticleSize
-							9.0f,   // MaxParticleSize
-							45.0f,  // MinParticleVelocity
-							240.0f, // MaxParticleVelocity
-							0.5f,   // MinParticleLifetime
-							4.0f,   // MaxParticleLifetime
-							0.25f,  // FinalOpacity
-							80      // NumParticles
-						};
-
-						Explosions.SpawnOne(UDaylonUtils::RandomPtWithinBox(Box), Params);
+						Explosions.SpawnOne(UDaylonUtils::RandomPtWithinBox(Box), IntroExplosionParams);
 
 						if(FMath::RandRange(0, 5) == 0)
 						{
@@ -1020,30 +1007,8 @@ void UPlayViewBase::ProcessPlayerShipSpawn(float DeltaTime)
 }
 
 
-template<typename T>
-bool ObjectsIntersectBox(const TArray<T>& PlayObjects, const UE::Geometry::FAxisAlignedBox2d& SafeZone)
-{
-	for(const auto& PlayObject : PlayObjects)
-	{
-		const auto ObjectHalfSize = PlayObject.GetSize() / 2;
-
-		const UE::Geometry::FAxisAlignedBox2d ObjectBox
-		(
-			PlayObject.UnwrappedNewPosition - ObjectHalfSize,
-			PlayObject.UnwrappedNewPosition + ObjectHalfSize
-		);
-
-		if(ObjectBox.Intersects(SafeZone))
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-
 template <typename T>
-bool ImageObjectsIntersectBox(const TArray<TSharedPtr<T>>& PlayObjects, const UE::Geometry::FAxisAlignedBox2d& SafeZone)
+bool PlayObjectsIntersectBox(const TArray<TSharedPtr<T>>& PlayObjects, const UE::Geometry::FAxisAlignedBox2d& SafeZone)
 {
 	for(const auto& PlayObject : PlayObjects)
 	{
@@ -1087,9 +1052,9 @@ bool UPlayViewBase::IsSafeToSpawnPlayer() const
 		ScreenCenter - SafeZoneSize / 2,
 		ScreenCenter + SafeZoneSize / 2);
 
-	return (!ImageObjectsIntersectBox(Asteroids.Asteroids,   SafeZone) && 
-	        !ImageObjectsIntersectBox(EnemyShips.Ships,      SafeZone) &&
-			!ImageObjectsIntersectBox(EnemyShips.Scavengers, SafeZone));
+	return (!PlayObjectsIntersectBox(Asteroids.Asteroids,   SafeZone) && 
+	        !PlayObjectsIntersectBox(EnemyShips.Ships,      SafeZone) &&
+			!PlayObjectsIntersectBox(EnemyShips.Scavengers, SafeZone));
 }
 
 
@@ -1331,8 +1296,6 @@ void UPlayViewBase::KillPowerup(int32 PowerupIndex)
 
 	auto& Powerup = Powerups[PowerupIndex];
 
-	//SpawnExplosion(EnemyShip.GetPosition());
-	// todo: PlaySound(ExplosionSounds[EnemyShip.Value == ValueBigEnemy ? 0 : 1]);
 	RemovePowerup(PowerupIndex);
 }
 
@@ -1457,7 +1420,7 @@ void UPlayViewBase::CheckCollisions()
 
 	// See what the active torpedos have collided with.
 
-	for (auto& TorpedoPtr : Torpedos)
+	for(auto& TorpedoPtr : Torpedos)
 	{
 		auto& Torpedo = *TorpedoPtr.Get();
 
@@ -1473,9 +1436,7 @@ void UPlayViewBase::CheckCollisions()
 		const FVector2D OldP     = Torpedo.OldPosition;
 		const FVector2D CurrentP = Torpedo.UnwrappedNewPosition;
 
-		// See if we hit any rocks. todo: we only need current pos, not next.
-		// todo: we should first move all objects, then check for collisions.
-
+		// See if torpedo hit any rocks.
 
 		for(int32 AsteroidIndex = 0; AsteroidIndex < Asteroids.Num(); AsteroidIndex++)
 		{
@@ -1628,7 +1589,6 @@ void UPlayViewBase::CheckCollisions()
 				// Player collided with a rock.
 
 				ProcessPlayerCollision();
-				// todo: should we credit player if he used his shields?
 				Asteroids.Kill(AsteroidIndex, CreditPlayerForKill);
 
 				break;
@@ -1777,8 +1737,8 @@ void UPlayViewBase::CheckCollisions()
 
 					case EPowerup::Shields:
 
-						PlayerShip->AdjustShieldsLeft(ShieldPowerupIncrease);
 						PlaySound(GainShieldPowerupSound);
+						PlayerShip->AdjustShieldsLeft(ShieldPowerupIncrease);
 						PlayAnimation(ShieldReadoutFlash, 0.0f, 1, EUMGSequencePlayMode::Forward, 1.0f, true);
 						break;
 

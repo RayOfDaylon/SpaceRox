@@ -108,19 +108,7 @@ void FEnemyShips::KillShip(int32 Index)
 
 	auto& Ship = *Ships[Index].Get();
 
-	const static FDaylonParticlesParams Params = 
-	{
-		 3.0f, 
-		 8.0f, 
-		30.0f, 
-       180.0f, 
-		 0.33f, 
-		 1.5f, 
-		 0.25f, 
-		60,
-	};
-
-	Arena->GetExplosions().SpawnOne(Ship.GetPosition(), Params, Ship.Inertia);
+	Arena->GetExplosions().SpawnOne(Ship.GetPosition(), EnemyShipExpolosionParams, Ship.Inertia);
 	Arena->PlaySound(Arena->GetExplosionSound(Ship.Value == ValueBigEnemy ? 0 : 1));
 	RemoveShip(Index);
 }
@@ -138,19 +126,7 @@ void FEnemyShips::KillBoss(int32 Index)
 
 	// Spawn explosion for the ship at the center.
 
-	const static FDaylonParticlesParams Params = 
-	{
-		 3.0f, 
-		 8.0f, 
-		30.0f, 
-       180.0f, 
-		 0.33f, 
-		 1.5f, 
-		 0.25f, 
-		60
-	};
-
-	Arena->GetExplosions().SpawnOne(Boss.GetPosition(), Params, Boss.Inertia);
+	Arena->GetExplosions().SpawnOne(Boss.GetPosition(), MiniBossExplosionParams, Boss.Inertia);
 
 	Arena->PlaySound(Arena->GetExplosionSound(0)); // todo: use specific sound
 
@@ -244,9 +220,6 @@ void FEnemyShips::KillScavenger(int32 Index)
 
 	// Have scavenger drop any powerups it was carrying.
 
-	// For now, place them in a line trailing away from the scavenger.
-	// todo: use a spiral. Each groove needs to be DroppedPowerupPtr->GetRadius*2 distant.
-
 	const int32 NumAcquiredPowerups = Scavenger.AcquiredPowerups.Num();
 
 	if(NumAcquiredPowerups > 0)
@@ -303,12 +276,12 @@ void FEnemyShips::SpawnShip()
 {
 	// Generate a big enemy ship vs. small one based on player score.
 	// The higher the score, the likelier a small enemy will appear.
-	// Regardless of score, there's always a 10% chance of a big enemy ship.
+	// Regardless of score, there's always a 1/3 chance of a big enemy ship.
 
 	const int32 ScoreTmp = FMath::Max(0, Arena->GetPlayerScore() - 5000);
 
-	float BigEnemyProbability = pow(FMath::Lerp(1.0f, 0.1f,  FMath::Min(1.0f, ScoreTmp / 65'000.0f)), 2.0f);
-	BigEnemyProbability = FMath::Max(0.1f, BigEnemyProbability);
+	float BigEnemyProbability = pow(FMath::Lerp(1.0f, BigEnemyLowestProbability,  FMath::Min(1.0f, ScoreTmp / 65'000.0f)), 2.0f);
+	BigEnemyProbability = FMath::Max(BigEnemyLowestProbability, BigEnemyProbability);
 
 	const bool IsBigEnemy = (FMath::FRand() <= BigEnemyProbability);
 
@@ -321,7 +294,7 @@ void FEnemyShips::SpawnShip()
 	// Choose a random Y-pos to appear at. Leave room to avoid ship appearing clipped.
 	FVector2D P(0.0, FMath::RandRange(EnemyShipPtr->GetSize().Y + 2, ViewportSize.Y - (EnemyShipPtr->GetSize().Y + 2)));
 
-	auto Inertia = FVector2D(1, 0) * 300; // todo: use global constant for speed, maybe min/max it
+	auto Inertia = FVector2D(1, 0) * FMath::FRandRange(MinEnemyShipSpeed, MaxEnemyShipSpeed);
 
 	if(FMath::RandBool())
 	{
@@ -368,14 +341,14 @@ void FEnemyShips::SpawnBoss()
 	// The higher the player score, the more likely the boss will have multiple shields.
 
 	// Don't spawn if score too low.
-	const int32 ScoreTmp = Arena->GetPlayerScore() - 30'000;
+	const int32 ScoreTmp = Arena->GetPlayerScore() - ScoreForBossSpawn;
 
 	if(ScoreTmp < 0)
 	{
 		return;
 	}
 
-	float DualShieldProbability = pow(FMath::Lerp(1.0f, 0.1f,  FMath::Min(1.0f, ScoreTmp / 100'000.0f)), 2.0f);
+	float DualShieldProbability = pow(FMath::Lerp(1.0f, 0.1f,  FMath::Min(1.0f, (float)ScoreTmp / ScoreForBossToHaveDualShields)), 2.0f);
 	DualShieldProbability = FMath::Max(0.1f, DualShieldProbability);
 
 	const bool IsDualShielded = (FMath::FRand() > DualShieldProbability);
@@ -404,7 +377,7 @@ void FEnemyShips::SpawnBoss()
 	}
 
 	BossShipPtr->SetPosition(P);
-	BossShipPtr->Inertia = UDaylonUtils::RandVector2D() * 100.0f;
+	BossShipPtr->Inertia = UDaylonUtils::RandVector2D() * FMath::FRandRange(MinMinibossSpeed, MaxMinibossSpeed);
 
 	Bosses.Add(BossShipPtr);
 }

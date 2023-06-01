@@ -16,11 +16,6 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogDaylon, Log, All);
 
 
-// Set to 1 to enable play objects to use Slate widgets directly instead of UMG.
-// todo: currently crashes, and our object arrays end up having 'fat' elements
-// when we should just be storing pointers.
-#define INCLUDE_SLATE_ONLY_SYSTEM 0
-
 
 UCLASS()
 class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary

@@ -150,7 +150,7 @@ void FPlayerShip::Perform(float DeltaTime)
 	{
 		InvincibilityShield->Hide();
 	}
-	else if(InvincibilityLeft <= 5.0f) // todo: use constant
+	else if(InvincibilityLeft <= WarnWhenInvincibilityGoingAway)
 	{
 		// Flash the invincibility shield to indicate that it has only a few seconds of power left.
 		TimeUntilNextInvincibilityWarnFlash -= DeltaTime;
@@ -185,35 +185,9 @@ void FPlayerShip::SpawnExplosion()
 	const auto P           = GetPosition();
 	const auto ShipInertia = Inertia * 0; // Don't use any inertia 
 
-	const static FDaylonParticlesParams Params =
-	{
-		3.0f,
-		6.0f,
-		30.0f,
-		160.0f,
-		0.5f,
-		3.0f,
-		0.25f,
-		80
-	};
+	Arena->GetExplosions().SpawnOne(P, PlayerShipFirstExplosionParams, ShipInertia);
 
-	Arena->GetExplosions().SpawnOne(P, Params, ShipInertia);
-
-	// Set up second explosion event for 3/4 second later
-
-	const static FDaylonParticlesParams Params2 =
-	{
-		4.5f,
-		9.0f,
-		45.0f,
-		240.0f,
-		0.5f,
-		4.0f,
-		0.25f,
-		80
-	};
-
-	Arena->ScheduleExplosion(0.66f, P, ShipInertia, Params2);
+	Arena->ScheduleExplosion(PlayerShipSecondExplosionDelay, P, ShipInertia, PlayerShipSecondExplosionParams);
 }
 
 

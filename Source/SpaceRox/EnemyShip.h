@@ -60,7 +60,6 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 	void  SetShieldSegmentHealth   (int32 ShieldNumber, int32 SegmentIndex, float Health);
 	void  GetShieldSegmentGeometry (int32 ShieldNumber, int32 SegmentIndex, FVector2D& P1, FVector2D& P2) const;
 	float GetShieldThickness       () const;
-	void  SpawnExplosion           ();
 	void  Perform                  (float DeltaTime);
 	void  Shoot                    ();
 };

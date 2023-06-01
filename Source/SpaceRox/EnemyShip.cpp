@@ -20,6 +20,21 @@
 #endif
 
 
+static FVector2D GetFiringAngle(float TorpedoSpeed, const FVector2D& P, const FVector2D& TargetP, const FVector2D& TargetInertia, float Quality)
+{
+	auto DirectionToTarget = TargetP - P;
+	DirectionToTarget.Normalize();
+
+	// The random direction has to be away from us. It can vary by -90 to +90 degrees from DirectionToTarget.
+	const auto AngleToTarget = UDaylonUtils::Vector2DToAngle(DirectionToTarget);
+	const auto RandomAngle   = AngleToTarget + FMath::FRandRange(-90.0f, 90.0f);
+
+	const auto PerfectDirection = UDaylonUtils::ComputeFiringSolution(P, TorpedoSpeed, TargetP, TargetInertia);
+	const auto PerfectAngle     = UDaylonUtils::Vector2DToAngle(PerfectDirection);
+
+	return UDaylonUtils::AngleToVector2D(FMath::Lerp(RandomAngle, PerfectAngle, Quality));
+}
+
 
 TSharedPtr<FEnemyShip> FEnemyShip::Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas, int Value, float RadiusFactor)
 {
@@ -71,7 +86,7 @@ void FEnemyShip::Perform(float DeltaTime)
 
 	if(TimeRemainingToNextMove <= 0.0f)
 	{
-		TimeRemainingToNextMove = 3.0f; // todo: use global constant instead of 3.0
+		TimeRemainingToNextMove = FMath::FRandRange(MinTimeTilNextEnemyShipMove, MaxTimeTilNextEnemyShipMove);
 
 		// Change heading (or stay on current heading).
 
@@ -91,7 +106,6 @@ void FEnemyShip::Perform(float DeltaTime)
 		Inertia.X *= Facing;
 	}
 }
-
 
 
 void FEnemyShip::Shoot()
@@ -125,12 +139,15 @@ void FEnemyShip::Shoot()
 
 	if(WereBig)
 	{
-		// Shot vector is random.
-		Direction = UDaylonUtils::RandVector2D();
+		Speed = BigEnemyTorpedoSpeed;
+
+		const float Aim = FMath::Clamp(UDaylonUtils::Normalize(Arena->GetPlayerScore(), ScoreForBigEnemyAimWorst, ScoreForBigEnemyAimPerfect), 0.0f, 1.0f);
+
+		Direction = GetFiringAngle(Speed, LaunchP, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia, Aim);
+
+		// Shift the launch point outside the ship. This will screw up perfect aims but they will still be close enough to rattle the player.
 		LaunchP += Direction * (GetSize().X / 2 + 2);
 		LaunchP = Arena->WrapPosition(LaunchP);
-
-		Speed = BigEnemyTorpedoSpeed;
 	}
 	else
 	{
@@ -147,7 +164,9 @@ void FEnemyShip::Shoot()
 
 		if(bShootAtPlayer || Arena->GetAsteroids().IsEmpty())
 		{
-			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia);
+			const float Aim = FMath::Clamp(UDaylonUtils::Normalize(Arena->GetPlayerScore(), ScoreForSmallEnemyAimWorst, ScoreForSmallEnemyAimPerfect), 0.0f, 1.0f);
+
+			Direction = GetFiringAngle(Speed, LaunchP, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia, Aim);
 		}
 		else
 		{
@@ -365,28 +384,6 @@ void FEnemyBoss::SetShieldSegmentHealth(int32 ShieldNumber, int32 SegmentIndex, 
 }
 
 
-void FEnemyBoss::SpawnExplosion()
-{
-	// todo: this never gets called, FEnemyShips::KillBoss() is handling it.
-	const auto P = GetPosition();
-	const auto ShipInertia = Inertia;
-
-	const static FDaylonParticlesParams Params = 
-	{
-		4.5f,
-		9.0f,
-		45.0f,
-		240.0f,
-		0.5f,
-		4.0f,
-		0.25f,
-		80
-	};
-
-	Arena->GetExplosions().SpawnOne(P,  Params, ShipInertia);
-}
-
-
 void FEnemyBoss::Perform(float DeltaTime)
 {
 	TimeRemainingToNextMove -= DeltaTime;
@@ -444,18 +441,9 @@ void FEnemyBoss::Shoot()
 	auto DirectionToPlayer = Arena->GetPlayerShip().GetPosition() - GetPosition();
 	DirectionToPlayer.Normalize();
 	const auto FiringPoint = Arena->WrapPosition(GetPosition() + DirectionToPlayer * (Shields.Last(0)->GetSize().X / 2 + 10.0f));
-
-	// The random direction has to be away from us. It can vary by -90 to +90 degrees from DirectionToPlayer.
-	const auto AngleToPlayer = UDaylonUtils::Vector2DToAngle(DirectionToPlayer);
-	const auto RandomAngle = AngleToPlayer + FMath::FRandRange(-90.0f, 90.0f);
-
-	const auto PerfectDirection = UDaylonUtils::ComputeFiringSolution(FiringPoint, BossTorpedoSpeed, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia);
-	const auto PerfectAngle = UDaylonUtils::Vector2DToAngle(PerfectDirection);
-
 	const float Aim = FMath::Min(1.0f, UDaylonUtils::Normalize(Arena->GetPlayerScore(), ScoreForBossSpawn, ScoreForBossAimPerfect));
-	const auto Angle = FMath::Lerp(RandomAngle, PerfectAngle, Aim);
 
-	const auto Direction = UDaylonUtils::AngleToVector2D(Angle);
+	const auto Direction = GetFiringAngle(BossTorpedoSpeed, FiringPoint, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia, Aim);
 
 	Torpedo.Spawn(FiringPoint, Direction * BossTorpedoSpeed, MaxTorpedoLifeTime);
 

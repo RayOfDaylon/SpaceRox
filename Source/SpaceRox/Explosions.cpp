@@ -23,7 +23,7 @@ TSharedPtr<FExplosion> FExplosion::Create
 	Daylon::Install<SDaylonParticles>(Widget, 0.5f);
 
 	Widget->Inertia = Inertia;
-	Widget->SetVisibility(EVisibility::HitTestInvisible);
+	UDaylonUtils::Show(&Widget.Get());
 	Widget->SetRenderTransformPivot(FVector2D(0.5f));
 	Widget->SetPosition(P);
 	Widget->UpdateWidgetSize();
@@ -36,11 +36,8 @@ TSharedPtr<FExplosion> FExplosion::Create
 void FExplosions::SpawnOne(const FVector2D& P, const FVector2D& Inertia)
 {
 	// Spawn a default explosion.
-	// This one mimics the original Asteroids arcade explosion; small unfading particles with a small dispersal radius.
 
-	const static FDaylonParticlesParams Params = { 3.0f, 3.0f, 30.0f, 80.0f, 0.25f, 1.0f, 1.0f, 40 };
-
-	SpawnOne(P, Params, Inertia);
+	SpawnOne(P, DefaultExplosionParams, Inertia);
 }
 
 
@@ -93,7 +90,7 @@ TSharedPtr<FShieldExplosion> FShieldExplosion::Create
 	Daylon::Install<SDaylonLineParticles>(Widget, 0.5f);
 
 	Widget->Inertia = Inertia;
-	Widget->SetVisibility(EVisibility::HitTestInvisible);
+	UDaylonUtils::Show(&Widget.Get());
 	Widget->SetRenderTransformPivot(FVector2D(0.5f));
 	Widget->SetPosition(P);
 	Widget->UpdateWidgetSize();
