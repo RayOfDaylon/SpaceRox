@@ -64,7 +64,7 @@ void FExplosions::Update(const TFunction<FVector2D(const FVector2D&)>& WrapFunct
 		
 		if(!Widget->Update(DeltaTime))
 		{
-			UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(ExplosionPtr.ToSharedRef());
+			Daylon::UninstallImpl(ExplosionPtr);
 			Explosions.RemoveAtSwap(Index);
 		}
 	}
@@ -75,8 +75,7 @@ void FExplosions::RemoveAll()
 {
 	while(!Explosions.IsEmpty())
 	{
-		UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(Explosions.Last(0).ToSharedRef());
-		Explosions.Pop();
+		Daylon::UninstallImpl(Explosions.Pop());
 	}
 }
 
