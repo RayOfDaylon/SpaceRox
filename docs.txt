@@ -362,6 +362,29 @@ In development mode, this will be in the project's
 Saved folder. In packaged Shipping builds, the 
 file should be in /Users/.../AppData/Local/SpaceRox/Saved.
 
+Texture design is tricky because many textures mimic 
+the look of the vector graphics in the original arcade game.
+First, textures must have sufficient resolution so that 
+the thin lines don't look too pixellated or blurry. 
+Second, the line width depends on how many screen 
+pixels the texture will occupy. This is why these 
+textures are never dynamically resized during gameplay, 
+because the lines would grow thicker and thinner 
+instead of remaining a constant width.
+    Although different window sizes will scale the 
+viewport, this is not a problem because the scale is
+applied uniformly to all widgets. If the game looks 
+okay at HD, it'll also be fine at e.g. 4K.
+    While we could avoid textures-pretending-to-be-vectors 
+by making Slate widgets that draw using lines, we'd then 
+need to furnish the vector data in code or have e.g. 
+an SVG importer, and it would also turn one render command 
+into several. GPUs, as a general rule, also don't perform 
+as well rasterizing thin polygons.
+    We could also just use traditional filled textures, 
+even color. It depends on how much we want to preserve 
+the vector/monochrome look of the original arcade game.
+
 
 Code Architecture
 -------------------------------------------------------------------------------------
