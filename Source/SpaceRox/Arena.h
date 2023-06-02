@@ -61,7 +61,7 @@ class IArena
 
 		virtual void                          PlaySound                  (USoundBase* Sound, float VolumeScale = 1.0f) = 0;
 
-		virtual bool                          IsPlayerPresent              () const = 0;
+		virtual bool                          IsPlayerShipPresent          () const = 0;
 		virtual FPlayerShip&                  GetPlayerShip                () = 0;
 		virtual int32                         GetPlayerScore               () const = 0;
 		virtual float                         GetPlayerRotationForce       () const = 0;

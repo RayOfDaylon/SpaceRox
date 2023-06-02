@@ -113,7 +113,7 @@ void FEnemyShip::Shoot()
 	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
 	// For now, just use wild and leaded.
 
-	if(!Arena->IsPlayerPresent())
+	if(!Arena->IsPlayerShipPresent())
 	{
 		return;
 	}
@@ -419,7 +419,7 @@ void FEnemyBoss::Shoot()
 	// In Defcon, we had three shooting accuracies: wild, at, and leaded.
 	// For now, just use wild and leaded.
 
-	if(!Arena->IsPlayerPresent())
+	if(!Arena->IsPlayerShipPresent())
 	{
 		return;
 	}

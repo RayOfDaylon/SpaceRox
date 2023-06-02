@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Runtime/GeometryCore/Public/BoxTypes.h"
 #include "UMG/Public/Blueprint/WidgetTree.h"
 #include "UMG/Public/Components/Widget.h"
 #include "UMG/Public/Components/Image.h"
@@ -15,6 +16,7 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(LogDaylon, Log, All);
 
+class UTextBlock;
 
 
 UCLASS()
@@ -67,7 +69,7 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary
 	static void        Hide                                 (UWidget* Widget);
 	static void        Show                                 (SWidget*, bool Visible = true);
 	static void        Hide                                 (SWidget* Widget);
-
+	static void        UpdateRoundedReadout                 (UTextBlock* Readout, float Value, int32& OldValue);
 };
 
 
@@ -589,6 +591,27 @@ namespace Daylon
 	DAYLONGRAPHICSLIBRARY_API void Uninstall(TSharedPtr<ImagePlayObject2D> Widget);
 	DAYLONGRAPHICSLIBRARY_API void Uninstall(TSharedPtr<SpritePlayObject2D> Widget);
 
+
+	template <typename T>
+	bool PlayObjectsIntersectBox(const TArray<TSharedPtr<T>>& PlayObjects, const UE::Geometry::FAxisAlignedBox2d& SafeZone)
+	{
+		for(const auto& PlayObject : PlayObjects)
+		{
+			const auto ObjectHalfSize = PlayObject->GetSize() / 2;
+
+			const UE::Geometry::FAxisAlignedBox2d ObjectBox
+			(
+				PlayObject->UnwrappedNewPosition - ObjectHalfSize,
+				PlayObject->UnwrappedNewPosition + ObjectHalfSize
+			);
+
+			if(ObjectBox.Intersects(SafeZone))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 
 } // namespace Daylon
 

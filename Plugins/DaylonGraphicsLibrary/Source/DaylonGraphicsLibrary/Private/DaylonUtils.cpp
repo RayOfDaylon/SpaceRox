@@ -7,6 +7,7 @@
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "Blueprint/UserWidget.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+#include "Runtime/UMG/Public/Components/TextBlock.h"
 #include "Algo/Reverse.h"
 
 //DECLARE_LOG_CATEGORY_EXTERN(LogDaylon, Log, All);
@@ -315,6 +316,22 @@ void UDaylonUtils::Hide(SWidget* Widget)
 {
 	Show(Widget, false); 
 }
+
+
+void UDaylonUtils::UpdateRoundedReadout(UTextBlock* Readout, float Value, int32& OldValue)
+{
+	check(Readout);
+
+	const int32 N = FMath::RoundToInt(Value);
+
+	if(N != OldValue)
+	{
+		const auto Str = FString::Printf(TEXT("%d"), N);
+		Readout->SetText(FText::FromString(Str));
+		OldValue = N;
+	}
+}
+
 
 // ------------------------------------------------------------------------------------------
 

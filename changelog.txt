@@ -1,6 +1,11 @@
 Change log for Stellar Mayhem
 
 
+Broke out various method implementations from PlayViewBase.cpp to 
+PlayViewBaseXXX.cpp files. Some functions were generic enough to 
+be moved to the DaylonGraphicsLibrary plugin.
+
+
 Version 1.8.5
 -------------------------------------------------------------------------------------
 Big enemy ships improve their aim over time, but take longer to do so

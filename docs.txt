@@ -66,6 +66,7 @@ Source
         Constants.h            Global constant values
         Arena.h                IArena interface class
         PlayViewBase.*         The overall game logic, implements IArena
+        PlayViewBase*.cpp      Subcategories of game logic e.g. Physics, Input, etc.
         PlayObject.h           Base play object class (SDaylonSprite widget)
         Asteroid.*             Asteroid class
         Asteroids.*            Handles collection of asteroids

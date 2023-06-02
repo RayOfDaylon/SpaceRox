@@ -392,7 +392,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	virtual USoundBase*                   GetShieldBonkSound           () override { return ShieldBonkSound; }
 	virtual TSharedPtr<FTorpedo>          GetAvailableTorpedo          ();
 									      
-	virtual bool                          IsPlayerPresent              () const override;
+	virtual bool                          IsPlayerShipPresent          () const override;
 	virtual FPlayerShip&                  GetPlayerShip                () override { return *PlayerShip; }
 	virtual int32                         GetPlayerScore               () const override { return PlayerScore; }
 	virtual Daylon::FLoopedSound&         GetPlayerShipThrustSoundLoop () override { return PlayerShipThrustSoundLoop; }
@@ -447,8 +447,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	void      AddPlayerShips             (int32 Amount);
 	void      UpdatePlayerScoreReadout   ();
 
-	bool      IsWaitingToSpawnPlayer     () const;
-	bool      IsSafeToSpawnPlayer        () const;
+	bool      IsWaitingToSpawnPlayerShip () const;
+	bool      IsSafeToSpawnPlayerShip    () const;
 
 	void      LoadHighScores             ();
 	void      SaveHighScores             ();
@@ -457,8 +457,6 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	void      ExecuteMenuItem            (EMenuItem Item);
 	void      UpdateMenuReadout          ();
 	void      NavigateMenu               (Daylon::EListNavigationDirection Direction);
-
-	void      UpdateRoundedReadout(UTextBlock* Readout, float Value, int32& OldValue);
 
 	static FVector2D WrapPositionToViewport  (const FVector2D& P);
 
@@ -479,8 +477,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	void ProcessWaveTransition     (float DeltaTime);
 	void ProcessPlayerShipSpawn    (float DeltaTime);
 
-	void CheckCollisions           ();
-	void ProcessPlayerCollision    ();
+	void CheckCollisions            ();
+	void ProcessPlayerShipCollision ();
 
 	void UpdateTorpedos            (float DeltaTime);
 	void UpdatePowerups            (float DeltaTime);
