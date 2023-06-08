@@ -46,6 +46,9 @@ void FAsteroids::Update(float DeltaTime)
 		{
 			Asteroid.Move(DeltaTime, Arena->GetWrapPositionFunction());
 
+#if(FEATURE_ASTEROID_FADE_IN == 1)
+			Asteroid.Update(DeltaTime);
+#endif
 			if(Asteroid.HasPowerup())
 			{
 				Asteroid.Powerup->SetPosition(Asteroid.GetPosition());

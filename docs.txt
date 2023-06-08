@@ -34,7 +34,6 @@ may provide more clarification.
 "SpaceRox" is the project's internal codename. It used to be the actual name, 
 but it turns out there are other games already called that.
 
-The change log was moved to the changelog.txt file. 
 
 
 Project Structure
