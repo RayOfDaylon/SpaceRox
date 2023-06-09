@@ -180,8 +180,9 @@ You can test how many simultaneous keys are recognized with a rollover tester.
 There's one online at https://www.mechanical-keyboard.org/key-rollover-test/
 
 If you want to change the default key assignments, open the project in the 
-UE Editor, access Project Settings, Input and change the key assignments 
-for the various input events, then repackage or play from the editor.
+UE Editor, access the default input mapping context asset, and change the 
+keyboard key assignments for the needed input events, then repackage or 
+play from the editor.
 
 Typical keyboards lack the responsiveness of the original 
 arcade cabinet pushbuttons, causing a suboptimal firing rate.
