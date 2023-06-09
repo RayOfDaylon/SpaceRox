@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-June 1, 2023
+June 9, 2023
 
 Chapters:
 
@@ -544,3 +544,16 @@ There's still some duplicate code so we want patterns or function consolidation.
 
 The player-rock collision detection seems to be a bit too generous 
 in some cases.
+
+To reduce the scenegraph, we could move various UI "screens" 
+such as intro, main menu, highscores, etc. to their own UUserWidget's, 
+and use CreateWidget, AddToViewport, RemoveFromViewport, etc. to 
+transition between them. The performance gain is negligible, but 
+it would make using the Widget Designer easier -- intead of having 
+to hide the parts of the UI one isn't working on, one could 
+just edit the screen of interest. It would also reduce the 
+code in the transition function; instead of showing/hiding 
+various parts, it would just remove the current userwidget 
+and add the new one.
+
+
