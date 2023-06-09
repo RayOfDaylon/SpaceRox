@@ -85,7 +85,7 @@ uses UE 5.1. While higher versions should work, any changes made to assets may n
 be openable in earlier versions.
 
 On Windows, right-click the .uproject file and choose "Generate Visual Studio project files".
-The project should work with Visual Studio Community Edition 2019, and likely with others.
+The project should work with Visual Studio Community Edition 2022, and likely with others.
 
 If you are getting launch errors, you may need to also right-click the .uproject file 
 and choose "Switch Unreal Engine version" to associate it with the version of UE 
