@@ -86,6 +86,11 @@ int32 SDaylonParticles::OnPaint
 	bool                       bParentEnabled
 ) const
 {
+	if(!IsValid(ParticleBrush.GetResourceObject()))
+	{
+		return LayerId;
+	}
+
 	for(const auto& Particle : Particles)
 	{
 		if(Particle.LifeRemaining <= 0.0f)
@@ -95,32 +100,22 @@ int32 SDaylonParticles::OnPaint
 
 		// Draw the particle.
 		
-#if 0
-		const FPaintGeometry PaintGeometry(
-			AllottedGeometry.GetAbsolutePosition() + AllottedGeometry.GetAbsoluteSize() / 2  + Particle.P + 0.5f, 
-			FVector2D(ParticleSize), 
-			AllottedGeometry.Scale);
-#else
 		const FPaintGeometry PaintGeometry(
 			AllottedGeometry.GetAbsolutePosition() + AllottedGeometry.GetAbsoluteSize() / 2  + (Particle.P * AllottedGeometry.Scale) + 0.5f, 
 			FVector2D(Particle.Size) * AllottedGeometry.Scale,
 			1.0f);
-#endif
 
-		if(IsValid(ParticleBrush.GetResourceObject()))
-		{
-			// Overdrive starting opacity so that we don't start darkening right away.
-			float CurrentOpacity = FMath::Lerp(FinalOpacity, 1.5f, Particle.LifeRemaining / Particle.StartingLifeRemaining);
-			CurrentOpacity = FMath::Min(1.0f, CurrentOpacity);
+		// Overdrive starting opacity so that we don't start darkening right away.
+		float CurrentOpacity = FMath::Lerp(FinalOpacity, 1.5f, Particle.LifeRemaining / Particle.StartingLifeRemaining);
+		CurrentOpacity = FMath::Min(1.0f, CurrentOpacity);
 
-			FSlateDrawElement::MakeBox(
-				OutDrawElements,
-				LayerId,
-				PaintGeometry,
-				&ParticleBrush,
-				ESlateDrawEffect::None,
-				ParticleBrush.TintColor.GetSpecifiedColor() * RenderOpacity * CurrentOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
-		}
+		FSlateDrawElement::MakeBox(
+			OutDrawElements,
+			LayerId,
+			PaintGeometry,
+			&ParticleBrush,
+			ESlateDrawEffect::None,
+			ParticleBrush.TintColor.GetSpecifiedColor() * RenderOpacity * CurrentOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
 	}
 
 	return LayerId;

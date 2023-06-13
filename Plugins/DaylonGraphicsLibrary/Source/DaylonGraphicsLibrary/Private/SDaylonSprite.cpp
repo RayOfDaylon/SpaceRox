@@ -157,50 +157,47 @@ int32 SDaylonSprite::OnPaint
 
 	const FBox2D uvRegion = Atlas.GetUVsForCel(CurrentCelIndex);
 
-	if(IsValid(Atlas.AtlasBrush.GetResourceObject()))
+	Atlas.AtlasBrush.SetUVRegion(uvRegion);
+
+	if(AllottedGeometry.HasRenderTransform())
 	{
-		Atlas.AtlasBrush.SetUVRegion(uvRegion);
+		FSlateDrawElement::MakeBox(
+			OutDrawElements,
+			LayerId,
+			AllottedGeometry.ToPaintGeometry(),
+			&Atlas.AtlasBrush,
+			ESlateDrawEffect::None,
+			Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
+	}
+	else
+	{
+		const auto GeomSize = AllottedGeometry.GetAbsoluteSize();
+		const FPaintGeometry PaintGeometry(AllottedGeometry.GetAbsolutePosition(), GeomSize, 1.0f);
 
-		if(AllottedGeometry.HasRenderTransform())
-		{
-			FSlateDrawElement::MakeBox(
-				OutDrawElements,
-				LayerId,
-				AllottedGeometry.ToPaintGeometry(),
-				&Atlas.AtlasBrush,
-				ESlateDrawEffect::None,
-				Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
-		}
-		else
-		{
-			const auto GeomSize = AllottedGeometry.GetAbsoluteSize();
-			const FPaintGeometry PaintGeometry(AllottedGeometry.GetAbsolutePosition(), GeomSize, 1.0f);
-
-			FSlateDrawElement::MakeBox(
-				OutDrawElements,
-				LayerId,
-				PaintGeometry,
-				&Atlas.AtlasBrush,
-				ESlateDrawEffect::None,
-				Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
-		}
+		FSlateDrawElement::MakeBox(
+			OutDrawElements,
+			LayerId,
+			PaintGeometry,
+			&Atlas.AtlasBrush,
+			ESlateDrawEffect::None,
+			Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
+	}
 
 #if 0
-		{
-			// Draw where P is.
-			FLinearColor Red(1.0f, 0.0f, 0.0f, 1.0f);
-			const FPaintGeometry PaintGeometry2(AllottedGeometry.GetAbsolutePosition(), FVector2D(4), 1.0f);
-			FSlateDrawElement::MakeBox(
-				OutDrawElements,
-				LayerId,
-				PaintGeometry2,
-				&Atlas.AtlasBrush,
-				ESlateDrawEffect::None,
-				Red * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
-		}
+	{
+		// Draw where P is.
+		FLinearColor Red(1.0f, 0.0f, 0.0f, 1.0f);
+		const FPaintGeometry PaintGeometry2(AllottedGeometry.GetAbsolutePosition(), FVector2D(4), 1.0f);
+		FSlateDrawElement::MakeBox(
+			OutDrawElements,
+			LayerId,
+			PaintGeometry2,
+			&Atlas.AtlasBrush,
+			ESlateDrawEffect::None,
+			Red * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
+	}
 #endif
 
-	}
 
 	return LayerId;
 }
