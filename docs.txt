@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-June 9, 2023
+June 13, 2023
 
 Chapters:
 
@@ -25,8 +25,8 @@ to match its look and feel, but coded using Unreal Engine (UE 5.1, specifically)
 Its goals are a) to provide an educational reference for people interested in how 
 this type of game works and how it can be made in UE, and b) to see if such a game 
 using only UMG or Slate widgets would be performant enough (it is -- on my nVidia GTX 1050 TI
-it gets between 60 and 120 fps). Another benefit (fwiw) is helping preserve the legacy of 
-a classic arcade game.
+it gets between 60 and 120 fps in the editor, and over 300 fps normally). 
+Another benefit (fwiw) is helping preserve the legacy of a classic arcade game.
 
 While I've endeavoured to make the source code readable, the rest of this document 
 may provide more clarification.
