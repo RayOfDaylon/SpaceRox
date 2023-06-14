@@ -70,6 +70,8 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary
 	static void        Show                                 (SWidget*, bool Visible = true);
 	static void        Hide                                 (SWidget* Widget);
 	static void        UpdateRoundedReadout                 (UTextBlock* Readout, float Value, int32& OldValue);
+	static FVector2D   GetWidgetPosition                    (const UWidget* Widget);
+	static FVector2D   GetWidgetSize                        (const UWidget* Widget);
 };
 
 

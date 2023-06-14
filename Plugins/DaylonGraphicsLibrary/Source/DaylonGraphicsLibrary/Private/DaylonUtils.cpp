@@ -333,6 +333,27 @@ void UDaylonUtils::UpdateRoundedReadout(UTextBlock* Readout, float Value, int32&
 }
 
 
+FVector2D UDaylonUtils::GetWidgetPosition(const UWidget* Widget)
+{
+	// Return a UWidget's position in layout (not screen) space. E.g. an HD canvas on a 4K screen will return HD units
+
+	const auto& Geometry = Widget->GetPaintSpaceGeometry();
+
+	return Geometry.GetAbsolutePosition() / Geometry.Scale;
+}
+
+
+FVector2D UDaylonUtils::GetWidgetSize(const UWidget* Widget)
+{
+	// Return a UWidget's size in layout (not screen) space. E.g. an HD canvas on a 4K screen will return HD units
+
+	const auto& Geometry = Widget->GetPaintSpaceGeometry();
+
+	return Geometry.GetAbsoluteSize() / Geometry.Scale;
+}
+
+
+
 // ------------------------------------------------------------------------------------------
 
 void Daylon::FLoopedSound::Start(float InVolumeScale)
