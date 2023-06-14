@@ -2,7 +2,7 @@ Documentation for DaylonGraphicsLibrary plug-in for Unreal Engine
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox (inside Plugins folder)
-June 1, 2023
+June 14, 2023
 
 
 
@@ -49,6 +49,13 @@ containing several static functions.
                    a vector of [+x, 0] corresponds to ninety degrees, etc.
 
   WrapAngle        Modulates a degree value to be within the 0-360 range.
+
+  GetWidgetPosition       Returns a UWidget's position in Slate units (not screen space pixels).
+                          This is handy if you need to position something else related to a widget and need 
+                          to use Slate units (because on different displays the pixel units will differ).
+                          Note: widgets in motion may report values off by a frame.
+
+  GetWidgetSize           Returns a UWidget's size in Slate units.
 
   ComputeFiringSolution   Given a launch point, a projectile speed, a target point
                           and a target inertia, returns the projectile inertia that will 
