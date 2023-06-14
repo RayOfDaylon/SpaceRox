@@ -602,17 +602,17 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				
 					if(ExploCountAge <= 0.0f)
 					{
-						ExploCountAge = FMath::FRandRange(0.05f, 0.2f);
+						ExploCountAge = Daylon::FRandRange(0.05f, 0.2f);
 
 						Explosions.SpawnOne(UDaylonUtils::RandomPtWithinBox(Box), IntroExplosionParams);
 
-						if(FMath::RandRange(0, 5) == 0)
+						if(Daylon::RandRange(0, 5) == 0)
 						{
 							PlaySound(PlayerShipDestroyedSound);
 						}
 						else
 						{
-							PlaySound(ExplosionSounds[FMath::RandRange(0, ExplosionSounds.Num() - 1)]);
+							PlaySound(ExplosionSounds[Daylon::RandRange(0, ExplosionSounds.Num() - 1)]);
 						}
 					}
 				}
@@ -763,7 +763,7 @@ void UPlayViewBase::ProcessWaveTransition(float DeltaTime)
 
 void UPlayViewBase::SpawnPowerup(TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P)
 {
-	auto PowerupKind = (EPowerup)FMath::RandRange(1, 3);
+	auto PowerupKind = (EPowerup)Daylon::RandRange(1, 3);
 
 	UDaylonSpriteWidgetAtlas* Atlas = nullptr;
 
@@ -811,22 +811,21 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 		// Place randomly along edges of screen.
 		FVector2D P(0);
 
-		if(FMath::RandBool())
+		if(Daylon::RandBool())
 		{
-			P.X = FMath::RandRange(0.0, ViewportSize.X);
+			P.X = Daylon::FRandRange(0.0, ViewportSize.X);
 		}
 		else
 		{
-			P.Y = FMath::RandRange(0.0, ViewportSize.Y);
+			P.Y = Daylon::FRandRange(0.0, ViewportSize.Y);
 		}
 #endif
 
-		const auto V = FMath::VRand();
 
 #if(TEST_ASTEROIDS==1)
 		const auto Inertia = FVector2D(0);
 #else
-		const auto Inertia = UDaylonUtils::RandVector2D() * FMath::Lerp(MinAsteroidSpeed, MaxAsteroidSpeed, FMath::FRand());
+		const auto Inertia = UDaylonUtils::RandVector2D() * Daylon::FRandRange(MinAsteroidSpeed, MaxAsteroidSpeed);
 #endif
 
 		UDaylonSpriteWidgetAtlas* AsteroidAtlas = nullptr;
@@ -854,7 +853,7 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 		auto Asteroid = FAsteroid::Create(this, AsteroidAtlas->Atlas);
 		Asteroid->Value = AsteroidValue;
 		Asteroid->LifeRemaining = 1.0f;
-		Asteroid->SpinSpeed = FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
+		Asteroid->SpinSpeed = Daylon::FRandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
 
 		if(AsteroidSize == 0 && Index % 4 == 0)
 		{

@@ -50,8 +50,8 @@ FVector2D UDaylonUtils::RandVector2D()
 	do
 	{
 		// Check random vectors in the unit sphere so result is statistically uniform.
-		Result.X = FMath::FRand() * 2.f - 1.f;
-		Result.Y = FMath::FRand() * 2.f - 1.f;
+		Result.X = Daylon::FRand() * 2.f - 1.f;
+		Result.Y = Daylon::FRand() * 2.f - 1.f;
 		L = Result.SizeSquared();
 	} while (L > 1.0f || L < UE_KINDA_SMALL_NUMBER);
 
@@ -85,7 +85,7 @@ float UDaylonUtils::WrapAngle(float Angle)
 
 FVector2D UDaylonUtils::DeviateVector(const FVector2D& VectorOld, float MinDeviation, float MaxDeviation)
 {
-	return UDaylonUtils::Rotate(VectorOld, FMath::RandRange(MinDeviation, MaxDeviation));
+	return UDaylonUtils::Rotate(VectorOld, Daylon::FRandRange(MinDeviation, MaxDeviation));
 }
 
 
@@ -269,7 +269,7 @@ FVector2D UDaylonUtils::ComputeFiringSolution(const FVector2D& LaunchP, float To
 
 FVector2D UDaylonUtils::RandomPtWithinBox(const FBox2d& Box)
 {
-	return FVector2D(FMath::FRandRange(Box.Min.X, Box.Max.X), FMath::FRandRange(Box.Min.Y, Box.Max.Y));
+	return FVector2D(Daylon::FRandRange(Box.Min.X, Box.Max.X), Daylon::FRandRange(Box.Min.Y, Box.Max.Y));
 }
 
 
@@ -352,6 +352,16 @@ FVector2D UDaylonUtils::GetWidgetSize(const UWidget* Widget)
 	return Geometry.GetAbsoluteSize() / Geometry.Scale;
 }
 
+
+
+// ------------------------------------------------------------------------------------------
+
+Daylon::MTRand Daylon::Rng;
+
+double Daylon::FRand      () { return Rng.rand(); }
+double Daylon::FRandRange (double Min, double Max) { return (Min + Rng.rand(Max - Min)); }
+int32  Daylon::RandRange  (int32  Min, int32  Max) { return (Min + Rng.randInt(Max - Min)); }
+bool   Daylon::RandBool   () { return (Rng.rand() >= 0.5); }
 
 
 // ------------------------------------------------------------------------------------------

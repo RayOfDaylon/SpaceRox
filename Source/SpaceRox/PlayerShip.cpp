@@ -272,10 +272,10 @@ void FPlayerShip::FireTorpedo()
 
 		Torpedo.FiredByPlayer = true;
 
-		auto P = PlayerFwd * (GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
+		auto P = PlayerFwd * (GetSize().Y / 4);// * Daylon::FRandRange(0.5f, 2.0f);
 		P = UDaylonUtils::Rotate(P, 90.0f);
 		P += GetPosition();
-		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
+		//P += PlayerFwd * Daylon::FRandRange(0.0f, 10.0f);
 		P = Arena->WrapPosition(P);
 
 		Torpedo.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
@@ -291,10 +291,10 @@ void FPlayerShip::FireTorpedo()
 
 		Torpedo2.FiredByPlayer = true;
 
-		P = PlayerFwd * (GetSize().Y / 4);// * FMath::RandRange(0.5f, 2.0f);
+		P = PlayerFwd * (GetSize().Y / 4);// * Daylon::FRandRange(0.5f, 2.0f);
 		P = UDaylonUtils::Rotate(P, -90.0f);
 		P += GetPosition();
-		//P += PlayerFwd * FMath::RandRange(0.0f, 10.0f);
+		//P += PlayerFwd * Daylon::FRandRange(0.0f, 10.0f);
 		P = Arena->WrapPosition(P);
 
 		Torpedo2.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);

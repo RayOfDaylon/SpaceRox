@@ -15,7 +15,7 @@ TSharedPtr<FAsteroid> FAsteroid::Create(IArena* InArena, const FDaylonSpriteAtla
 	Widget->SetAtlas(Atlas);
 	Widget->SetSize(Atlas.AtlasBrush.GetImageSize() / 2);
 	Widget->UpdateWidgetSize();
-	Widget->SetCurrentCel(FMath::RandRange(0, Atlas.NumCels - 1));
+	Widget->SetCurrentCel(Daylon::RandRange(0, Atlas.NumCels - 1));
 
 	return Widget;
 }
@@ -55,7 +55,7 @@ TSharedPtr<FAsteroid> FAsteroid::Split()
 	SetSize(NewAsteroidAtlasPtr->GetCelPixelSize());
 	UpdateWidgetSize();
 
-	SetCurrentCel(FMath::RandRange(0, NewAsteroidAtlasPtr->NumCels - 1));
+	SetCurrentCel(Daylon::RandRange(0, NewAsteroidAtlasPtr->NumCels - 1));
 
 
 	auto NewAsteroidPtr = FAsteroid::Create(Arena, *NewAsteroidAtlasPtr);
@@ -64,16 +64,16 @@ TSharedPtr<FAsteroid> FAsteroid::Split()
 	NewAsteroid.Value = Value;
 
 
-	const bool BothKidsFast = FMath::RandRange(0, 10) < 9;
+	const bool BothKidsFast = Daylon::RandRange(0, 10) < 9;
 
 	NewAsteroid.Inertia = UDaylonUtils::DeviateVector(Inertia, MinAsteroidSplitAngle, MaxAsteroidSplitAngle);
-	NewAsteroid.Inertia *= FMath::RandRange(1.2f, 3.0f);
+	NewAsteroid.Inertia *= Daylon::FRandRange(1.2f, 3.0f);
 
 	NewAsteroid.LifeRemaining = 1.0f;
-	NewAsteroid.SpinSpeed     = SpinSpeed * AsteroidSpinScale;// FMath::RandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
+	NewAsteroid.SpinSpeed     = SpinSpeed * AsteroidSpinScale;// Daylon::FRandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
 
 	Inertia = UDaylonUtils::DeviateVector(Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
-	Inertia *= (BothKidsFast ? FMath::RandRange(1.2f, 3.0f) : FMath::RandRange(0.25f, 1.0f));
+	Inertia *= (BothKidsFast ? Daylon::FRandRange(1.2f, 3.0f) : Daylon::FRandRange(0.25f, 1.0f));
 
 	SpinSpeed *= AsteroidSpinScale;
 

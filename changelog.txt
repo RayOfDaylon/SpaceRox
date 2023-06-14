@@ -1,5 +1,7 @@
 Change log for Stellar Mayhem
 
+Changed random number generator calls to use Mersenne Twister RNG class 
+with Daylon namespace versions of several FMath functions.
 
 Broke out various method implementations from PlayViewBase.cpp to 
 PlayViewBaseXXX.cpp files. Some functions were generic enough to 

@@ -42,13 +42,13 @@ void SDaylonLineParticles::SetParticles(const TArray<FDaylonLineParticle>& InPar
 	for(auto& Particle : Particles)
 	{
 		// Make each line segment fly off along its vector to the center with a little random deviation.
-		const auto Angle = UDaylonUtils::Vector2DToAngle(Particle.P) + FMath::RandRange(-15.0f, 15.0f);
+		const auto Angle = UDaylonUtils::Vector2DToAngle(Particle.P) + Daylon::FRandRange(-15.0f, 15.0f);
 
 		Particle.Inertia       = /*UDaylonUtils::RandVector2D()*/ 
 			UDaylonUtils::AngleToVector2D(Angle) 
-			* FMath::RandRange(MinParticleVelocity, MaxParticleVelocity);
+			* Daylon::FRandRange(MinParticleVelocity, MaxParticleVelocity);
 			
-		Particle.LifeRemaining = Particle.StartingLifeRemaining = FMath::RandRange(MinParticleLifetime, MaxParticleLifetime);
+		Particle.LifeRemaining = Particle.StartingLifeRemaining = Daylon::FRandRange(MinParticleLifetime, MaxParticleLifetime);
 	}
 }
 

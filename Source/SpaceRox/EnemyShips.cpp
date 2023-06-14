@@ -155,7 +155,7 @@ void FEnemyShips::KillBoss(int32 Index)
 			Particle.Color = FLinearColor(Health, Health, Health, 1.0f);
 			Particle.Angle = UDaylonUtils::Vector2DToAngle(P2 - P1);
 			Particle.P = (P1 + P2) / 2;
-			Particle.Spin = FMath::RandRange(0, 7) == 0 ? FMath::FRandRange(-240.0f, 240.0f) : FMath::FRandRange(-120.0f, 120.0f);
+			Particle.Spin = Daylon::RandRange(0, 7) == 0 ? Daylon::FRandRange(-240.0f, 240.0f) : Daylon::FRandRange(-120.0f, 120.0f);
 			Particle.Length = (P2 - P1).Length();
 
 			Params2.Particles.Add(Particle);
@@ -283,7 +283,7 @@ void FEnemyShips::SpawnShip()
 	float BigEnemyProbability = pow(FMath::Lerp(1.0f, BigEnemyLowestProbability,  FMath::Min(1.0f, ScoreTmp / 65'000.0f)), 2.0f);
 	BigEnemyProbability = FMath::Max(BigEnemyLowestProbability, BigEnemyProbability);
 
-	const bool IsBigEnemy = (FMath::FRand() <= BigEnemyProbability);
+	const bool IsBigEnemy = (Daylon::FRand() <= BigEnemyProbability);
 
 	auto EnemyShipPtr = FEnemyShip::Create(Arena,
 		IsBigEnemy ? Arena->GetBigEnemyAtlas() : Arena->GetSmallEnemyAtlas(), 
@@ -292,11 +292,11 @@ void FEnemyShips::SpawnShip()
 
 
 	// Choose a random Y-pos to appear at. Leave room to avoid ship appearing clipped.
-	FVector2D P(0.0, FMath::RandRange(EnemyShipPtr->GetSize().Y + 2, ViewportSize.Y - (EnemyShipPtr->GetSize().Y + 2)));
+	FVector2D P(0.0, Daylon::FRandRange(EnemyShipPtr->GetSize().Y + 2, ViewportSize.Y - (EnemyShipPtr->GetSize().Y + 2)));
 
-	auto Inertia = FVector2D(1, 0) * FMath::FRandRange(MinEnemyShipSpeed, MaxEnemyShipSpeed);
+	auto Inertia = FVector2D(1, 0) * Daylon::FRandRange(MinEnemyShipSpeed, MaxEnemyShipSpeed);
 
-	if(FMath::RandBool())
+	if(Daylon::RandBool())
 	{
 		Inertia.X *= -1; // make enemy ship travel from right to left.
 		P.X = ViewportSize.X - 1.0f; // avoid immediate removal
@@ -351,7 +351,7 @@ void FEnemyShips::SpawnBoss()
 	float DualShieldProbability = pow(FMath::Lerp(1.0f, 0.1f,  FMath::Min(1.0f, (float)ScoreTmp / ScoreForBossToHaveDualShields)), 2.0f);
 	DualShieldProbability = FMath::Max(0.1f, DualShieldProbability);
 
-	const bool IsDualShielded = (FMath::FRand() > DualShieldProbability);
+	const bool IsDualShielded = (Daylon::FRand() > DualShieldProbability);
 
 	const int32 NumShields = IsDualShielded ? 2 : 1;
 
@@ -367,17 +367,17 @@ void FEnemyShips::SpawnBoss()
 
 	FVector2D P(0);
 
-	if(FMath::RandBool())
+	if(Daylon::RandBool())
 	{
-		P.X = FMath::RandRange(0.0, ViewportSize.X);
+		P.X = Daylon::FRandRange(0.0, ViewportSize.X);
 	}
 	else
 	{
-		P.Y = FMath::RandRange(0.0, ViewportSize.Y);
+		P.Y = Daylon::FRandRange(0.0, ViewportSize.Y);
 	}
 
 	BossShipPtr->SetPosition(P);
-	BossShipPtr->Inertia = UDaylonUtils::RandVector2D() * FMath::FRandRange(MinMinibossSpeed, MaxMinibossSpeed);
+	BossShipPtr->Inertia = UDaylonUtils::RandVector2D() * Daylon::FRandRange(MinMinibossSpeed, MaxMinibossSpeed);
 
 	Bosses.Add(BossShipPtr);
 }
@@ -529,7 +529,7 @@ void FEnemyShips::Update(float DeltaTime)
 
 			auto ScavengerPtr = FScavenger::Create(Arena->GetScavengerAtlas(), FVector2D(32));
 
-			ScavengerPtr->SetPosition(FVector2D(0, FMath::FRandRange(ViewportSize.Y * 0.1, ViewportSize.Y * 0.9)));
+			ScavengerPtr->SetPosition(FVector2D(0, Daylon::FRandRange(ViewportSize.Y * 0.1, ViewportSize.Y * 0.9)));
 			ScavengerPtr->Inertia.Set(MaxScavengerSpeed, 0);
 			ScavengerPtr->SetAngle(UDaylonUtils::Vector2DToAngle(ScavengerPtr->Inertia));
 
