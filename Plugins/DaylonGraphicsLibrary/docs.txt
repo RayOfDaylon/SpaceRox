@@ -115,6 +115,14 @@ SpritePlayObject2D            A PlayObject2D that uses an SDaylonSpriteWidget.
 PlayObjectsIntersectBox       Returns true if an array of PlayObject2D widgets
                               intersects a given 2D rectangle.
 
+FRand                         Returns a random real number inclusively between 0.0 and 1.0.
+
+RandBool                      Returns a random true/false value.
+
+RandRange                     Returns a random integer inclusively between two integers.
+
+FRandRange                    Returns a random real number inclusively between two reals.
+
 UMG widgets have been retired to an #if 0 ... #endif block. 
 The code is retained there for reference.
 
