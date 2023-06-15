@@ -15,6 +15,12 @@ The game departs from Asteroids as development continues, e.g.:
 - Scavenger enemies that harvest unpicked powerups
 - Minibosses that are shielded
 
+The DaylonGraphicsLibrary plugin provides generic types and functions
+that can be used in other similar games, along with some widgets.
+It's included directly instead of using a git submodule, so 
+that if you clone or pull this repo, you'll have it without any fuss
+ready to go.
+
 Unreal Engine 5.1 or higher required.
 
 Keyboard and gamepad input supported at present.
