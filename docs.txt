@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-June 14, 2023
+June 15, 2023
 
 Chapters:
 
@@ -94,6 +94,15 @@ you have installed.
 Once you have the project's .sln file, you can open it in Visual Studio and 
 browse/modify/debug the code, build it, launch the development editor, etc.
 
+The frame rate is left uncapped so that you can measure how well your system 
+runs the game. Note that PIE sessions often play slower because UE has to 
+render all the editor UI as well. Also, checking "Fixed frame rate" in 
+Project Settings doesn't always work for PIE sessions. To see the runtime 
+frame rate, of course, use the "stat fps" or "stat unitgraph" console 
+commands. There are also other commands that show even more about what 
+is taking time and where. Overall, the game is very undemanding of the GPU.
+Because the collision checker isn't yet perfect, faster frame rates will 
+produce more accurate collisions.
 
 
 How the Game is Played
