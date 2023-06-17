@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-June 15, 2023
+June 17, 2023
 
 Chapters:
 
@@ -401,12 +401,14 @@ Code Architecture
 The most salient feature of Stellar Mayhem is that it takes 
 place entirely on the UI layer of the Unreal Engine renderer.
 There's no Actor objects, and even the camera isn't defined or used, 
-nor a proper GameMode, GameInstance, Pawn, etc.
+nor a proper GameMode, GameState, GameInstance, Pawn, etc.
+So while not a model-view separation, for a simple single-player 
+game like this, putting everything into UPlayViewBase suffices.
 
 This is by design. The project was meant to test how a 2D game 
 could be implemented using UI widgets and to see if it would 
 run fast enough. The answer to both questions, it turns out, is yes.
-While there is some nervousness about the authoritative game state 
+While there is some nervousness about the game state 
 being ahead of the renderer by one or two frames (because it is 
 running on its own thread), in practice it turns out not to be 
 an issue (or at least, not for a game like this).
