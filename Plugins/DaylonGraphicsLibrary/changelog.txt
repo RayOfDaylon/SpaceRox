@@ -1,0 +1,11 @@
+Changelog for DaylonGraphicsLibrary UE plugin
+
+Last updated: June 16, 2023
+
+
+Moved functions from UDaylonUtils class to the Daylon namespace, since they 
+weren't using any BlueprintCallable tags. The class name is reserved 
+in case we want to add BP-callable functions later.
+
+Renamed DoesTriangleIntersectTriangle to DoTrianglesIntersect.
+
