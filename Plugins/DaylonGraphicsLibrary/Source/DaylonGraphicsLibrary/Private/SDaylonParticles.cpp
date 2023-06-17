@@ -56,7 +56,7 @@ void SDaylonParticles::Reset()
 	{
 		Particle.P             = FVector2D(0); // todo: could randomize this a small distance for more realism
 		Particle.Size          = Daylon::FRandRange(MinParticleSize, MaxParticleSize);
-		Particle.Inertia       = UDaylonUtils::RandVector2D() * Daylon::FRandRange(MinParticleVelocity, MaxParticleVelocity);
+		Particle.Inertia       = Daylon::RandVector2D() * Daylon::FRandRange(MinParticleVelocity, MaxParticleVelocity);
 		Particle.LifeRemaining = Particle.StartingLifeRemaining = Daylon::FRandRange(MinParticleLifetime, MaxParticleLifetime);
 	}
 }

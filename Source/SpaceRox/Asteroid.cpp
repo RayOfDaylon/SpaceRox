@@ -66,13 +66,13 @@ TSharedPtr<FAsteroid> FAsteroid::Split()
 
 	const bool BothKidsFast = Daylon::RandRange(0, 10) < 9;
 
-	NewAsteroid.Inertia = UDaylonUtils::DeviateVector(Inertia, MinAsteroidSplitAngle, MaxAsteroidSplitAngle);
+	NewAsteroid.Inertia = Daylon::DeviateVector(Inertia, MinAsteroidSplitAngle, MaxAsteroidSplitAngle);
 	NewAsteroid.Inertia *= Daylon::FRandRange(1.2f, 3.0f);
 
 	NewAsteroid.LifeRemaining = 1.0f;
 	NewAsteroid.SpinSpeed     = SpinSpeed * AsteroidSpinScale;// Daylon::FRandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
 
-	Inertia = UDaylonUtils::DeviateVector(Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
+	Inertia = Daylon::DeviateVector(Inertia, -MinAsteroidSplitAngle, -MaxAsteroidSplitAngle);
 	Inertia *= (BothKidsFast ? Daylon::FRandRange(1.2f, 3.0f) : Daylon::FRandRange(0.25f, 1.0f));
 
 	SpinSpeed *= AsteroidSpinScale;

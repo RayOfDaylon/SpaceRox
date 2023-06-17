@@ -58,7 +58,7 @@ void UPlayViewBase::CheckCollisions()
 
 		for(auto& Triangle : PlayerShipTriangle)
 		{
-			Triangle = UDaylonUtils::Rotate(Triangle, ShipAngle);
+			Triangle = Daylon::Rotate(Triangle, ShipAngle);
 
 			// Use the ship's old position because the current position can cause unwanted self-intersections.
 			Triangle += PlayerShip->OldPosition;
@@ -95,8 +95,8 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& Asteroid = Asteroids.Get(AsteroidIndex);
 
-			if(UDaylonUtils::DoesLineSegmentIntersectCircle(OldP, CurrentP, Asteroid.GetPosition(), Asteroid.GetRadius())
-				|| UDaylonUtils::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, OldP, Asteroid.GetRadius()))
+			if(Daylon::DoesLineSegmentIntersectCircle(OldP, CurrentP, Asteroid.GetPosition(), Asteroid.GetRadius())
+				|| Daylon::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, OldP, Asteroid.GetRadius()))
 			{
 				// A torpedo hit a rock.
 
@@ -112,7 +112,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			// Torpedo didn't hit a rock and the player didn't fire it, so see if it hit the player ship.
 
-			if(UDaylonUtils::DoesLineSegmentIntersectTriangle(OldP, CurrentP, PlayerShipTriangle))
+			if(Daylon::DoesLineSegmentIntersectTriangle(OldP, CurrentP, PlayerShipTriangle))
 			{
 				Torpedo.Kill();
 				SpawnExplosion(OldP, PlayerShip->Inertia);
@@ -128,7 +128,7 @@ void UPlayViewBase::CheckCollisions()
 			{
 				auto& EnemyShip = EnemyShips.GetShip(EnemyIndex);
 
-				if(UDaylonUtils::DoesLineSegmentIntersectCircle(OldP, CurrentP, EnemyShip.GetPosition(), EnemyShip.GetRadius()))
+				if(Daylon::DoesLineSegmentIntersectCircle(OldP, CurrentP, EnemyShip.GetPosition(), EnemyShip.GetRadius()))
 				{
 					Torpedo.Kill();
 					IncreasePlayerScoreBy(EnemyShip.Value);
@@ -144,7 +144,7 @@ void UPlayViewBase::CheckCollisions()
 				{
 					auto& Scavenger = EnemyShips.GetScavenger(ScavengerIndex);
 
-					if(UDaylonUtils::DoesLineSegmentIntersectCircle(OldP, CurrentP, Scavenger.GetPosition(), Scavenger.GetRadius()))
+					if(Daylon::DoesLineSegmentIntersectCircle(OldP, CurrentP, Scavenger.GetPosition(), Scavenger.GetRadius()))
 					{
 						Torpedo.Kill();
 						IncreasePlayerScoreBy(Scavenger.Value);
@@ -235,8 +235,8 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& Asteroid = Asteroids.Get(AsteroidIndex);
 
-			if(UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Asteroid.GetPosition(), Asteroid.GetRadius() + PlayerShip->GetRadius())
-				|| UDaylonUtils::DoesLineSegmentIntersectTriangle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, PlayerShipTriangle))
+			if(Daylon::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Asteroid.GetPosition(), Asteroid.GetRadius() + PlayerShip->GetRadius())
+				|| Daylon::DoesLineSegmentIntersectTriangle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, PlayerShipTriangle))
 			{
 				// Player collided with a rock.
 
@@ -257,7 +257,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& EnemyShip = EnemyShips.GetShip(EnemyIndex);
 
-			if (UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, EnemyShip.OldPosition, EnemyShip.GetRadius())
+			if (Daylon::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, EnemyShip.OldPosition, EnemyShip.GetRadius())
 				|| FVector2D::Distance(PlayerShip->UnwrappedNewPosition, EnemyShip.UnwrappedNewPosition) < EnemyShip.GetRadius() + PlayerShip->GetRadius())
 			{
 				// Enemy ship collided with player ship.
@@ -281,7 +281,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& Scavenger = EnemyShips.GetScavenger(ScavengerIndex);
 
-			if (UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Scavenger.OldPosition, Scavenger.GetRadius())
+			if (Daylon::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Scavenger.OldPosition, Scavenger.GetRadius())
 				|| FVector2D::Distance(PlayerShip->UnwrappedNewPosition, Scavenger.UnwrappedNewPosition) < Scavenger.GetRadius() + PlayerShip->GetRadius())
 			{
 				// Enemy ship collided with player ship.
@@ -371,7 +371,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& Powerup = *Powerups[PowerupIndex].Get();
 
-			if (UDaylonUtils::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Powerup.OldPosition, Powerup.GetRadius())
+			if (Daylon::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Powerup.OldPosition, Powerup.GetRadius())
 				|| FVector2D::Distance(PlayerShip->UnwrappedNewPosition, Powerup.UnwrappedNewPosition) < Powerup.GetRadius() + PlayerShip->GetRadius())
 			{
 				// Powerup collided with player ship.
@@ -418,7 +418,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& Asteroid = Asteroids.Get(AsteroidIndex);
 
-			if(UDaylonUtils::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, EnemyShip.GetPosition(), EnemyShip.GetRadius())
+			if(Daylon::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, EnemyShip.GetPosition(), EnemyShip.GetRadius())
 				|| FVector2D::Distance(WrapPositionToViewport(EnemyShip.UnwrappedNewPosition), Asteroid.OldPosition) < Asteroid.GetRadius() + EnemyShip.GetRadius())
 			{
 				// Enemy ship collided with a rock.
@@ -439,7 +439,7 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& Asteroid = Asteroids.Get(AsteroidIndex);
 
-			if(UDaylonUtils::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, Scavenger.GetPosition(), Scavenger.GetRadius())
+			if(Daylon::DoesLineSegmentIntersectCircle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, Scavenger.GetPosition(), Scavenger.GetRadius())
 				|| FVector2D::Distance(WrapPositionToViewport(Scavenger.UnwrappedNewPosition), Asteroid.OldPosition) < Asteroid.GetRadius() + Scavenger.GetRadius())
 			{
 				// Scavenger collided with a rock.

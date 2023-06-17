@@ -24,59 +24,56 @@ class DAYLONGRAPHICSLIBRARY_API UDaylonUtils : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
-	protected:
-
-	static UWidgetTree*  WidgetTree;
-	static UCanvasPanel* RootCanvas;
-
-
-	public:
-
-	static const double Epsilon;
-
-	template<class WidgetT> static WidgetT* MakeWidget()
-	{
-		auto Widget = WidgetTree->ConstructWidget<WidgetT>();
-		check(Widget);
-		return Widget;
-	}
-
-
-	static void          SetWidgetTree   (UWidgetTree* InWidgetTree) { WidgetTree = InWidgetTree; }
-	static UWidgetTree*  GetWidgetTree   () { return WidgetTree; }
-	static void          SetRootCanvas   (UCanvasPanel* InCanvas) { RootCanvas = InCanvas; }
-	static UCanvasPanel* GetRootCanvas   () { return RootCanvas; }
-
-	static float       Normalize         (float N, float Min, float Max);
-	static FVector2D   AngleToVector2D   (float Angle);
-	static FVector2D   RandVector2D      ();
-	static FVector2D   Rotate            (const FVector2D& P, float Angle); 
-	static float       Vector2DToAngle   (const FVector2D& Vector);
-	static float       WrapAngle         (float Angle);
-	static FVector2D   DeviateVector     (const FVector2D& VectorOld, float MinDeviation, float MaxDeviation);
-
-	FORCEINLINE static double Square     (double x) { return x * x; }
-
-	static FVector2D   ComputeFiringSolution                (const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia);
-	static bool        DoesLineSegmentIntersectCircle       (const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R);
-	static bool        DoesLineSegmentIntersectTriangle     (const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3]);
-	static bool        DoesTriangleIntersectTriangle        (const FVector2D TriA[3], const FVector2D TriB[3]);
-	static bool        DoCirclesIntersect                   (const FVector2D& C1, float R1, const FVector2D& C2, float R2);
-	static FVector2D   RandomPtWithinBox                    (const FBox2d& Box);
-
-	static FVector2D   GetWidgetDirectionVector             (const UWidget* Widget);
-	static void        Show                                 (UWidget*, bool Visible = true);
-	static void        Hide                                 (UWidget* Widget);
-	static void        Show                                 (SWidget*, bool Visible = true);
-	static void        Hide                                 (SWidget* Widget);
-	static void        UpdateRoundedReadout                 (UTextBlock* Readout, float Value, int32& OldValue);
-	static FVector2D   GetWidgetPosition                    (const UWidget* Widget);
-	static FVector2D   GetWidgetSize                        (const UWidget* Widget);
+	// Classname reserved for future use.
 };
 
 
 namespace Daylon
 {
+	extern UWidgetTree*  WidgetTree;
+	extern UCanvasPanel* RootCanvas;
+
+	extern const double Epsilon;
+
+	DAYLONGRAPHICSLIBRARY_API FORCEINLINE double Square     (double x) { return x * x; }
+
+	DAYLONGRAPHICSLIBRARY_API void          SetWidgetTree   (UWidgetTree* InWidgetTree);
+	DAYLONGRAPHICSLIBRARY_API UWidgetTree*  GetWidgetTree   ();
+	DAYLONGRAPHICSLIBRARY_API void          SetRootCanvas   (UCanvasPanel* InCanvas);
+	DAYLONGRAPHICSLIBRARY_API UCanvasPanel* GetRootCanvas   ();
+
+	DAYLONGRAPHICSLIBRARY_API FVector2D   AngleToVector2D   (float Angle);
+	DAYLONGRAPHICSLIBRARY_API FVector2D   RandVector2D      ();
+	DAYLONGRAPHICSLIBRARY_API FVector2D   Rotate            (const FVector2D& P, float Angle); 
+	DAYLONGRAPHICSLIBRARY_API FVector2D   DeviateVector     (const FVector2D& VectorOld, float MinDeviation, float MaxDeviation);
+	DAYLONGRAPHICSLIBRARY_API float       Vector2DToAngle   (const FVector2D& Vector);
+	DAYLONGRAPHICSLIBRARY_API float       WrapAngle         (float Angle);
+	DAYLONGRAPHICSLIBRARY_API float       Normalize         (float N, float Min, float Max);
+
+	DAYLONGRAPHICSLIBRARY_API FVector2D   ComputeFiringSolution             (const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia);
+	DAYLONGRAPHICSLIBRARY_API bool        DoesLineSegmentIntersectCircle    (const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R);
+	DAYLONGRAPHICSLIBRARY_API bool        DoesLineSegmentIntersectTriangle  (const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3]);
+	DAYLONGRAPHICSLIBRARY_API bool        DoTrianglesIntersect              (const FVector2D TriA[3], const FVector2D TriB[3]);
+	DAYLONGRAPHICSLIBRARY_API bool        DoCirclesIntersect                (const FVector2D& C1, float R1, const FVector2D& C2, float R2);
+	DAYLONGRAPHICSLIBRARY_API FVector2D   RandomPtWithinBox                 (const FBox2d& Box);
+
+	DAYLONGRAPHICSLIBRARY_API FVector2D   GetWidgetPosition                 (const UWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API FVector2D   GetWidgetSize                     (const UWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API FVector2D   GetWidgetDirectionVector          (const UWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API void        Show                              (UWidget*, bool Visible = true);
+	DAYLONGRAPHICSLIBRARY_API void        Show                              (SWidget*, bool Visible = true);
+	DAYLONGRAPHICSLIBRARY_API void        Hide                              (UWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API void        Hide                              (SWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API void        UpdateRoundedReadout              (UTextBlock* Readout, float Value, int32& OldValue);
+
+	template<class WidgetT> static WidgetT* MakeWidget()
+	{
+		auto Widget = GetWidgetTree()->ConstructWidget<WidgetT>();
+		check(Widget);
+		return Widget;
+	}
+
+
 	UENUM()
 	enum class EListNavigationDirection : int32
 	{
@@ -86,14 +83,14 @@ namespace Daylon
 	};
 
 
-	/*
+	
 	UENUM()
 	enum class ERotationDirection : int32
 	{
 		// These values are casted to int
 		CounterClockwise = -1,
 		Clockwise        =  1,
-	};*/
+	};
 
 
 	struct DAYLONGRAPHICSLIBRARY_API FLoopedSound
@@ -326,6 +323,8 @@ namespace Daylon
 
 	// -------------------------------------------------------------------------------------------------------------------
 	// Slate-only 2D play object
+	// Warning: play objects combine views with models; if you need a view-model separation, prefer AActor and 
+	// arrange for a visuals-only class (e.g. SImage or your own custom UWidgets/SWidgets) to do rendering.
 
 
 	template <class SWidgetT>
@@ -376,7 +375,7 @@ namespace Daylon
 
 		bool IsAlive   () const { return (LifeRemaining > 0.0f); }
 		bool IsDead    () const { return !IsAlive(); }
-		void Show      (bool Visible = true) { UDaylonUtils::Show(this, Visible); }
+		void Show      (bool Visible = true) { Daylon::Show(this, Visible); }
 		void Hide      () { Show(false); }
 		void Kill      () { LifeRemaining = 0.0f; Hide(); }
 		
@@ -499,7 +498,7 @@ namespace Daylon
 				return FVector2D(0.0f);
 			}
 
-			return UDaylonUtils::AngleToVector2D(GetAngle());
+			return Daylon::AngleToVector2D(GetAngle());
 		}
 
 
@@ -571,7 +570,7 @@ namespace Daylon
 	{
 		Widget->SetRenderTransformPivot(FVector2D(0.5f));
 
-		auto Canvas = UDaylonUtils::GetRootCanvas()->GetCanvasWidget();
+		auto Canvas = Daylon::GetRootCanvas()->GetCanvasWidget();
 
 		auto SlotArgs = Canvas->AddSlot();
 
@@ -595,7 +594,7 @@ namespace Daylon
 
 
 	template <typename T>
-	bool PlayObjectsIntersectBox(const TArray<TSharedPtr<T>>& PlayObjects, const UE::Geometry::FAxisAlignedBox2d& SafeZone)
+	bool PlayObjectsIntersectBox(const TArray<TSharedPtr<T>>& PlayObjects, const UE::Geometry::FAxisAlignedBox2d& Box)
 	{
 		for(const auto& PlayObject : PlayObjects)
 		{
@@ -607,7 +606,7 @@ namespace Daylon
 				PlayObject->UnwrappedNewPosition + ObjectHalfSize
 			);
 
-			if(ObjectBox.Intersects(SafeZone))
+			if(ObjectBox.Intersects(Box))
 			{
 				return true;
 			}
@@ -920,7 +919,7 @@ namespace Daylon
 
 			Widget->SetRenderTransformPivot(FVector2D(0.5f));
 
-			auto CanvasSlot = UDaylonUtils::GetRootCanvas()->AddChildToCanvas(Widget);
+			auto CanvasSlot = Daylon::GetRootCanvas()->AddChildToCanvas(Widget);
 			CanvasSlot->SetAnchors(FAnchors());
 			CanvasSlot->SetAutoSize(true);
 			CanvasSlot->SetAlignment(FVector2D(0.5));
@@ -970,7 +969,7 @@ namespace Daylon
 		bool IsAlive   () const { return (LifeRemaining > 0.0f); }
 		bool IsDead    () const { return !IsAlive(); }
 		bool IsVisible () const { return (Widget != nullptr ? Widget->IsVisible() : false); }
-		void Show      (bool Visible = true) { UDaylonUtils::Show(Widget, Visible); }
+		void Show      (bool Visible = true) { Daylon::Show(Widget, Visible); }
 		void Hide      () { Show(false); }
 		void Kill      () { LifeRemaining = 0.0f; Hide(); }
 
@@ -1091,7 +1090,7 @@ namespace Daylon
 	{
 		void Create(const FSlateBrush& Brush, float Radius)
 		{
-			Widget = UDaylonUtils::MakeWidget<UImage>();
+			Widget = Daylon::MakeWidget<UImage>();
 			check(Widget);
 
 			Widget->Brush = Brush;
@@ -1114,7 +1113,7 @@ namespace Daylon
 			check(WidgetAtlas);
 			check(Size.X > 0 && Size.Y > 0);
 
-			Widget = UDaylonUtils::MakeWidget<UDaylonSpriteWidget>();
+			Widget = Daylon::MakeWidget<UDaylonSpriteWidget>();
 			check(Widget);
 
 			Widget->TextureAtlas = WidgetAtlas;

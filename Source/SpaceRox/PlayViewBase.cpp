@@ -193,8 +193,8 @@ void UPlayViewBase::NativeOnInitialized()
 		return;
 	}
 
-	UDaylonUtils::SetWidgetTree(WidgetTree);
-	UDaylonUtils::SetRootCanvas(RootCanvas);
+	Daylon::SetWidgetTree(WidgetTree);
+	Daylon::SetRootCanvas(RootCanvas);
 
 	// Note: UMG Canvas will not have its SConstraintCanvas member populated until later.
 
@@ -294,7 +294,7 @@ void UPlayViewBase::OnAnimationFinished_Implementation(const UWidgetAnimation* A
 {
 	if(Animation == MenuOutro)
 	{
-		UDaylonUtils::Hide(MenuContent);
+		Daylon::Hide(MenuContent);
 		ExecuteMenuItem(SelectedMenuItem);
 		GetOwningPlayer()->EnableInput(nullptr);
 	}
@@ -331,7 +331,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 	GameState = State;
 
-	UDaylonUtils::Show(GameTitle, GameState != EGameState::Intro);
+	Daylon::Show(GameTitle, GameState != EGameState::Intro);
 
 	// todo: maybe use a polymorphic game state class with an Enter() method instead of a switch statement.
 
@@ -349,12 +349,12 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			TimeUntilIntroStateEnds = MaxIntroStateLifetime;
 			Asteroids.RemoveAll();
 
-			UDaylonUtils::Hide (MenuContent);
-			UDaylonUtils::Hide (PlayerScoreReadout);
-			UDaylonUtils::Hide (PlayerShipsReadout);
-			UDaylonUtils::Hide (PowerupReadouts);
-			UDaylonUtils::Hide (GameOverMessage);
-			UDaylonUtils::Show (IntroContent, InitialDelay == 0.0f);
+			Daylon::Hide (MenuContent);
+			Daylon::Hide (PlayerScoreReadout);
+			Daylon::Hide (PlayerShipsReadout);
+			Daylon::Hide (PowerupReadouts);
+			Daylon::Hide (GameOverMessage);
+			Daylon::Show (IntroContent, InitialDelay == 0.0f);
 
 			PlayAnimation(PressToStartFlash, 0.0f, 0);
 
@@ -373,15 +373,15 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				TitleCels.Empty();
 			}
 
-			UDaylonUtils::Hide (IntroContent);
-			UDaylonUtils::Hide (HelpContent);
-			UDaylonUtils::Hide (CreditsContent);
-			UDaylonUtils::Hide (HighScoresContent);
-			UDaylonUtils::Hide (PlayerScoreReadout);
-			UDaylonUtils::Hide (PlayerShipsReadout);
-			UDaylonUtils::Hide (PowerupReadouts);
-			UDaylonUtils::Hide (GameOverMessage);
-			UDaylonUtils::Hide (HighScoreEntryContent);
+			Daylon::Hide (IntroContent);
+			Daylon::Hide (HelpContent);
+			Daylon::Hide (CreditsContent);
+			Daylon::Hide (HighScoresContent);
+			Daylon::Hide (PlayerScoreReadout);
+			Daylon::Hide (PlayerShipsReadout);
+			Daylon::Hide (PowerupReadouts);
+			Daylon::Hide (GameOverMessage);
+			Daylon::Hide (HighScoreEntryContent);
 			
 			Explosions.RemoveAll       ();
 			ShieldExplosions.RemoveAll ();
@@ -390,7 +390,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			RemovePowerups             ();
 
 			StartMsgAnimationAge = 0.0f;
-			UDaylonUtils::Show(MenuContent);
+			Daylon::Show(MenuContent);
 			MenuContent->SetRenderOpacity(1.0f);
 			UpdateMenuReadout();
 
@@ -434,9 +434,9 @@ void UPlayViewBase::TransitionToState(EGameState State)
 
 			WaveNumber = 0;
 
-			UDaylonUtils::Show  (PlayerScoreReadout);
-			UDaylonUtils::Show  (PlayerShipsReadout);
-			UDaylonUtils::Show  (PowerupReadouts);
+			Daylon::Show  (PlayerScoreReadout);
+			Daylon::Show  (PlayerShipsReadout);
+			Daylon::Show  (PowerupReadouts);
 
 			PlayerShip->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
 
@@ -460,7 +460,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			PlayerShip.Reset();
 
 
-			UDaylonUtils::Show(GameOverMessage);
+			Daylon::Show(GameOverMessage);
 
 			TimeUntilGameOverStateEnds = MaxTimeUntilGameOverStateEnds;
 
@@ -477,11 +477,11 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			LoadHighScores     ();
 			PopulateHighScores (); 
 
-			UDaylonUtils::Hide (GameOverMessage);
-			UDaylonUtils::Hide (HighScoreEntryContent);
-			UDaylonUtils::Show (HighScoresContent);
+			Daylon::Hide (GameOverMessage);
+			Daylon::Hide (HighScoreEntryContent);
+			Daylon::Show (HighScoresContent);
 
-			UDaylonUtils::Show (PlayerScoreReadout, (PreviousState == EGameState::HighScoreEntry));
+			Daylon::Show (PlayerScoreReadout, (PreviousState == EGameState::HighScoreEntry));
 
 			EnemyShips.RemoveAll();
 
@@ -499,8 +499,8 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			EnemyShips.RemoveAll();
 			RemovePowerups    ();
 
-			UDaylonUtils::Show(PlayerScoreReadout);
-			UDaylonUtils::Hide(GameOverMessage);
+			Daylon::Show(PlayerScoreReadout);
+			Daylon::Hide(GameOverMessage);
 			
 			HighScoreEntryContent->SetVisibility(ESlateVisibility::Visible);
 			HighScoreNameEntry->SetFocus();
@@ -518,7 +518,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			EnemyShips.RemoveAll();
 			RemovePowerups   ();
 
-			UDaylonUtils::Show(CreditsContent);
+			Daylon::Show(CreditsContent);
 
 			break;
 
@@ -534,7 +534,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			EnemyShips.RemoveAll();
 			RemovePowerups    ();
 
-			UDaylonUtils::Show(HelpContent);
+			Daylon::Show(HelpContent);
 
 			break;
 
@@ -573,7 +573,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				return;
 			}
 
-			UDaylonUtils::Show(IntroContent);
+			Daylon::Show(IntroContent);
 			//TitleGraphic->SetOpacity(0.0f);
 
 
@@ -604,7 +604,7 @@ void UPlayViewBase::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 					{
 						ExploCountAge = Daylon::FRandRange(0.05f, 0.2f);
 
-						Explosions.SpawnOne(UDaylonUtils::RandomPtWithinBox(Box), IntroExplosionParams);
+						Explosions.SpawnOne(Daylon::RandomPtWithinBox(Box), IntroExplosionParams);
 
 						if(Daylon::RandRange(0, 5) == 0)
 						{
@@ -825,7 +825,7 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 #if(TEST_ASTEROIDS==1)
 		const auto Inertia = FVector2D(0);
 #else
-		const auto Inertia = UDaylonUtils::RandVector2D() * Daylon::FRandRange(MinAsteroidSpeed, MaxAsteroidSpeed);
+		const auto Inertia = Daylon::RandVector2D() * Daylon::FRandRange(MinAsteroidSpeed, MaxAsteroidSpeed);
 #endif
 
 		UDaylonSpriteWidgetAtlas* AsteroidAtlas = nullptr;
@@ -901,7 +901,7 @@ void UPlayViewBase::StartWave()
 	{
 		TSharedPtr<FPowerup> PowerupPtr;
 
-		SpawnPowerup(PowerupPtr, UDaylonUtils::RandomPtWithinBox(Box));
+		SpawnPowerup(PowerupPtr, Daylon::RandomPtWithinBox(Box));
 
 		Powerups.Add(PowerupPtr);
 	}

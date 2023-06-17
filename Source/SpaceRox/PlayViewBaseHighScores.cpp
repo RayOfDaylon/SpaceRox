@@ -161,7 +161,7 @@ void UPlayViewBase::PopulateHighScores()
 			EntryColor = FSlateColor(FLinearColor(1.0f, 1.0f, 1.0f, 1.0f));
 		}
 
-		auto TextBlockScore = UDaylonUtils::MakeWidget<UTextBlock>();
+		auto TextBlockScore = Daylon::MakeWidget<UTextBlock>();
 		TextBlockScore->SetFont(HighScoreReadoutFont);
 		TextBlockScore->SetColorAndOpacity(EntryColor);
 		TextBlockScore->SetText(FText::FromString(FString::Format(TEXT("{0}"), { Entry.Score })));
@@ -171,7 +171,7 @@ void UPlayViewBase::PopulateHighScores()
 		ScoreSlot->SetRow(RowIndex);
 		ScoreSlot->SetColumn(0);
 
-		auto TextBlockName = UDaylonUtils::MakeWidget<UTextBlock>();
+		auto TextBlockName = Daylon::MakeWidget<UTextBlock>();
 		TextBlockName->SetFont(HighScoreReadoutFont);
 		TextBlockName->SetColorAndOpacity(EntryColor);
 		TextBlockName->SetText(FText::FromString(Entry.Name));

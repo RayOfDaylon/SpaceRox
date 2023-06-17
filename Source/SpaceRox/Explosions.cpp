@@ -23,7 +23,7 @@ TSharedPtr<FExplosion> FExplosion::Create
 	Daylon::Install<SDaylonParticles>(Widget, 0.5f);
 
 	Widget->Inertia = Inertia;
-	UDaylonUtils::Show(&Widget.Get());
+	Daylon::Show(&Widget.Get());
 	//Widget->SetRenderTransformPivot(FVector2D(0.5f));
 	Widget->SetPosition(P);
 	Widget->UpdateWidgetSize();
@@ -90,7 +90,7 @@ TSharedPtr<FShieldExplosion> FShieldExplosion::Create
 	Daylon::Install<SDaylonLineParticles>(Widget, 0.5f);
 
 	Widget->Inertia = Inertia;
-	UDaylonUtils::Show(&Widget.Get());
+	Daylon::Show(&Widget.Get());
 	//Widget->SetRenderTransformPivot(FVector2D(0.5f));
 	Widget->SetPosition(P);
 	Widget->UpdateWidgetSize();

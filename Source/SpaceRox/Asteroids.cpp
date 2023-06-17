@@ -55,7 +55,7 @@ void FAsteroids::Update(float DeltaTime)
 				Asteroid.Powerup->Update(DeltaTime);
 			}
 #if(FEATURE_SPINNING_ASTEROIDS == 1)
-			Asteroid.SetAngle(UDaylonUtils::WrapAngle(Asteroid.GetAngle() + Asteroid.SpinSpeed * DeltaTime));
+			Asteroid.SetAngle(Daylon::WrapAngle(Asteroid.GetAngle() + Asteroid.SpinSpeed * DeltaTime));
 #endif
 		}
 	}

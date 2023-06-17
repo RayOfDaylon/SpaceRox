@@ -88,7 +88,7 @@ void UPlayViewBase::OnStartButtonPressed()
 				bHighScoreWasEntered = false;
 				return;
 			}
-			UDaylonUtils::Hide(HighScoresContent);
+			Daylon::Hide(HighScoresContent);
 			TransitionToState(EGameState::MainMenu);
 			break;
 
@@ -101,14 +101,14 @@ void UPlayViewBase::OnStartButtonPressed()
 
 		case EGameState::Credits:
 
-			UDaylonUtils::Hide(CreditsContent);
+			Daylon::Hide(CreditsContent);
 			TransitionToState(EGameState::MainMenu);
 			break;
 
 
 		case EGameState::Help:
 
-			UDaylonUtils::Hide(HelpContent);
+			Daylon::Hide(HelpContent);
 			TransitionToState(EGameState::MainMenu);
 			break;
 

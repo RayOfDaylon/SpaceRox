@@ -42,10 +42,10 @@ void SDaylonLineParticles::SetParticles(const TArray<FDaylonLineParticle>& InPar
 	for(auto& Particle : Particles)
 	{
 		// Make each line segment fly off along its vector to the center with a little random deviation.
-		const auto Angle = UDaylonUtils::Vector2DToAngle(Particle.P) + Daylon::FRandRange(-15.0f, 15.0f);
+		const auto Angle = Daylon::Vector2DToAngle(Particle.P) + Daylon::FRandRange(-15.0f, 15.0f);
 
-		Particle.Inertia       = /*UDaylonUtils::RandVector2D()*/ 
-			UDaylonUtils::AngleToVector2D(Angle) 
+		Particle.Inertia       = /*Daylon::RandVector2D()*/ 
+			Daylon::AngleToVector2D(Angle) 
 			* Daylon::FRandRange(MinParticleVelocity, MaxParticleVelocity);
 			
 		Particle.LifeRemaining = Particle.StartingLifeRemaining = Daylon::FRandRange(MinParticleLifetime, MaxParticleLifetime);
@@ -95,7 +95,7 @@ int32 SDaylonLineParticles::OnPaint
 
 		TArray<FVector2f> Points;
 
-		const auto AngleVec = UDaylonUtils::AngleToVector2D(Particle.Angle) * Particle.Length / 2;
+		const auto AngleVec = Daylon::AngleToVector2D(Particle.Angle) * Particle.Length / 2;
 
 		const auto P1 = Particle.P + AngleVec;
 		const auto P2 = Particle.P - AngleVec;

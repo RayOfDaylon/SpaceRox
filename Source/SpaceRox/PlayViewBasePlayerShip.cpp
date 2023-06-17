@@ -55,7 +55,7 @@ void UPlayViewBase::OnAimPlayerShip(const FVector2D& Direction)
 
 	if(GameState == EGameState::Active)
 	{
-		PlayerShip->SetAngle(UDaylonUtils::Vector2DToAngle(Direction));
+		PlayerShip->SetAngle(Daylon::Vector2DToAngle(Direction));
 	}
 }
 
@@ -72,7 +72,7 @@ void UPlayViewBase::AddPlayerShips(int32 Amount)
 	{
 		while(PlayerShipsReadout->GetChildrenCount() < NumPlayerShips)
 		{
-			UImage* Image = UDaylonUtils::MakeWidget<UImage>();
+			UImage* Image = Daylon::MakeWidget<UImage>();
 			Image->SetBrush(PlayerShipAtlas->Atlas.AtlasBrush);
 			Image->Brush.SetImageSize(FVector2D(24));
 			Image->Brush.SetUVRegion(PlayerShipAtlas->Atlas.GetUVsForCel(PlayerShipNormalAtlasCel));
@@ -217,11 +217,11 @@ void UPlayViewBase::UpdatePlayerShipReadout(EPowerup PowerupKind)
 			break;
 
 		case EPowerup::Shields:
-			UDaylonUtils::UpdateRoundedReadout(PlayerShieldReadout, PlayerShip->ShieldsLeft, ShieldsLeft);
+			Daylon::UpdateRoundedReadout(PlayerShieldReadout, PlayerShip->ShieldsLeft, ShieldsLeft);
 			break;
 
 		case EPowerup::Invincibility:
-			UDaylonUtils::UpdateRoundedReadout(InvincibilityReadout, PlayerShip->InvincibilityLeft, InvincibilityLeft);
+			Daylon::UpdateRoundedReadout(InvincibilityReadout, PlayerShip->InvincibilityLeft, InvincibilityLeft);
 			break;
 	}
 }

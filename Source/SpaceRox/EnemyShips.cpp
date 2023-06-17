@@ -153,7 +153,7 @@ void FEnemyShips::KillBoss(int32 Index)
 			ShieldPtr->GetSegmentGeometry(SegmentIndex, P1, P2);
 
 			Particle.Color = FLinearColor(Health, Health, Health, 1.0f);
-			Particle.Angle = UDaylonUtils::Vector2DToAngle(P2 - P1);
+			Particle.Angle = Daylon::Vector2DToAngle(P2 - P1);
 			Particle.P = (P1 + P2) / 2;
 			Particle.Spin = Daylon::RandRange(0, 7) == 0 ? Daylon::FRandRange(-240.0f, 240.0f) : Daylon::FRandRange(-120.0f, 120.0f);
 			Particle.Length = (P2 - P1).Length();
@@ -242,7 +242,7 @@ void FEnemyShips::KillScavenger(int32 Index)
 			auto DroppedPowerupPtr = Scavenger.AcquiredPowerups[PowerupIndex];
 			DroppedPowerupPtr->Show();
 			//DroppedPowerupPtr->SetPosition(Arena.WrapPositionToViewport(Scavenger.GetPosition() + (Direction * DroppedPowerupPtr->GetRadius() * 2.5f * PowerupIndex)));
-			const FVector2D CircleP = UDaylonUtils::AngleToVector2D(Placement.Angle) * PowerupDiameter * Placement.CircleRadius;
+			const FVector2D CircleP = Daylon::AngleToVector2D(Placement.Angle) * PowerupDiameter * Placement.CircleRadius;
 			DroppedPowerupPtr->SetPosition(Arena->WrapPosition(Scavenger.GetPosition() + CircleP));
 			Arena->GetPowerups().Add(DroppedPowerupPtr);
 		}
@@ -316,7 +316,7 @@ void FEnemyShips::SpawnShip()
 	}
 
 	// Taper enemy ship volume quieter as player score increases.
-	float VolumeScale = FMath::Clamp(UDaylonUtils::Normalize(Arena->GetPlayerScore(), 100'000, 30'000), 0.0f, 1.0f);
+	float VolumeScale = FMath::Clamp(Daylon::Normalize(Arena->GetPlayerScore(), 100'000, 30'000), 0.0f, 1.0f);
 	VolumeScale = FMath::Lerp(0.5f, 1.0f, VolumeScale);
 
 	if(IsBigEnemy)
@@ -377,7 +377,7 @@ void FEnemyShips::SpawnBoss()
 	}
 
 	BossShipPtr->SetPosition(P);
-	BossShipPtr->Inertia = UDaylonUtils::RandVector2D() * Daylon::FRandRange(MinMinibossSpeed, MaxMinibossSpeed);
+	BossShipPtr->Inertia = Daylon::RandVector2D() * Daylon::FRandRange(MinMinibossSpeed, MaxMinibossSpeed);
 
 	Bosses.Add(BossShipPtr);
 }
@@ -494,7 +494,7 @@ void FEnemyShips::Update(float DeltaTime)
 				Scavenger.Inertia = (Arena->GetPowerups()[NearestPowerupIndex].Get()->GetPosition() - Scavenger.GetPosition());
 				Scavenger.Inertia.Normalize();
 				Scavenger.Inertia *= MaxScavengerSpeed;
-				Scavenger.SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger.Inertia));
+				Scavenger.SetAngle(Daylon::Vector2DToAngle(Scavenger.Inertia));
 			}
 			else
 			{
@@ -502,7 +502,7 @@ void FEnemyShips::Update(float DeltaTime)
 				if(Scavenger.Inertia.Y != 0)
 				{
 					Scavenger.Inertia = FVector2D(1, 0) * MaxScavengerSpeed;
-					Scavenger.SetAngle(UDaylonUtils::Vector2DToAngle(Scavenger.Inertia));
+					Scavenger.SetAngle(Daylon::Vector2DToAngle(Scavenger.Inertia));
 				}
 
 				Scavenger.Move(DeltaTime, Arena->GetWrapPositionFunction());
@@ -531,7 +531,7 @@ void FEnemyShips::Update(float DeltaTime)
 
 			ScavengerPtr->SetPosition(FVector2D(0, Daylon::FRandRange(ViewportSize.Y * 0.1, ViewportSize.Y * 0.9)));
 			ScavengerPtr->Inertia.Set(MaxScavengerSpeed, 0);
-			ScavengerPtr->SetAngle(UDaylonUtils::Vector2DToAngle(ScavengerPtr->Inertia));
+			ScavengerPtr->SetAngle(Daylon::Vector2DToAngle(ScavengerPtr->Inertia));
 
 			Scavengers.Add(ScavengerPtr);
 		}

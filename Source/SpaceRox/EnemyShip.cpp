@@ -26,13 +26,13 @@ static FVector2D GetFiringAngle(float TorpedoSpeed, const FVector2D& P, const FV
 	DirectionToTarget.Normalize();
 
 	// The random direction has to be away from us. It can vary by -90 to +90 degrees from DirectionToTarget.
-	const auto AngleToTarget = UDaylonUtils::Vector2DToAngle(DirectionToTarget);
+	const auto AngleToTarget = Daylon::Vector2DToAngle(DirectionToTarget);
 	const auto RandomAngle   = AngleToTarget + FMath::FRandRange(-90.0f, 90.0f);
 
-	const auto PerfectDirection = UDaylonUtils::ComputeFiringSolution(P, TorpedoSpeed, TargetP, TargetInertia);
-	const auto PerfectAngle     = UDaylonUtils::Vector2DToAngle(PerfectDirection);
+	const auto PerfectDirection = Daylon::ComputeFiringSolution(P, TorpedoSpeed, TargetP, TargetInertia);
+	const auto PerfectAngle     = Daylon::Vector2DToAngle(PerfectDirection);
 
-	return UDaylonUtils::AngleToVector2D(FMath::Lerp(RandomAngle, PerfectAngle, Quality));
+	return Daylon::AngleToVector2D(FMath::Lerp(RandomAngle, PerfectAngle, Quality));
 }
 
 
@@ -141,7 +141,7 @@ void FEnemyShip::Shoot()
 	{
 		Speed = BigEnemyTorpedoSpeed;
 
-		const float Aim = FMath::Clamp(UDaylonUtils::Normalize(Arena->GetPlayerScore(), ScoreForBigEnemyAimWorst, ScoreForBigEnemyAimPerfect), 0.0f, 1.0f);
+		const float Aim = FMath::Clamp(Daylon::Normalize(Arena->GetPlayerScore(), ScoreForBigEnemyAimWorst, ScoreForBigEnemyAimPerfect), 0.0f, 1.0f);
 
 		Direction = GetFiringAngle(Speed, LaunchP, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia, Aim);
 
@@ -164,7 +164,7 @@ void FEnemyShip::Shoot()
 
 		if(bShootAtPlayer || Arena->GetAsteroids().IsEmpty())
 		{
-			const float Aim = FMath::Clamp(UDaylonUtils::Normalize(Arena->GetPlayerScore(), ScoreForSmallEnemyAimWorst, ScoreForSmallEnemyAimPerfect), 0.0f, 1.0f);
+			const float Aim = FMath::Clamp(Daylon::Normalize(Arena->GetPlayerScore(), ScoreForSmallEnemyAimWorst, ScoreForSmallEnemyAimPerfect), 0.0f, 1.0f);
 
 			Direction = GetFiringAngle(Speed, LaunchP, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia, Aim);
 		}
@@ -172,7 +172,7 @@ void FEnemyShip::Shoot()
 		{
 			// Shoot at an asteroid.
 			const auto& Asteroid = Arena->GetAsteroids().Get(FMath::RandRange(0, Arena->GetAsteroids().Num() - 1));
-			Direction = UDaylonUtils::ComputeFiringSolution(LaunchP, Speed, Asteroid.GetPosition(), Asteroid.Inertia);
+			Direction = Daylon::ComputeFiringSolution(LaunchP, Speed, Asteroid.GetPosition(), Asteroid.Inertia);
 		}
 	}
 
@@ -264,7 +264,7 @@ int32 FEnemyBoss::CheckCollision(const FVector2D& P1, const FVector2D &P2, int32
 	const auto LocalP2 = P2 - GetPosition();
 
 	// Check center first.
-	if(UDaylonUtils::DoesLineSegmentIntersectCircle(LocalP1, LocalP2, FVector2D(0), Sprite->GetSize().X / 2))
+	if(Daylon::DoesLineSegmentIntersectCircle(LocalP1, LocalP2, FVector2D(0), Sprite->GetSize().X / 2))
 	{
 		return 0;
 	}
@@ -308,7 +308,7 @@ int32 FEnemyBoss::CheckCollision(const FVector2D& P1, const FVector2D &P2, float
 	// For now, use the average of P1, P2 as the hit point.
 	HitPt = (P1 + P2) / 2;
 
-	if(UDaylonUtils::DoCirclesIntersect(LocalAvgP, Radius, FVector2D(0), GetRadius()))
+	if(Daylon::DoCirclesIntersect(LocalAvgP, Radius, FVector2D(0), GetRadius()))
 	{
 		return 0;
 	}
@@ -319,7 +319,7 @@ int32 FEnemyBoss::CheckCollision(const FVector2D& P1, const FVector2D &P2, float
 
 	for(auto ShieldPtr : Shields)
 	{
-		if(UDaylonUtils::DoCirclesIntersect(LocalAvgP, Radius, FVector2D(0), ShieldPtr->GetSize().X / 2))
+		if(Daylon::DoCirclesIntersect(LocalAvgP, Radius, FVector2D(0), ShieldPtr->GetSize().X / 2))
 		{
 			// Determine the segment by casting a ray from our center.
 			ShieldSegmentIndex = ShieldPtr->GetHitSegment(FVector2D(0), LocalAvgP * 10.0f);
@@ -395,10 +395,10 @@ void FEnemyBoss::Perform(float DeltaTime)
 		TimeRemainingToNextMove = FMath::FRandRange(2.0f, 3.0f);
 
 		// Make new direction not differ so much from current direction.
-		const auto OldAngle = UDaylonUtils::Vector2DToAngle(Inertia);
+		const auto OldAngle = Daylon::Vector2DToAngle(Inertia);
 		const auto NewAngle = OldAngle + FMath::FRandRange(-70.0f, 70.0f);
 
-		Inertia = UDaylonUtils::AngleToVector2D(NewAngle) * GetSpeed();
+		Inertia = Daylon::AngleToVector2D(NewAngle) * GetSpeed();
 	}
 
 	Move(DeltaTime, Arena->GetWrapPositionFunction());
@@ -441,7 +441,7 @@ void FEnemyBoss::Shoot()
 	auto DirectionToPlayer = Arena->GetPlayerShip().GetPosition() - GetPosition();
 	DirectionToPlayer.Normalize();
 	const auto FiringPoint = Arena->WrapPosition(GetPosition() + DirectionToPlayer * (Shields.Last(0)->GetSize().X / 2 + 10.0f));
-	const float Aim = FMath::Min(1.0f, UDaylonUtils::Normalize(Arena->GetPlayerScore(), ScoreForBossSpawn, ScoreForBossAimPerfect));
+	const float Aim = FMath::Min(1.0f, Daylon::Normalize(Arena->GetPlayerScore(), ScoreForBossSpawn, ScoreForBossAimPerfect));
 
 	const auto Direction = GetFiringAngle(BossTorpedoSpeed, FiringPoint, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia, Aim);
 

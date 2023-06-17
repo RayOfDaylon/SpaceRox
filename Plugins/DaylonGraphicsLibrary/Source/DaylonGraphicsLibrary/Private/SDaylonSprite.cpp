@@ -263,7 +263,7 @@ int32 SDaylonPolyShield::GetHitSegment(const FVector2D& P1, const FVector2D& P2)
 
 	const auto ShieldAngle = CurrentAge * SpinSpeed;
 
-	if(!UDaylonUtils::DoesLineSegmentIntersectCircle(P1, P2, FVector2D(0), Size.X / 2))
+	if(!Daylon::DoesLineSegmentIntersectCircle(P1, P2, FVector2D(0), Size.X / 2))
 	{
 		return INDEX_NONE;
 	}
@@ -273,7 +273,7 @@ int32 SDaylonPolyShield::GetHitSegment(const FVector2D& P1, const FVector2D& P2)
 
 	//UE_LOG(LogDaylon, Log, TEXT("HitAngle = %.2f"), HitAngle);
 
-	const auto HitAngle = FMath::Wrap(UDaylonUtils::Vector2DToAngle(HitVector) - ShieldAngle, 0.0f, 360.0f);
+	const auto HitAngle = FMath::Wrap(Daylon::Vector2DToAngle(HitVector) - ShieldAngle, 0.0f, 360.0f);
 
 	//UE_LOG(LogDaylon, Log, TEXT("Wrapped HitAngle = %.2f"), HitAngle);
 
@@ -296,8 +296,8 @@ void  SDaylonPolyShield::GetSegmentGeometry(int32 SegmentIndex, FVector2D& P1, F
 
 	Angle += AngleDelta * SegmentIndex;
 
-	P1 = UDaylonUtils::AngleToVector2D(Angle) * Radius;
-	P2 = UDaylonUtils::AngleToVector2D(Angle + AngleDelta) * Radius;
+	P1 = Daylon::AngleToVector2D(Angle) * Radius;
+	P2 = Daylon::AngleToVector2D(Angle + AngleDelta) * Radius;
 }
 
 
@@ -352,8 +352,8 @@ int32 SDaylonPolyShield::OnPaint
 
 		TArray<FVector2f> Points;
 
-		Points.Add(UE::Slate::CastToVector2f(AllottedGeometry.GetLocalSize() / 2 + UDaylonUtils::AngleToVector2D(Angle) * Radius));
-		Points.Add(UE::Slate::CastToVector2f(AllottedGeometry.GetLocalSize() / 2 + UDaylonUtils::AngleToVector2D(Angle + AngleDelta) * Radius));
+		Points.Add(UE::Slate::CastToVector2f(AllottedGeometry.GetLocalSize() / 2 + Daylon::AngleToVector2D(Angle) * Radius));
+		Points.Add(UE::Slate::CastToVector2f(AllottedGeometry.GetLocalSize() / 2 + Daylon::AngleToVector2D(Angle + AngleDelta) * Radius));
 
 		FSlateDrawElement::MakeLines(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, Color, true, Thickness);
 	}

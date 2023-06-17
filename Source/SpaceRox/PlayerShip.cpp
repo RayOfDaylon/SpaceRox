@@ -87,7 +87,7 @@ void FPlayerShip::Perform(float DeltaTime)
 
 	//UE_LOG(LogGame, Log, TEXT("Rotation force: %.5f"), Arena->RotationForce);
 
-	SetAngle(UDaylonUtils::WrapAngle(GetAngle() + Amt * Arena->GetPlayerRotationForce()));
+	SetAngle(Daylon::WrapAngle(GetAngle() + Amt * Arena->GetPlayerRotationForce()));
 
 
 	// Change sprite cel only if the thrust state actually changed.
@@ -141,7 +141,7 @@ void FPlayerShip::Perform(float DeltaTime)
 	if(Shield->IsVisible())
 	{
 		// We have to budge the shield texture by two px to look nicely centered around the player ship.
-		Shield->SetPosition(GetPosition() + UDaylonUtils::Rotate(FVector2D(0, 2), GetAngle()));
+		Shield->SetPosition(GetPosition() + Daylon::Rotate(FVector2D(0, 2), GetAngle()));
 		AdjustShieldsLeft(-DeltaTime);
 	}
 
@@ -170,7 +170,7 @@ void FPlayerShip::Perform(float DeltaTime)
 	if(InvincibilityShield->IsVisible())
 	{
 		InvincibilityShield->SetAngle(GetAngle());
-		InvincibilityShield->SetPosition(GetPosition() + UDaylonUtils::Rotate(FVector2D(0, -2), GetAngle()));
+		InvincibilityShield->SetPosition(GetPosition() + Daylon::Rotate(FVector2D(0, -2), GetAngle()));
 	}
 
 	if(InvincibilityLeft > 0.0f)
@@ -197,14 +197,14 @@ bool FPlayerShip::ProcessCollision()
 
 	if(Arena->IsGodModeActive() || InvincibilityLeft > 0.0f)
 	{
-		Arena->PlaySound(Arena->GetShieldBonkSound());
+		Arena->PlaySound(Arena->GetShieldBonkSound(), 0.5f);
 		return true;
 	}
 
 	if(Shield->IsVisible())
 	{
 		AdjustShieldsLeft(-ShieldBonkDamage);
-		Arena->PlaySound(Arena->GetShieldBonkSound());
+		Arena->PlaySound(Arena->GetShieldBonkSound(), 0.5f);
 		return true;
 	}
 
@@ -273,7 +273,7 @@ void FPlayerShip::FireTorpedo()
 		Torpedo.FiredByPlayer = true;
 
 		auto P = PlayerFwd * (GetSize().Y / 4);// * Daylon::FRandRange(0.5f, 2.0f);
-		P = UDaylonUtils::Rotate(P, 90.0f);
+		P = Daylon::Rotate(P, 90.0f);
 		P += GetPosition();
 		//P += PlayerFwd * Daylon::FRandRange(0.0f, 10.0f);
 		P = Arena->WrapPosition(P);
@@ -292,7 +292,7 @@ void FPlayerShip::FireTorpedo()
 		Torpedo2.FiredByPlayer = true;
 
 		P = PlayerFwd * (GetSize().Y / 4);// * Daylon::FRandRange(0.5f, 2.0f);
-		P = UDaylonUtils::Rotate(P, -90.0f);
+		P = Daylon::Rotate(P, -90.0f);
 		P += GetPosition();
 		//P += PlayerFwd * Daylon::FRandRange(0.0f, 10.0f);
 		P = Arena->WrapPosition(P);

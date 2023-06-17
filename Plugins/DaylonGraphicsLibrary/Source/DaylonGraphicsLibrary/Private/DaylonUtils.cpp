@@ -15,13 +15,19 @@
 DEFINE_LOG_CATEGORY(LogDaylon);
 
 
-const double UDaylonUtils::Epsilon = 1e-14;
+const double Daylon::Epsilon = 1e-14;
 
-UWidgetTree*  UDaylonUtils::WidgetTree = nullptr;
-UCanvasPanel* UDaylonUtils::RootCanvas = nullptr;
+UWidgetTree*  Daylon::WidgetTree = nullptr;
+UCanvasPanel* Daylon::RootCanvas = nullptr;
 
 
-float UDaylonUtils::Normalize(float N, float Min, float Max)
+void          Daylon::SetWidgetTree   (UWidgetTree* InWidgetTree) { WidgetTree = InWidgetTree; }
+UWidgetTree*  Daylon::GetWidgetTree   () { return WidgetTree; }
+void          Daylon::SetRootCanvas   (UCanvasPanel* InCanvas) { RootCanvas = InCanvas; }
+UCanvasPanel* Daylon::GetRootCanvas   () { return RootCanvas; }
+
+
+float Daylon::Normalize(float N, float Min, float Max)
 {
 	// Return N normalized given Min/Max.
 	// Note that result can be outside the 0..1 range if N is not inside Min..Max.
@@ -32,7 +38,7 @@ float UDaylonUtils::Normalize(float N, float Min, float Max)
 }
 
 
-FVector2D UDaylonUtils::AngleToVector2D(float Angle)
+FVector2D Daylon::AngleToVector2D(float Angle)
 {
 	// We place zero degrees pointing up and increasing clockwise.
 
@@ -42,7 +48,7 @@ FVector2D UDaylonUtils::AngleToVector2D(float Angle)
 }
 
 
-FVector2D UDaylonUtils::RandVector2D()
+FVector2D Daylon::RandVector2D()
 {
 	FVector2D Result;
 	FVector::FReal L;
@@ -59,7 +65,7 @@ FVector2D UDaylonUtils::RandVector2D()
 }
 
 
-FVector2D UDaylonUtils::Rotate(const FVector2D& P, float Angle)
+FVector2D Daylon::Rotate(const FVector2D& P, float Angle)
 {
 	// Rotate P around the origin for Angle degrees.
 
@@ -69,7 +75,7 @@ FVector2D UDaylonUtils::Rotate(const FVector2D& P, float Angle)
 }
 
 
-float UDaylonUtils::Vector2DToAngle(const FVector2D& Vector)
+float Daylon::Vector2DToAngle(const FVector2D& Vector)
 {
 	// We place zero degrees pointing up and increasing clockwise.
 
@@ -77,19 +83,19 @@ float UDaylonUtils::Vector2DToAngle(const FVector2D& Vector)
 }
 
 
-float UDaylonUtils::WrapAngle(float Angle)
+float Daylon::WrapAngle(float Angle)
 {
 	return (float)UKismetMathLibrary::GenericPercent_FloatFloat(Angle, 360.0);
 }
 
 
-FVector2D UDaylonUtils::DeviateVector(const FVector2D& VectorOld, float MinDeviation, float MaxDeviation)
+FVector2D Daylon::DeviateVector(const FVector2D& VectorOld, float MinDeviation, float MaxDeviation)
 {
-	return UDaylonUtils::Rotate(VectorOld, Daylon::FRandRange(MinDeviation, MaxDeviation));
+	return Daylon::Rotate(VectorOld, Daylon::FRandRange(MinDeviation, MaxDeviation));
 }
 
 
-bool UDaylonUtils::DoCirclesIntersect(const FVector2D& C1, float R1, const FVector2D& C2, float R2)
+bool Daylon::DoCirclesIntersect(const FVector2D& C1, float R1, const FVector2D& C2, float R2)
 {
 	return (FVector2D::Distance(C1, C2) < (R1 + R2));
 }
@@ -98,7 +104,7 @@ bool UDaylonUtils::DoCirclesIntersect(const FVector2D& C1, float R1, const FVect
 static UE::Geometry::TIntrTriangle2Triangle2<double> TriTriIntersector;
 
 
-bool UDaylonUtils::DoesLineSegmentIntersectTriangle(const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3])
+bool Daylon::DoesLineSegmentIntersectTriangle(const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3])
 {
 	// Use a degenerate triangle to mimic the line segment.
 
@@ -112,7 +118,7 @@ bool UDaylonUtils::DoesLineSegmentIntersectTriangle(const FVector2D& P1, const F
 }
 
 
-bool UDaylonUtils::DoesTriangleIntersectTriangle(const FVector2D TriA[3], const FVector2D TriB[3])
+bool Daylon::DoTrianglesIntersect(const FVector2D TriA[3], const FVector2D TriB[3])
 {
 	UE::Geometry::FTriangle2d Tri0(TriA);
 	TriTriIntersector.SetTriangle0(Tri0);
@@ -124,7 +130,7 @@ bool UDaylonUtils::DoesTriangleIntersectTriangle(const FVector2D TriA[3], const 
 }
 
 
-bool UDaylonUtils::DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R)
+bool Daylon::DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R)
 {
 	// Test if a line intersects a circle.
 	// p1 and p2 are the line endpoints.
@@ -235,7 +241,7 @@ bool UDaylonUtils::DoesLineSegmentIntersectCircle(const FVector2D& P1, const FVe
 }
 
 
-FVector2D UDaylonUtils::ComputeFiringSolution(const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia)
+FVector2D Daylon::ComputeFiringSolution(const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia)
 {
 	// Given launch and target positions, torpedo speed, and target inertia, 
 	// return a firing direction.
@@ -251,7 +257,7 @@ FVector2D UDaylonUtils::ComputeFiringSolution(const FVector2D& LaunchP, float To
 
 	if(Desc <= 0)
 	{
-		return UDaylonUtils::RandVector2D();
+		return Daylon::RandVector2D();
 	}
 
 	const auto TimeToTarget = 2 * C / (FMath::Sqrt(Desc) - B);
@@ -267,24 +273,24 @@ FVector2D UDaylonUtils::ComputeFiringSolution(const FVector2D& LaunchP, float To
 }
 
 
-FVector2D UDaylonUtils::RandomPtWithinBox(const FBox2d& Box)
+FVector2D Daylon::RandomPtWithinBox(const FBox2d& Box)
 {
 	return FVector2D(Daylon::FRandRange(Box.Min.X, Box.Max.X), Daylon::FRandRange(Box.Min.Y, Box.Max.Y));
 }
 
 
-FVector2D UDaylonUtils::GetWidgetDirectionVector(const UWidget* Widget)
+FVector2D Daylon::GetWidgetDirectionVector(const UWidget* Widget)
 {
 	if (Widget == nullptr)
 	{
 		return FVector2D(0.0f);
 	}
 
-	return UDaylonUtils::AngleToVector2D(Widget->GetRenderTransformAngle());
+	return Daylon::AngleToVector2D(Widget->GetRenderTransformAngle());
 }
 
 
-void UDaylonUtils::Show(UWidget* Widget, bool Visible)
+void Daylon::Show(UWidget* Widget, bool Visible)
 {
 	if(Widget == nullptr)
 	{
@@ -295,13 +301,13 @@ void UDaylonUtils::Show(UWidget* Widget, bool Visible)
 }
 
 
-void UDaylonUtils::Hide(UWidget* Widget) 
+void Daylon::Hide(UWidget* Widget) 
 {
 	Show(Widget, false); 
 }
 
 
-void UDaylonUtils::Show(SWidget* Widget, bool Visible)
+void Daylon::Show(SWidget* Widget, bool Visible)
 {
 	if(Widget == nullptr)
 	{
@@ -312,13 +318,13 @@ void UDaylonUtils::Show(SWidget* Widget, bool Visible)
 }
 
 
-void UDaylonUtils::Hide(SWidget* Widget) 
+void Daylon::Hide(SWidget* Widget) 
 {
 	Show(Widget, false); 
 }
 
 
-void UDaylonUtils::UpdateRoundedReadout(UTextBlock* Readout, float Value, int32& OldValue)
+void Daylon::UpdateRoundedReadout(UTextBlock* Readout, float Value, int32& OldValue)
 {
 	check(Readout);
 
@@ -333,7 +339,7 @@ void UDaylonUtils::UpdateRoundedReadout(UTextBlock* Readout, float Value, int32&
 }
 
 
-FVector2D UDaylonUtils::GetWidgetPosition(const UWidget* Widget)
+FVector2D Daylon::GetWidgetPosition(const UWidget* Widget)
 {
 	// Return a UWidget's position in layout (not screen) space. E.g. an HD canvas on a 4K screen will return HD units
 
@@ -343,7 +349,7 @@ FVector2D UDaylonUtils::GetWidgetPosition(const UWidget* Widget)
 }
 
 
-FVector2D UDaylonUtils::GetWidgetSize(const UWidget* Widget)
+FVector2D Daylon::GetWidgetSize(const UWidget* Widget)
 {
 	// Return a UWidget's size in layout (not screen) space. E.g. an HD canvas on a 4K screen will return HD units
 
@@ -351,8 +357,6 @@ FVector2D UDaylonUtils::GetWidgetSize(const UWidget* Widget)
 
 	return Geometry.GetAbsoluteSize() / Geometry.Scale;
 }
-
-
 
 // ------------------------------------------------------------------------------------------
 
@@ -362,7 +366,6 @@ double Daylon::FRand      () { return Rng.rand(); }
 double Daylon::FRandRange (double Min, double Max) { return (Min + Rng.rand(Max - Min)); }
 int32  Daylon::RandRange  (int32  Min, int32  Max) { return (Min + Rng.randInt(Max - Min)); }
 bool   Daylon::RandBool   () { return (Rng.rand() >= 0.5); }
-
 
 // ------------------------------------------------------------------------------------------
 
@@ -478,7 +481,7 @@ TSharedPtr<Daylon::SpritePlayObject2D> Daylon::CreateSpritePlayObject2D(const FD
 
 void Daylon::UninstallImpl(TSharedPtr<SWidget> Widget)
 {
-	UDaylonUtils::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(Widget.ToSharedRef());
+	Daylon::GetRootCanvas()->GetCanvasWidget()->RemoveSlot(Widget.ToSharedRef());
 }
 
 #define UNINSTALL_PLAYOBJECT(_Widget)	\
