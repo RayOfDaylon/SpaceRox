@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-June 17, 2023
+June 18, 2023
 
 Chapters:
 
@@ -94,6 +94,14 @@ you have installed.
 Once you have the project's .sln file, you can open it in Visual Studio and 
 browse/modify/debug the code, build it, launch the development editor, etc.
 
+If you get "unknown symbol" compilation errors, it's probably because the unity 
+build option is enabled (which is the case by default), and one or more .cpp 
+files is missing an #include statement, and your unity build just happens 
+to collect a different set of .cpp files together into a compilation unit 
+than mine. All you need to do is locate the symbol's definition, then 
+include that header in the .cpp file that won't compile, and repeat for 
+any remaining unknown symbols.
+
 The frame rate is left uncapped so that you can measure how well your system 
 runs the game. Note that PIE sessions often play slower because UE has to 
 render all the editor UI as well. Also, checking "Fixed frame rate" in 
@@ -162,7 +170,7 @@ will be deducted.
 The double-gun (or power) powerup grants 100 double-shot rounds. The player ship 
 will automatically switch to double guns if any such rounds have been acquired.
 Double guns make a huge difference in destroying big and medium-sized asteroids, 
-and overall improve your chances of hitting targets.
+and especially minibosses, and overall improve your chances of hitting targets.
 
 The invincibility (or star) powerup grants 30 seconds of invincibility 
 taking effect immediately upon acquisition. A bright form-fitting shield 
@@ -404,6 +412,8 @@ There's no Actor objects, and even the camera isn't defined or used,
 nor a proper GameMode, GameState, GameInstance, Pawn, etc.
 So while not a model-view separation, for a simple single-player 
 game like this, putting everything into UPlayViewBase suffices.
+Further cementing the "no viewmodel" approach is that the 
+PlayObject2D classes combine game object state with widgets.
 
 This is by design. The project was meant to test how a 2D game 
 could be implemented using UI widgets and to see if it would 
