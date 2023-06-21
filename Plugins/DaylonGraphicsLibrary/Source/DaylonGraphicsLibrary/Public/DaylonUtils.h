@@ -35,36 +35,37 @@ namespace Daylon
 
 	extern const double Epsilon;
 
-	DAYLONGRAPHICSLIBRARY_API FORCEINLINE double Square     (double x) { return x * x; }
+	DAYLONGRAPHICSLIBRARY_API FORCEINLINE double Square (double x) { return x * x; }
 
-	DAYLONGRAPHICSLIBRARY_API void          SetWidgetTree   (UWidgetTree* InWidgetTree);
-	DAYLONGRAPHICSLIBRARY_API UWidgetTree*  GetWidgetTree   ();
-	DAYLONGRAPHICSLIBRARY_API void          SetRootCanvas   (UCanvasPanel* InCanvas);
-	DAYLONGRAPHICSLIBRARY_API UCanvasPanel* GetRootCanvas   ();
+	DAYLONGRAPHICSLIBRARY_API void          SetWidgetTree                     (UWidgetTree* InWidgetTree);
+	DAYLONGRAPHICSLIBRARY_API UWidgetTree*  GetWidgetTree                     ();
+	DAYLONGRAPHICSLIBRARY_API void          SetRootCanvas                     (UCanvasPanel* InCanvas);
+	DAYLONGRAPHICSLIBRARY_API UCanvasPanel* GetRootCanvas                     ();
 
-	DAYLONGRAPHICSLIBRARY_API FVector2D   AngleToVector2D   (float Angle);
-	DAYLONGRAPHICSLIBRARY_API FVector2D   RandVector2D      ();
-	DAYLONGRAPHICSLIBRARY_API FVector2D   Rotate            (const FVector2D& P, float Angle); 
-	DAYLONGRAPHICSLIBRARY_API FVector2D   DeviateVector     (const FVector2D& VectorOld, float MinDeviation, float MaxDeviation);
-	DAYLONGRAPHICSLIBRARY_API float       Vector2DToAngle   (const FVector2D& Vector);
-	DAYLONGRAPHICSLIBRARY_API float       WrapAngle         (float Angle);
-	DAYLONGRAPHICSLIBRARY_API float       Normalize         (float N, float Min, float Max);
+	DAYLONGRAPHICSLIBRARY_API FVector2D     GetWidgetPosition                 (const UWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API FVector2D     GetWidgetSize                     (const UWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API FVector2D     GetWidgetDirectionVector          (const UWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API void          Show                              (UWidget*, bool Visible = true);
+	DAYLONGRAPHICSLIBRARY_API void          Show                              (SWidget*, bool Visible = true);
+	DAYLONGRAPHICSLIBRARY_API void          Hide                              (UWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API void          Hide                              (SWidget* Widget);
+	DAYLONGRAPHICSLIBRARY_API void          UpdateRoundedReadout              (UTextBlock* Readout, float Value, int32& OldValue);
 
-	DAYLONGRAPHICSLIBRARY_API FVector2D   ComputeFiringSolution             (const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia);
-	DAYLONGRAPHICSLIBRARY_API bool        DoesLineSegmentIntersectCircle    (const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R);
-	DAYLONGRAPHICSLIBRARY_API bool        DoesLineSegmentIntersectTriangle  (const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3]);
-	DAYLONGRAPHICSLIBRARY_API bool        DoTrianglesIntersect              (const FVector2D TriA[3], const FVector2D TriB[3]);
-	DAYLONGRAPHICSLIBRARY_API bool        DoCirclesIntersect                (const FVector2D& C1, float R1, const FVector2D& C2, float R2);
-	DAYLONGRAPHICSLIBRARY_API FVector2D   RandomPtWithinBox                 (const FBox2d& Box);
+	DAYLONGRAPHICSLIBRARY_API FVector2D     AngleToVector2D                   (float Angle);
+	DAYLONGRAPHICSLIBRARY_API FVector2D     RandVector2D                      ();
+	DAYLONGRAPHICSLIBRARY_API FVector2D     Rotate                            (const FVector2D& P, float Angle); 
+	DAYLONGRAPHICSLIBRARY_API FVector2D     DeviateVector                     (const FVector2D& VectorOld, float MinDeviation, float MaxDeviation);
+	DAYLONGRAPHICSLIBRARY_API float         Vector2DToAngle                   (const FVector2D& Vector);
+	DAYLONGRAPHICSLIBRARY_API float         WrapAngle                         (float Angle);
+	DAYLONGRAPHICSLIBRARY_API float         Normalize                         (float N, float Min, float Max);
 
-	DAYLONGRAPHICSLIBRARY_API FVector2D   GetWidgetPosition                 (const UWidget* Widget);
-	DAYLONGRAPHICSLIBRARY_API FVector2D   GetWidgetSize                     (const UWidget* Widget);
-	DAYLONGRAPHICSLIBRARY_API FVector2D   GetWidgetDirectionVector          (const UWidget* Widget);
-	DAYLONGRAPHICSLIBRARY_API void        Show                              (UWidget*, bool Visible = true);
-	DAYLONGRAPHICSLIBRARY_API void        Show                              (SWidget*, bool Visible = true);
-	DAYLONGRAPHICSLIBRARY_API void        Hide                              (UWidget* Widget);
-	DAYLONGRAPHICSLIBRARY_API void        Hide                              (SWidget* Widget);
-	DAYLONGRAPHICSLIBRARY_API void        UpdateRoundedReadout              (UTextBlock* Readout, float Value, int32& OldValue);
+	DAYLONGRAPHICSLIBRARY_API bool          DoesLineSegmentIntersectCircle    (const FVector2D& P1, const FVector2D& P2, const FVector2D& CP, double R);
+	DAYLONGRAPHICSLIBRARY_API bool          DoesLineSegmentIntersectTriangle  (const FVector2D& P1, const FVector2D& P2, const FVector2D Triangle[3]);
+	DAYLONGRAPHICSLIBRARY_API bool          DoTrianglesIntersect              (const FVector2D TriA[3], const FVector2D TriB[3]);
+	DAYLONGRAPHICSLIBRARY_API bool          DoCirclesIntersect                (const FVector2D& C1, float R1, const FVector2D& C2, float R2);
+	DAYLONGRAPHICSLIBRARY_API FVector2D     RandomPtWithinBox                 (const FBox2d& Box);
+	DAYLONGRAPHICSLIBRARY_API FVector2D     ComputeFiringSolution             (const FVector2D& LaunchP, float TorpedoSpeed, const FVector2D& TargetP, const FVector2D& TargetInertia);
+
 
 	template<class WidgetT> static WidgetT* MakeWidget()
 	{
@@ -325,6 +326,8 @@ namespace Daylon
 	// Slate-only 2D play object
 	// Warning: play objects combine views with models; if you need a view-model separation, prefer AActor and 
 	// arrange for a visuals-only class (e.g. SImage or your own custom UWidgets/SWidgets) to do rendering.
+	// You can still use PlayObject2D just for visuals, but you'll want to handle stuff like Inertia in a model,
+	// not call Move(), etc.
 
 
 	template <class SWidgetT>
@@ -356,35 +359,16 @@ namespace Daylon
 
 		virtual FVector2D GetActualSize() const = 0;
 
-
-		void SetSlot(SConstraintCanvas::FSlot* InSlot) 
-		{
-			check(Slot == nullptr);
-
-			Slot = InSlot; 
-		}
-
-
-		bool IsValid   () const 
-		{ 
-			return ((Slot != nullptr) && (Value >= 0));
-		}
-
-
 		virtual void Update    (float DeltaTime) {}
 
+		void SetSlot   (SConstraintCanvas::FSlot* InSlot) { check(Slot == nullptr); Slot = InSlot; }
+		bool IsValid   () const { return ((Slot != nullptr) && (Value >= 0)); }
 		bool IsAlive   () const { return (LifeRemaining > 0.0f); }
 		bool IsDead    () const { return !IsAlive(); }
+		bool IsVisible () const { return (IsValid() ? (GetVisibility() != EVisibility::Collapsed && GetVisibility() != EVisibility::Hidden) : false); }
 		void Show      (bool Visible = true) { Daylon::Show(this, Visible); }
 		void Hide      () { Show(false); }
 		void Kill      () { LifeRemaining = 0.0f; Hide(); }
-		
-		bool IsVisible () const 
-		{
-			return (IsValid() 
-				? (GetVisibility() != EVisibility::Collapsed && GetVisibility() != EVisibility::Hidden) 
-				: false);
-		}
 
 
 		void UpdateWidgetSize() 
@@ -498,7 +482,7 @@ namespace Daylon
 				return FVector2D(0.0f);
 			}
 
-			return Daylon::AngleToVector2D(GetAngle());
+			return AngleToVector2D(GetAngle());
 		}
 
 
@@ -561,7 +545,6 @@ namespace Daylon
 		virtual FVector2D GetActualSize() const override { return Size; }
 
 		virtual void Update(float DeltaTime) override { SDaylonSprite::Update(DeltaTime); }
-
 	};
 
 
@@ -570,7 +553,7 @@ namespace Daylon
 	{
 		Widget->SetRenderTransformPivot(FVector2D(0.5f));
 
-		auto Canvas = Daylon::GetRootCanvas()->GetCanvasWidget();
+		auto Canvas = GetRootCanvas()->GetCanvasWidget();
 
 		auto SlotArgs = Canvas->AddSlot();
 
@@ -584,8 +567,8 @@ namespace Daylon
 	}
 
 
-	DAYLONGRAPHICSLIBRARY_API TSharedPtr<ImagePlayObject2D>          CreateImagePlayObject2D  (const FSlateBrush& Brush, float Radius);
-	DAYLONGRAPHICSLIBRARY_API TSharedPtr<Daylon::SpritePlayObject2D> CreateSpritePlayObject2D (const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float Radius);
+	DAYLONGRAPHICSLIBRARY_API TSharedPtr<ImagePlayObject2D>  CreateImagePlayObject2D  (const FSlateBrush& Brush, float Radius);
+	DAYLONGRAPHICSLIBRARY_API TSharedPtr<SpritePlayObject2D> CreateSpritePlayObject2D (const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float Radius);
 
 	DAYLONGRAPHICSLIBRARY_API void UninstallImpl(TSharedPtr<SWidget> Widget);
 
@@ -630,12 +613,13 @@ namespace Daylon
 	{
 		// Data
 		public:
-			//typedef unsigned long uint32;  // unsigned integer type, at least 32 bits
 	
 			enum { N = 624 };       // length of state vector
 			enum { SAVE = N + 1 };  // length of array for save()
 
+
 		protected:
+
 			enum { M = 397 };  // period parameter
 	
 			uint32  state[N];   // internal state
@@ -643,8 +627,8 @@ namespace Daylon
 			int     left;       // number of values left before reload needed
 
 
-		//Methods
 		public:
+
 			MTRand(const uint32& oneSeed);  // initialize with a simple uint32
 			MTRand();  // auto-initialize with /dev/urandom or time() and clock()
 	
