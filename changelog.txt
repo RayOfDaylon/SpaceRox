@@ -1,5 +1,11 @@
 Change log for Stellar Mayhem
 
+Renamed static play object "Create" methods to "Spawn" since 
+"create" should only mean to create an object, while "spawn" 
+means to create _and_ install the widget into the widget tree.
+Calls to the Daylon::PlayObject2d::Spawn method were changed 
+to "Start" to adhere to that function being renamed.
+
 Changed random number generator calls to use Mersenne Twister RNG class 
 with Daylon namespace versions of several FMath functions.
 

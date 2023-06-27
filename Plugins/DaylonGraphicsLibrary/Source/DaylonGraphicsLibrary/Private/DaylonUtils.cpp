@@ -453,7 +453,7 @@ void Daylon::FHighScoreTable::Add(int32 Score, const FString& Name)
 
 // ------------------------------------------------------------------------------------------
 
-TSharedPtr<Daylon::ImagePlayObject2D> Daylon::CreateImagePlayObject2D(const FSlateBrush& Brush, float Radius)
+TSharedPtr<Daylon::ImagePlayObject2D> Daylon::SpawnImagePlayObject2D(const FSlateBrush& Brush, float Radius)
 {
 	auto PlayObj = SNew(ImagePlayObject2D);
 
@@ -465,7 +465,7 @@ TSharedPtr<Daylon::ImagePlayObject2D> Daylon::CreateImagePlayObject2D(const FSla
 }
 
 
-TSharedPtr<Daylon::SpritePlayObject2D> Daylon::CreateSpritePlayObject2D(const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float Radius)
+TSharedPtr<Daylon::SpritePlayObject2D> Daylon::SpawnSpritePlayObject2D(const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float Radius)
 {
 	auto PlayObj = SNew(SpritePlayObject2D);
 

@@ -438,7 +438,7 @@ void UPlayViewBase::TransitionToState(EGameState State)
 			Daylon::Show  (PlayerShipsReadout);
 			Daylon::Show  (PowerupReadouts);
 
-			PlayerShip->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
+			PlayerShip->Start(ViewportSize / 2, FVector2D(0), 1.0f);
 
 
 #if(FEATURE_MINIBOSS == 1)
@@ -850,7 +850,7 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 				break;
 		}
 
-		auto Asteroid = FAsteroid::Create(this, AsteroidAtlas->Atlas);
+		auto Asteroid = FAsteroid::Spawn(this, AsteroidAtlas->Atlas);
 		Asteroid->Value = AsteroidValue;
 		Asteroid->LifeRemaining = 1.0f;
 		Asteroid->SpinSpeed = Daylon::FRandRange(MinAsteroidSpinSpeed, MaxAsteroidSpinSpeed);
@@ -860,7 +860,7 @@ void UPlayViewBase::SpawnAsteroids(int32 NumAsteroids)
 			SpawnPowerup(Asteroid->Powerup, P);
 		}
 
-		Asteroid->Spawn(P, Inertia, 1.0f);
+		Asteroid->Start(P, Inertia, 1.0f);
 
 		// Do this last since the play object is copied.
 		Asteroids.Add(Asteroid);

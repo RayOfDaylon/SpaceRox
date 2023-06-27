@@ -36,7 +36,7 @@ static FVector2D GetFiringAngle(float TorpedoSpeed, const FVector2D& P, const FV
 }
 
 
-TSharedPtr<FEnemyShip> FEnemyShip::Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas, int Value, float RadiusFactor)
+TSharedPtr<FEnemyShip> FEnemyShip::Spawn(IArena* InArena, const FDaylonSpriteAtlas& Atlas, int Value, float RadiusFactor)
 {
 	check(InArena);
 
@@ -176,7 +176,7 @@ void FEnemyShip::Shoot()
 		}
 	}
 
-	Torpedo.Spawn(LaunchP, Direction * Speed, MaxTorpedoLifeTime);
+	Torpedo.Start(LaunchP, Direction * Speed, MaxTorpedoLifeTime);
 
 	Arena->PlaySound(Arena->GetTorpedoSound());
 }
@@ -185,7 +185,7 @@ void FEnemyShip::Shoot()
 // ------------------------------------------------------------------------------------------------------------------
 
 
-TSharedPtr<FEnemyBoss> FEnemyBoss::Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed)
+TSharedPtr<FEnemyBoss> FEnemyBoss::Spawn(IArena* InArena, const FDaylonSpriteAtlas& Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed)
 {
 	check(InArena);
 	check(NumShields > 0);
@@ -445,7 +445,7 @@ void FEnemyBoss::Shoot()
 
 	const auto Direction = GetFiringAngle(BossTorpedoSpeed, FiringPoint, Arena->GetPlayerShip().GetPosition(), Arena->GetPlayerShip().Inertia, Aim);
 
-	Torpedo.Spawn(FiringPoint, Direction * BossTorpedoSpeed, MaxTorpedoLifeTime);
+	Torpedo.Start(FiringPoint, Direction * BossTorpedoSpeed, MaxTorpedoLifeTime);
 
 	Arena->PlaySound(Arena->GetTorpedoSound());
 }

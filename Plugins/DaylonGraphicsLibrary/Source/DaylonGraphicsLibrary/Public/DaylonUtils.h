@@ -497,7 +497,7 @@ namespace Daylon
 		}
 
 
-		void Spawn(const FVector2D& P, const FVector2D& InInertia, float InLifeRemaining)
+		void Start(const FVector2D& P, const FVector2D& InInertia, float InLifeRemaining)
 		{
 			if(!IsValid())
 			{
@@ -567,8 +567,8 @@ namespace Daylon
 	}
 
 
-	DAYLONGRAPHICSLIBRARY_API TSharedPtr<ImagePlayObject2D>  CreateImagePlayObject2D  (const FSlateBrush& Brush, float Radius);
-	DAYLONGRAPHICSLIBRARY_API TSharedPtr<SpritePlayObject2D> CreateSpritePlayObject2D (const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float Radius);
+	DAYLONGRAPHICSLIBRARY_API TSharedPtr<ImagePlayObject2D>  SpawnImagePlayObject2D  (const FSlateBrush& Brush, float Radius);
+	DAYLONGRAPHICSLIBRARY_API TSharedPtr<SpritePlayObject2D> SpawnSpritePlayObject2D (const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float Radius);
 
 	DAYLONGRAPHICSLIBRARY_API void UninstallImpl(TSharedPtr<SWidget> Widget);
 

@@ -26,7 +26,7 @@ class FAsteroid : public FPlayObject
 		bool HasPowerup() const;
 
 
-		static TSharedPtr<FAsteroid> Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas);
+		static TSharedPtr<FAsteroid> Spawn(IArena* InArena, const FDaylonSpriteAtlas& Atlas);
 	
 
 		TSharedPtr<FAsteroid> Split();

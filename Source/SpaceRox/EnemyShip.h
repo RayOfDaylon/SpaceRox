@@ -23,7 +23,7 @@ class FEnemyShip : public FPlayObject
 	bool  bShootAtPlayer          = false;
 
 
-	static TSharedPtr<FEnemyShip> Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas, int Value, float RadiusFactor);
+	static TSharedPtr<FEnemyShip> Spawn(IArena* InArena, const FDaylonSpriteAtlas& Atlas, int Value, float RadiusFactor);
 
 	FEnemyShip();
 
@@ -51,7 +51,7 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 	TArray<TSharedPtr<SDaylonPolyShield>> Shields;
 	TArray<FOverlaySlot*>                 ShieldSlots;
 
-	static TSharedPtr<FEnemyBoss> Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed = 100.0f);
+	static TSharedPtr<FEnemyBoss> Spawn(IArena* InArena, const FDaylonSpriteAtlas& Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed = 100.0f);
 
 	void  Update                   (float DeltaTime);
 	int32 CheckCollision           (const FVector2D& P1, const FVector2D &P2, int32& ShieldSegmentIndex) const;

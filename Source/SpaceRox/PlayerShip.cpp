@@ -45,7 +45,7 @@ void FPlayerShip::Initialize(IArena* InArena)
 	ShieldsLeft        = 0.0f;
 	InvincibilityLeft  = 0.0f;
 
-	Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
+	Start  (ViewportSize / 2, FVector2D(0), 1.0f);
 	Hide   ();
 }
 
@@ -61,7 +61,7 @@ void FPlayerShip::InitializeDefenses()
 	Shield->SetSize(Arena->GetDefensesAtlas().GetCelPixelSize());
 	Shield->UpdateWidgetSize();
 
-	Shield->Spawn  (ViewportSize / 2, FVector2D(0), 1.0f);
+	Shield->Start  (ViewportSize / 2, FVector2D(0), 1.0f);
 	Shield->Hide   ();
 
 
@@ -73,7 +73,7 @@ void FPlayerShip::InitializeDefenses()
 	InvincibilityShield->SetCurrentCel(InvincibilityDefenseAtlasCel);
 	InvincibilityShield->SetSize(Arena->GetDefensesAtlas().GetCelPixelSize());
 	InvincibilityShield->UpdateWidgetSize();
-	InvincibilityShield->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
+	InvincibilityShield->Start(ViewportSize / 2, FVector2D(0), 1.0f);
 	InvincibilityShield->Hide();
 }
 
@@ -264,7 +264,7 @@ void FPlayerShip::FireTorpedo()
 		P += PlayerFwd * (GetSize().Y / 2 + /*Inertia.Length()*/ 2.0); // The last offset is so that the bullet doesn't start off accidentally overlapping the player ship
 		P = Arena->WrapPosition(P);
 
-		Torpedo.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
+		Torpedo.Start(P, TorpedoInertia, MaxTorpedoLifeTime);
 	}
 	else
 	{
@@ -278,7 +278,7 @@ void FPlayerShip::FireTorpedo()
 		//P += PlayerFwd * Daylon::FRandRange(0.0f, 10.0f);
 		P = Arena->WrapPosition(P);
 
-		Torpedo.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
+		Torpedo.Start(P, TorpedoInertia, MaxTorpedoLifeTime);
 
 		auto TorpedoPtr2 = Arena->GetAvailableTorpedo();
 
@@ -297,7 +297,7 @@ void FPlayerShip::FireTorpedo()
 		//P += PlayerFwd * Daylon::FRandRange(0.0f, 10.0f);
 		P = Arena->WrapPosition(P);
 
-		Torpedo2.Spawn(P, TorpedoInertia, MaxTorpedoLifeTime);
+		Torpedo2.Start(P, TorpedoInertia, MaxTorpedoLifeTime);
 	}
 }
 

@@ -1,7 +1,12 @@
 Changelog for DaylonGraphicsLibrary UE plugin
 
-Last updated: June 16, 2023
+Last updated: June 27, 2023
 
+Renamed Daylon::PlayObject2D::Spawn to Daylon::PlayObject2D::Start.
+"Start" means to just start using an already created and spawned widget.
+
+Renamed Daylon::CreateXxxPlayObject2D to Daylon::SpawnXxxPlayObject2D.
+"Spawn" now has a specific meaning: to create a widget _and_ install it into the widget tree.
 
 Moved functions from UDaylonUtils class to the Daylon namespace, since they 
 weren't using any BlueprintCallable tags. The class name is reserved 

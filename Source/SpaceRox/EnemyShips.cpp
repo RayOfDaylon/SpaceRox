@@ -285,7 +285,7 @@ void FEnemyShips::SpawnShip()
 
 	const bool IsBigEnemy = (Daylon::FRand() <= BigEnemyProbability);
 
-	auto EnemyShipPtr = FEnemyShip::Create(Arena,
+	auto EnemyShipPtr = FEnemyShip::Spawn(Arena,
 		IsBigEnemy ? Arena->GetBigEnemyAtlas() : Arena->GetSmallEnemyAtlas(), 
 		IsBigEnemy ? ValueBigEnemy             : ValueSmallEnemy,
 		0.375f);
@@ -302,7 +302,7 @@ void FEnemyShips::SpawnShip()
 		P.X = ViewportSize.X - 1.0f; // avoid immediate removal
 	}
 
-	EnemyShipPtr->Spawn(Arena->WrapPosition(P), Inertia, 0.0f);
+	EnemyShipPtr->Start(Arena->WrapPosition(P), Inertia, 0.0f);
 
 	Ships.Add(EnemyShipPtr);
 
@@ -359,8 +359,8 @@ void FEnemyShips::SpawnBoss()
 
 	switch(NumShields)
 	{
-		case 1: BossShipPtr = FEnemyBoss::Create(Arena, Arena->GetMiniboss1Atlas(), 32, ValueMiniBoss1, NumShields); break;
-		case 2: BossShipPtr = FEnemyBoss::Create(Arena, Arena->GetMiniboss2Atlas(), 32, ValueMiniBoss2, NumShields); break;
+		case 1: BossShipPtr = FEnemyBoss::Spawn(Arena, Arena->GetMiniboss1Atlas(), 32, ValueMiniBoss1, NumShields); break;
+		case 2: BossShipPtr = FEnemyBoss::Spawn(Arena, Arena->GetMiniboss2Atlas(), 32, ValueMiniBoss2, NumShields); break;
 	}
 
 	// Like an asteroid, start at some random edge place with a random inertia.

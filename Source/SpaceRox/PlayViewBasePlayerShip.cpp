@@ -118,7 +118,7 @@ void UPlayViewBase::ProcessPlayerShipSpawn(float DeltaTime)
 		return;
 	}
 
-	PlayerShip->Spawn(ViewportSize / 2, FVector2D(0), 1.0f);
+	PlayerShip->Start(ViewportSize / 2, FVector2D(0), 1.0f);
 
 	PlayerShip->IsSpawning = false;
 }

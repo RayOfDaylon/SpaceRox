@@ -3,7 +3,7 @@
 #include "Arena.h"
 
 
-TSharedPtr<FAsteroid> FAsteroid::Create(IArena* InArena, const FDaylonSpriteAtlas& Atlas)
+TSharedPtr<FAsteroid> FAsteroid::Spawn(IArena* InArena, const FDaylonSpriteAtlas& Atlas)
 {
 	check(InArena);
 
@@ -58,7 +58,7 @@ TSharedPtr<FAsteroid> FAsteroid::Split()
 	SetCurrentCel(Daylon::RandRange(0, NewAsteroidAtlasPtr->NumCels - 1));
 
 
-	auto NewAsteroidPtr = FAsteroid::Create(Arena, *NewAsteroidAtlasPtr);
+	auto NewAsteroidPtr = FAsteroid::Spawn(Arena, *NewAsteroidAtlasPtr);
 	auto& NewAsteroid   = *NewAsteroidPtr.Get();
 
 	NewAsteroid.Value = Value;
