@@ -99,6 +99,8 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSprite : public SLeafWidget
 
 			virtual FVector2D ComputeDesiredSize(float) const override;
 
+			bool      IsStatic = false; // Set to true to use current cel regardless of updating
+
 
 		protected:
 

@@ -122,6 +122,11 @@ void SDaylonSprite::SetCurrentCel(int32 CelX, int32 CelY)
 
 void SDaylonSprite::Update(float DeltaTime)
 {
+	if(IsStatic)
+	{
+		return;
+	}
+
 	const auto SecondsPerFrame = 1.0f / Atlas.FrameRate;
 
 	SetCurrentCel((FMath::RoundToInt(CurrentAge / SecondsPerFrame)) % Atlas.NumCels);
