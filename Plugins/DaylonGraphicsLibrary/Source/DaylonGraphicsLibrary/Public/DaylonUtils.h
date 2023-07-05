@@ -362,6 +362,7 @@ namespace Daylon
 		virtual void Update    (float DeltaTime) {}
 
 		void SetSlot   (SConstraintCanvas::FSlot* InSlot) { check(Slot == nullptr); Slot = InSlot; }
+		void ClearSlot () { check(Slot != nullptr); Slot = nullptr; }
 		bool IsValid   () const { return ((Slot != nullptr) && (Value >= 0)); }
 		bool IsAlive   () const { return (LifeRemaining > 0.0f); }
 		bool IsDead    () const { return !IsAlive(); }

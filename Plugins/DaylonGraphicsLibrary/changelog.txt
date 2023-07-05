@@ -1,6 +1,9 @@
 Changelog for DaylonGraphicsLibrary UE plugin
 
-Last updated: June 27, 2023
+Last updated: July 4, 2023
+
+Added ClearSlot method to PlayObject2D and made Uninstall() 
+call it to ensure that uninstalled widgets had no slot pointer.
 
 Renamed Daylon::PlayObject2D::Spawn to Daylon::PlayObject2D::Start.
 "Start" means to just start using an already created and spawned widget.

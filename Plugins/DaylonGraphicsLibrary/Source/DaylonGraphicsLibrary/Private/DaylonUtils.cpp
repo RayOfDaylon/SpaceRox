@@ -487,9 +487,10 @@ void Daylon::UninstallImpl(TSharedPtr<SWidget> Widget)
 #define UNINSTALL_PLAYOBJECT(_Widget)	\
 	if(!_Widget->IsValid())	\
 	{	\
-		UE_LOG(LogDaylon, Error, TEXT("Daylon::Destroy() tried to destroy an invalid Slate widget!"));	\
+		UE_LOG(LogDaylon, Error, TEXT("Daylon::Destroy() tried to uninstall an invalid Slate widget!"));	\
 		return;	\
 	}	\
+	_Widget->ClearSlot();	\
 	UninstallImpl(StaticCastSharedPtr<SWidget>(Widget));
 
 
