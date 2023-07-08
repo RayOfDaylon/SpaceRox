@@ -17,6 +17,24 @@ void FDaylonSpriteAtlas::InitCache()
 {
 	UVSize       = FVector2D(1.0 / CelsAcross, 1.0 / CelsDown);
 	CelPixelSize = AtlasBrush.GetImageSize() * UVSize;
+
+	int32 Index = 0;
+
+	for(; Index < NumCels; Index++)
+	{
+		LogToPhysCelIndices.Add(Index);
+	}
+
+	if(bReversible)
+	{
+		// Add additional indices to support reversible looping.
+		// If the number of cels is less than three, no extra indices will be added.
+
+		for(; Index < NumCels + NumCels - 2; Index++)
+		{
+			LogToPhysCelIndices.Add(Index - (Index - (NumCels - 1)) * 2);
+		}
+	}
 }
 
 
@@ -57,7 +75,6 @@ FBox2d FDaylonSpriteAtlas::GetUVsForCel(int32 Index) const
 
 FBox2d FDaylonSpriteAtlas::GetUVsForCel(int32 CelX, int32 CelY) const
 {
-	//const FVector2D UV(CelX / (double)CelsAcross, CelY / (double)CelsDown);
 	const FVector2D UV(CelX * UVSize.X, CelY * UVSize.Y);
 
 	return FBox2D(UV, UV + UVSize);
@@ -127,17 +144,22 @@ void SDaylonSprite::Update(float DeltaTime)
 		return;
 	}
 
-	const auto SecondsPerFrame = 1.0f / Atlas.FrameRate;
+	// See if we need to change the current cel.
 
-	SetCurrentCel((FMath::RoundToInt(CurrentAge / SecondsPerFrame)) % Atlas.NumCels);
+	const int32 NumLogicalCels  = Atlas.LogToPhysCelIndices.Num();
+	const float SecondsPerFrame = (1.0f / Atlas.FrameRate); 
+	
+	// Determine the next absolute cel index as if we were always going forwards.
+	const int32 NextLogicalCelIndex = (FMath::RoundToInt(CurrentAge / SecondsPerFrame)) % NumLogicalCels;
+	SetCurrentCel(Atlas.LogToPhysCelIndices[NextLogicalCelIndex]);
 
 	CurrentAge += DeltaTime;
 
-	const auto AnimDuration = Atlas.NumCels * SecondsPerFrame;
+	const auto AnimDuration = NumLogicalCels * SecondsPerFrame;
 
 	while(CurrentAge > AnimDuration)
 	{
-		CurrentAge -= Atlas.NumCels / Atlas.FrameRate;
+		CurrentAge -= NumLogicalCels / Atlas.FrameRate;
 	}
 
 	//UE_LOG(LogSlate, Log, TEXT("sprite widget::update: currentage = %.3f, currentcelindex = %d"), CurrentAge, CurrentCelIndex);
@@ -160,7 +182,16 @@ int32 SDaylonSprite::OnPaint
 		return LayerId;
 	}
 
-	const FBox2D uvRegion = Atlas.GetUVsForCel(CurrentCelIndex);
+	FBox2D uvRegion = Atlas.GetUVsForCel(CurrentCelIndex);
+
+	if(FlipHorizontal)
+	{
+		Swap(uvRegion.Min.X, uvRegion.Max.X);
+	}
+	if(FlipVertical)
+	{
+		Swap(uvRegion.Min.Y, uvRegion.Max.Y);
+	}
 
 	Atlas.AtlasBrush.SetUVRegion(uvRegion);
 
@@ -362,46 +393,6 @@ int32 SDaylonPolyShield::OnPaint
 
 		FSlateDrawElement::MakeLines(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, Color, true, Thickness);
 	}
-
-
-/*		if(AllottedGeometry.HasRenderTransform())
-		{
-			FSlateDrawElement::MakeBox(
-				OutDrawElements,
-				LayerId,
-				AllottedGeometry.ToPaintGeometry(),
-				&Atlas.AtlasBrush,
-				ESlateDrawEffect::None,
-				Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
-		}
-		else
-		{
-			const auto GeomSize = AllottedGeometry.GetAbsoluteSize();
-			const FPaintGeometry PaintGeometry(AllottedGeometry.GetAbsolutePosition(), GeomSize, 1.0f);
-
-			FSlateDrawElement::MakeBox(
-				OutDrawElements,
-				LayerId,
-				PaintGeometry,
-				&Atlas.AtlasBrush,
-				ESlateDrawEffect::None,
-				Atlas.AtlasBrush.TintColor.GetSpecifiedColor() * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
-		}
-*/
-#if 0
-		{
-			// Draw where P is.
-			FLinearColor Red(1.0f, 0.0f, 0.0f, 1.0f);
-			const FPaintGeometry PaintGeometry2(AllottedGeometry.GetAbsolutePosition(), FVector2D(4), 1.0f);
-			FSlateDrawElement::MakeBox(
-				OutDrawElements,
-				LayerId,
-				PaintGeometry2,
-				&Atlas.AtlasBrush,
-				ESlateDrawEffect::None,
-				Red * RenderOpacity * InWidgetStyle.GetColorAndOpacityTint().A);
-		}
-#endif
 
 	return LayerId;
 }

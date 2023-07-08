@@ -37,8 +37,23 @@ struct DAYLONGRAPHICSLIBRARY_API FDaylonSpriteAtlas
 	UPROPERTY(EditAnywhere, BlueprintReadonly)
 	float FrameRate = 30.0f;
 
-	FVector2D CelPixelSize;
-	FVector2D UVSize;
+	// If checked, plays the animation forwards, then backwards, then forwards, etc.
+	UPROPERTY(EditAnywhere, BlueprintReadonly)
+	bool bReversible = false;
+
+	FVector2D      CelPixelSize;
+	FVector2D      UVSize;
+
+	// This array maps logical cel indices to physical ones.
+	// E.g. if you have a reversible four cel atlas, the array
+	// will hold six indices: [ 0 1 2 3  2 1 ]. During rendering, 
+	// a logical cel index for the current frame will be computed, 
+	// modulated to the 0-5 range, then lookup into the array
+	// to get the physical cel index. This lets the sprite treat 
+	// the atlas as if it had the extra cels, simplifying its logic.
+	// All other mentions of cel indices refer to physical indices.
+
+	TArray<int32>  LogToPhysCelIndices;
 
 
 	void       InitCache        ();
@@ -100,6 +115,8 @@ class DAYLONGRAPHICSLIBRARY_API SDaylonSprite : public SLeafWidget
 			virtual FVector2D ComputeDesiredSize(float) const override;
 
 			bool      IsStatic = false; // Set to true to use current cel regardless of updating
+			bool      FlipHorizontal = false;
+			bool      FlipVertical   = false;
 
 
 		protected:
