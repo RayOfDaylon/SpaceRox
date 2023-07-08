@@ -18,6 +18,8 @@ void FDaylonSpriteAtlas::InitCache()
 	UVSize       = FVector2D(1.0 / CelsAcross, 1.0 / CelsDown);
 	CelPixelSize = AtlasBrush.GetImageSize() * UVSize;
 
+	LogToPhysCelIndices.Empty(); // to be safe.
+
 	int32 Index = 0;
 
 	for(; Index < NumCels; Index++)
