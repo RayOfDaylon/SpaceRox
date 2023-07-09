@@ -157,6 +157,8 @@ void SDaylonSprite::Update(float DeltaTime)
 
 	CurrentAge += DeltaTime;
 
+	// Wrap the current age so it's always within the animation duration.
+
 	const auto AnimDuration = NumLogicalCels * SecondsPerFrame;
 
 	while(CurrentAge > AnimDuration)
@@ -379,6 +381,8 @@ int32 SDaylonPolyShield::OnPaint
 	const float AngleDelta = 360.0f / NumSides;
 	const auto Radius = Size * 0.5f;
 
+	const auto AllottedGeometryLocalSizeHalf = AllottedGeometry.GetLocalSize() / 2;
+
 	for(int32 SegmentIndex = 0; SegmentIndex < NumSides; SegmentIndex++, Angle += AngleDelta)
 	{
 		if(SegmentHealth[SegmentIndex] <= 0.0f)
@@ -390,8 +394,8 @@ int32 SDaylonPolyShield::OnPaint
 
 		TArray<FVector2f> Points;
 
-		Points.Add(UE::Slate::CastToVector2f(AllottedGeometry.GetLocalSize() / 2 + Daylon::AngleToVector2D(Angle) * Radius));
-		Points.Add(UE::Slate::CastToVector2f(AllottedGeometry.GetLocalSize() / 2 + Daylon::AngleToVector2D(Angle + AngleDelta) * Radius));
+		Points.Add(UE::Slate::CastToVector2f(AllottedGeometryLocalSizeHalf + Daylon::AngleToVector2D(Angle) * Radius));
+		Points.Add(UE::Slate::CastToVector2f(AllottedGeometryLocalSizeHalf + Daylon::AngleToVector2D(Angle + AngleDelta) * Radius));
 
 		FSlateDrawElement::MakeLines(OutDrawElements, LayerId, AllottedGeometry.ToPaintGeometry(), Points, ESlateDrawEffect::None, Color, true, Thickness);
 	}

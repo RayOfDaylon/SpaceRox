@@ -13,6 +13,7 @@ TSharedPtr<FAsteroid> FAsteroid::Spawn(IArena* InArena, const FDaylonSpriteAtlas
 
 	Widget->Arena = InArena;
 	Widget->SetAtlas(Atlas);
+	// We use 4K textures so halve that image size for the sprite widget size in our HD Slate space
 	Widget->SetSize(Atlas.AtlasBrush.GetImageSize() / 2);
 	Widget->UpdateWidgetSize();
 	Widget->SetCurrentCel(Daylon::RandRange(0, Atlas.NumCels - 1));
