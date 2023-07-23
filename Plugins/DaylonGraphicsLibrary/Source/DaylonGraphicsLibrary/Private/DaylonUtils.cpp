@@ -7,6 +7,7 @@
 #include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
 #include "Blueprint/UserWidget.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
+#include "Runtime/Engine/Classes/Sound/SoundBase.h"
 #include "Runtime/UMG/Public/Components/TextBlock.h"
 #include "Algo/Reverse.h"
 

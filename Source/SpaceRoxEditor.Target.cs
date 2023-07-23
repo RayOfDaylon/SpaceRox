@@ -11,5 +11,9 @@ public class SpaceRoxEditorTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_1;
 		ExtraModuleNames.Add("SpaceRox");
-	}
+
+		// Uncomment these to build without Unity and PCH to detect missing #include directives
+		//bUseUnityBuild = false;
+		//bUsePCHFiles = false;
+    }
 }
