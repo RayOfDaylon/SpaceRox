@@ -2,7 +2,7 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-June 18, 2023
+June 23, 2023
 
 Chapters:
 
@@ -97,10 +97,13 @@ browse/modify/debug the code, build it, launch the development editor, etc.
 If you get "unknown symbol" compilation errors, it's probably because the unity 
 build option is enabled (which is the case by default), and one or more .cpp 
 files is missing an #include statement, and your unity build just happens 
-to collect a different set of .cpp files together into a compilation unit 
-than mine. All you need to do is locate the symbol's definition, then 
+to collect a set of .cpp files together into a compilation unit where none of 
+them has a needed #include directive.
+    All you need to do is locate the symbol's definition, then 
 include that header in the .cpp file that won't compile, and repeat for 
 any remaining unknown symbols.
+    You can also edit the Source/SpaceRoxEditor.Target.cs file
+to force non-Unity, non-PCH building to reveal any missing #includes.
 
 The frame rate is left uncapped so that you can measure how well your system 
 runs the game. Note that PIE sessions often play slower because UE has to 
