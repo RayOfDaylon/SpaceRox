@@ -256,10 +256,16 @@ namespace Daylon
 				return *this;
 			}
 
-			TBindableValue& operator += (const T& Val) { *this = *this + Val; return *this;	 }
-			TBindableValue& operator -= (const T& Val) { *this = *this - Val; return *this;	 }
-			TBindableValue& operator *= (const T& Val) { *this = *this * Val; return *this;	 }
+			TBindableValue& operator += (const T& Val) { *this = *this + Val; return *this;	}
+			TBindableValue& operator -= (const T& Val) { *this = *this - Val; return *this;	}
+			TBindableValue& operator *= (const T& Val) { *this = *this * Val; return *this;	}
 			TBindableValue& operator /= (const T& Val) { *this = *this / Val; return *this; }
+
+			T operator -- (int)  { T temp = *this; *this -= (T)1; return temp; }
+			TBindableValue& operator -- ()  { *this -= (T)1; return *this; }
+
+			T operator ++ (int)  { T temp = *this; *this += (T)1; return temp; }
+			TBindableValue& operator ++ ()  { *this += (T)1; return *this; }
 
 			bool operator <  (const T& Val) const { return (Value < Val); }
 			bool operator <= (const T& Val) const { return (Value <= Val); }
