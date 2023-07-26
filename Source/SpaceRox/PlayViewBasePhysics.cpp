@@ -343,7 +343,8 @@ void UPlayViewBase::CheckCollisions()
 				auto ShieldImpactNormal = (HitPt - Boss.UnwrappedNewPosition);
 				ShieldImpactNormal.Normalize();
 
-				auto BounceForce = ShieldImpactNormal * PlayerShip->GetSpeed();
+				// Have to treat player ship speed below 1.0 as 1.0 to prevent possible infinite loop during inertia scaling.
+				const auto BounceForce = ShieldImpactNormal * FMath::Max(1.0f, PlayerShip->GetSpeed());
 
 				PlayerShip->Inertia += BounceForce;
 
