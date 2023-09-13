@@ -1,6 +1,9 @@
 Changelog for DaylonGraphicsLibrary UE plugin
 
-Last updated: September 12, 2023
+Last updated: September 13, 2023
+
+TMessageMediator groups message consumers by message ID, 
+increasing message sending performance.
 
 Added TMessageMediator and related helper types.
 

@@ -21,16 +21,14 @@ class FPlayerShip : public FPlayObject
 
 	bool   IsUnderThrust;
 	bool   IsSpawning;
-
-	Daylon::TBindableValue<int32> DoubleShotsLeft;
-	Daylon::TBindableValue<float> ShieldsLeft;
-	Daylon::TBindableValue<float> InvincibilityLeft;
-
 	float  TimeUntilNextInvincibilityWarnFlash;
 
+	Daylon::TBindableValue<int32>  DoubleShotsLeft;
+	Daylon::TBindableValue<float>  ShieldsLeft;
+	Daylon::TBindableValue<float>  InvincibilityLeft;
 
-	TSharedPtr<Daylon::SpritePlayObject2D>     Shield;
-	TSharedPtr<Daylon::SpritePlayObject2D>     InvincibilityShield;
+	TSharedPtr<Daylon::SpritePlayObject2D>  Shield;
+	TSharedPtr<Daylon::SpritePlayObject2D>  InvincibilityShield;
 
 
 	static TSharedPtr<FPlayerShip> Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float RadiusFactor);
