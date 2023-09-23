@@ -24,7 +24,7 @@ void UPlayViewBase::OnEnterHighScore(const FString& Name)
 {
 	FString Str = Name.TrimStartAndEnd();
 
-	if(Str.IsEmpty() || Str.Len() > HighScores.MaxNameLength)
+	if(Str.IsEmpty() || Str.Len() > HighScores.GetMaxNameLength())
 	{
 		// Stay inside high score entry screen until name has valid length.
 		PlaySound(ErrorSound);
