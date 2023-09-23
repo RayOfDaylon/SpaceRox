@@ -13,7 +13,7 @@ public class SpaceRoxEditorTarget : TargetRules
 		ExtraModuleNames.Add("SpaceRox");
 
 		// Uncomment these to build without Unity and PCH to detect missing #include directives
-		//bUseUnityBuild = false;
-		//bUsePCHFiles = false;
+		bUseUnityBuild = false;
+		bUsePCHFiles = false;
     }
 }
