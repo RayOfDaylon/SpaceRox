@@ -2,6 +2,7 @@
 #include "Arena.h"
 #include "Torpedo.h"
 #include "Constants.h"
+#include "DaylonAudio.h"
 
 
 TSharedPtr<FPlayerShip> FPlayerShip::Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float RadiusFactor)

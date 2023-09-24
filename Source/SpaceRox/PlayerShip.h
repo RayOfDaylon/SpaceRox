@@ -7,7 +7,8 @@
 
 #include "CoreMinimal.h"
 #include "PlayObject.h"
-#include "DaylonUtils.h"
+#include "DaylonBindableValue.h"
+#include "DaylonPlayObject2D.h"
 
 
 class IArena;
@@ -19,13 +20,13 @@ class FPlayerShip : public FPlayObject
 
 	IArena* Arena = nullptr;
 
-	bool   IsUnderThrust;
-	bool   IsSpawning;
-	float  TimeUntilNextInvincibilityWarnFlash;
+	bool                                    IsUnderThrust;
+	bool                                    IsSpawning;
+	float                                   TimeUntilNextInvincibilityWarnFlash;
 
-	Daylon::TBindableValue<int32>  DoubleShotsLeft;
-	Daylon::TBindableValue<float>  ShieldsLeft;
-	Daylon::TBindableValue<float>  InvincibilityLeft;
+	Daylon::TBindableValue<int32>           DoubleShotsLeft;
+	Daylon::TBindableValue<float>           ShieldsLeft;
+	Daylon::TBindableValue<float>           InvincibilityLeft;
 
 	TSharedPtr<Daylon::SpritePlayObject2D>  Shield;
 	TSharedPtr<Daylon::SpritePlayObject2D>  InvincibilityShield;

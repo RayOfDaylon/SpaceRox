@@ -4,15 +4,10 @@
 
 
 #include "PlayViewBase.h"
+#include "Logging.h"
 #include "Constants.h"
 #include "Runtime/Engine/Classes/Kismet/GameplayStatics.h"
 
-/*
-#include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
-#include "Runtime/Core/Public/Logging/LogMacros.h"
-*/
-
-DECLARE_LOG_CATEGORY_EXTERN(LogGame, Log, All);
 
 
 // Set to 1 to enable debugging

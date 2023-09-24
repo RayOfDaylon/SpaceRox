@@ -474,15 +474,15 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 
 	// -- Called every frame -----------------------------------------------------------
 
-	void ProcessWaveTransition     (float DeltaTime);
-	void ProcessPlayerShipSpawn    (float DeltaTime);
+	void ProcessWaveTransition      (float DeltaTime);
+	void ProcessPlayerShipSpawn     (float DeltaTime);
 
 	void CheckCollisions            ();
 	void ProcessPlayerShipCollision ();
 
-	void UpdateTorpedos            (float DeltaTime);
-	void UpdatePowerups            (float DeltaTime);
-	void UpdateTasks               (float DeltaTime);
+	void UpdateTorpedos             (float DeltaTime);
+	void UpdatePowerups             (float DeltaTime);
+	void UpdateTasks                (float DeltaTime);
 
 
 	// -- Member variables -----------------------------------------------------------

@@ -5,7 +5,9 @@
 #include "EnemyShips.h"
 #include "Constants.h"
 #include "Arena.h"
-#include "DaylonUtils.h"
+#include "DaylonGeometry.h"
+#include "DaylonRNG.h"
+#include "DaylonAudio.h"
 
 
 #define FEATURE_MULTIPLE_ENEMIES    1

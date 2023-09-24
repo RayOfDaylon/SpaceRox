@@ -4,19 +4,10 @@
 
 
 #include "PlayViewBase.h"
+#include "Logging.h"
 #include "Constants.h"
 
-/*
-#include "Runtime/Engine/Classes/Kismet/KismetMathLibrary.h"
-#include "Runtime/Engine/Classes/Kismet/KismetSystemLibrary.h"
-#include "UDaylonParticlesWidget.h"
-#include "UMG/Public/Blueprint/WidgetLayoutLibrary.h"
-#include "UMG/Public/Blueprint/WidgetBlueprintLibrary.h"
-#include "UMG/Public/Animation/WidgetAnimation.h"
-#include "Runtime/Core/Public/Logging/LogMacros.h"
-*/
 
-DECLARE_LOG_CATEGORY_EXTERN(LogGame, Log, All);
 
 
 // Set to 1 to enable debugging

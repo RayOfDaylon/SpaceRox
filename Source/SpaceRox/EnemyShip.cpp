@@ -4,7 +4,8 @@
 
 
 #include "EnemyShip.h"
-#include "DaylonUtils.h"
+#include "DaylonGeometry.h"
+#include "DaylonRNG.h"
 #include "Torpedo.h"
 #include "Arena.h"
 #include "PlayerShip.h"
@@ -27,7 +28,7 @@ static FVector2D GetFiringAngle(float TorpedoSpeed, const FVector2D& P, const FV
 
 	// The random direction has to be away from us. It can vary by -90 to +90 degrees from DirectionToTarget.
 	const auto AngleToTarget = Daylon::Vector2DToAngle(DirectionToTarget);
-	const auto RandomAngle   = AngleToTarget + FMath::FRandRange(-90.0f, 90.0f);
+	const auto RandomAngle   = AngleToTarget + Daylon::FRandRange(-90.0f, 90.0f);
 
 	const auto PerfectDirection = Daylon::ComputeFiringSolution(P, TorpedoSpeed, TargetP, TargetInertia);
 	const auto PerfectAngle     = Daylon::Vector2DToAngle(PerfectDirection);
@@ -86,7 +87,7 @@ void FEnemyShip::Perform(float DeltaTime)
 
 	if(TimeRemainingToNextMove <= 0.0f)
 	{
-		TimeRemainingToNextMove = FMath::FRandRange(MinTimeTilNextEnemyShipMove, MaxTimeTilNextEnemyShipMove);
+		TimeRemainingToNextMove = Daylon::FRandRange(MinTimeTilNextEnemyShipMove, MaxTimeTilNextEnemyShipMove);
 
 		// Change heading (or stay on current heading).
 
@@ -392,11 +393,11 @@ void FEnemyBoss::Perform(float DeltaTime)
 	{
 		// Alter heading by some random vector.
 
-		TimeRemainingToNextMove = FMath::FRandRange(2.0f, 3.0f);
+		TimeRemainingToNextMove = Daylon::FRandRange(2.0f, 3.0f);
 
 		// Make new direction not differ so much from current direction.
 		const auto OldAngle = Daylon::Vector2DToAngle(Inertia);
-		const auto NewAngle = OldAngle + FMath::FRandRange(-70.0f, 70.0f);
+		const auto NewAngle = OldAngle + Daylon::FRandRange(-70.0f, 70.0f);
 
 		Inertia = Daylon::AngleToVector2D(NewAngle) * GetSpeed();
 	}
@@ -408,7 +409,7 @@ void FEnemyBoss::Perform(float DeltaTime)
 
 	if(TimeRemainingToNextShot <= 0.0f)
 	{
-		TimeRemainingToNextShot = FMath::FRandRange(1.0f, 2.0f);
+		TimeRemainingToNextShot = Daylon::FRandRange(1.0f, 2.0f);
 		Shoot();
 	}
 }

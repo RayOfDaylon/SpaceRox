@@ -1,6 +1,7 @@
 #include "Asteroid.h"
 #include "Constants.h"
 #include "Arena.h"
+#include "DaylonRNG.h"
 
 
 TSharedPtr<FAsteroid> FAsteroid::Spawn(IArena* InArena, const FDaylonSpriteAtlas& Atlas)

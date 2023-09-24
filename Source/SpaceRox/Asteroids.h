@@ -27,18 +27,16 @@ class FAsteroids
 			Asteroids.Reserve(MaxInitialAsteroids * 4);
 		}
 
-		void   Add     (TSharedPtr<FAsteroid> AsteroidPtr) { Asteroids.Add(AsteroidPtr); }
-		bool   IsEmpty () const { return Asteroids.IsEmpty(); }
-		int32  Num     () const { return Asteroids.Num(); }
+		void              Add        (TSharedPtr<FAsteroid> AsteroidPtr) { Asteroids.Add(AsteroidPtr); }
+		bool              IsEmpty    () const { return Asteroids.IsEmpty(); }
+		int32             Num        () const { return Asteroids.Num(); }
 
-		FAsteroid&        Get  (int32 Index) { return *Asteroids[Index].Get(); }
-		const FAsteroid&  Get  (int32 Index) const { return *Asteroids[Index].Get(); }
+		FAsteroid&        Get        (int32 Index) { return *Asteroids[Index].Get(); }
+		const FAsteroid&  Get        (int32 Index) const { return *Asteroids[Index].Get(); }
 
-		//FAsteroid& operator [] (int32 Index) { return Get(Index); }
+		void              Remove     (int32 Index);
+		void              RemoveAll  ();
 
-		void Remove     (int32 Index);
-		void RemoveAll  ();
-
-		void Update     (float DeltaTime);
-		void Kill       (int32 Index, bool KilledByPlayer);
+		void              Update     (float DeltaTime);
+		void              Kill       (int32 Index, bool KilledByPlayer);
 };

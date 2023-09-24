@@ -2,15 +2,9 @@
 
 // SpaceRox - an Atari Asteroids clone developed with Unreal Engine.
 
-
 #pragma once
 
+#include "CoreMinimal.h"
 
-#include "DaylonPlayObject2D.h"
-
-
-class FPlayObject : public Daylon::SpritePlayObject2D
-{
-	// Base class of all non-trivial game play objects.
-};
+DECLARE_LOG_CATEGORY_EXTERN(LogGame, Log, All);
 

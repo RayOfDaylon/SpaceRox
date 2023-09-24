@@ -4,8 +4,8 @@
 
 
 #include "PlayViewBase.h"
+#include "Logging.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogGame, Log, All);
 
 
 // Set to 1 to enable debugging
