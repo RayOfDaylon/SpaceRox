@@ -1,6 +1,10 @@
 Changelog for DaylonGraphicsLibrary UE plugin
 
-Last updated: September 22, 2023
+Last updated: September 24, 2023
+
+Enabled Unity build.
+
+Moved LogDaylon decl/impl to DaylonLogging.h/.cpp.
 
 Broke out various classes and function categories to their own .h/.cpp files.
 DaylonUtils.h is retained as a "#include everything" convenience header.
