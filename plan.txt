@@ -1,0 +1,45 @@
+PLAN file for Stellar Mayhem game project
+
+Author(s): Ray Gardener (support@daylongraphics.com)
+Repository: https://github.com/RayOfDaylon/SpaceRox
+October 5, 2023
+
+
+A sector map has been added but is not currently used.
+It's part of a planned upgrade to sector-based gameplay
+instead of waves. We'll eventually get rid of the player score 
+and the high score table as well.
+
+It would be good to add component members to FPlayObject2D to avoid 
+doing the subclasses' features entirely by inheritance, to have 
+class dtors automatically remove widgets from the canvas.
+
+We could have all the torpedos be drawn by a single 
+Slate widget similar to how SDaylonParticles works, 
+removing 20-30 widgets from the scenegraph.
+
+There's still some duplicate code so we want patterns or function consolidation.
+
+The player-rock collision detection seems to be a bit too generous 
+in some cases.
+
+To reduce the scenegraph, we could move various UI "screens" 
+such as intro, main menu, highscores, etc. to their own UUserWidget's, 
+and use CreateWidget, AddToViewport, RemoveFromViewport, etc. to 
+transition between them. The performance gain is negligible, but 
+it would make using the Widget Designer easier -- intead of having 
+to hide the parts of the UI one isn't working on, one could 
+just edit the screen of interest. It would also reduce the 
+code in the transition function; instead of showing/hiding 
+various parts, it would just remove the current userwidget 
+and add the new one.
+   The details have already been worked out for Defcon, which 
+has so many screens that UUserWidget switching was mandatory.
+
+Might be worth refactoring some widget binds and other function calls 
+to use Daylon::TFastMessageMediator, to improve loose coupling. 
+The current TBindableValue usage can require the event recipient to 
+know about the event source.
+
+
+
