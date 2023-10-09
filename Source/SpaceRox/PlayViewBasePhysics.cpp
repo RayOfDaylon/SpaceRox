@@ -11,7 +11,7 @@
 
 
 // Set to 1 to enable debugging
-#define DEBUG_MODULE                0
+#define DEBUG_MODULE                1
 
 
 
@@ -226,16 +226,28 @@ void UPlayViewBase::CheckCollisions()
 		{
 			auto& Asteroid = Asteroids.Get(AsteroidIndex);
 
-			if(Daylon::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Asteroid.GetPosition(), Asteroid.GetRadius() + PlayerShip->GetRadius())
-				|| Daylon::DoesLineSegmentIntersectTriangle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, PlayerShipTriangle))
+			#define SHIP_INTERSECTS_ASTEROID  Daylon::DoesLineSegmentIntersectCircle(PlayerShipLineStart, PlayerShipLineEnd, Asteroid.GetPosition(), Asteroid.GetRadius() + PlayerShip->GetRadius())
+			#define ASTEROID_INTERSECTS_SHIP  Daylon::DoesLineSegmentIntersectTriangle(Asteroid.OldPosition, Asteroid.UnwrappedNewPosition, PlayerShipTriangle)
+	
+			if(SHIP_INTERSECTS_ASTEROID || ASTEROID_INTERSECTS_SHIP)
 			{
 				// Player collided with a rock.
+				static const TMap<int, float> AsteroidMasses = 
+				{
+					{ ValueBigAsteroid,    BigAsteroidMass    },
+					{ ValueMediumAsteroid, MediumAsteroidMass }, 
+					{ ValueSmallAsteroid,  SmallAsteroidMass  }
+				};
 
-				ProcessPlayerShipCollision();
+				// todo: use args when elastic collisions working.
+				ProcessPlayerShipCollision();//AsteroidMasses[Asteroid.Value] * AsteroidInertiaImpart, &Asteroid.Inertia);
 				Asteroids.Kill(AsteroidIndex, CreditPlayerForKill);
 
 				break;
 			}
+
+			#undef SHIP_INTERSECTS_ASTEROID 
+			#undef ASTEROID_INTERSECTS_SHIP
 		}
 	}
 

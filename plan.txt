@@ -2,8 +2,12 @@ PLAN file for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-October 5, 2023
+October 9, 2023
 
+
+Working on adding elastic collisions when asteroids collide 
+with player ship in a non-fatal way. Basically, the ship's motion 
+should change depending on the asteroid mass and inertia. 
 
 A sector map has been added but is not currently used.
 It's part of a planned upgrade to sector-based gameplay

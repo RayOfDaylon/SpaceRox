@@ -192,24 +192,33 @@ void FPlayerShip::SpawnExplosion()
 }
 
 
-bool FPlayerShip::ProcessCollision()
+bool FPlayerShip::ProcessCollision(float MassOther, const FVector2D* InertiaOther)
 {
 	// Return true if we didn't get destroyed.
 
+	bool StillAlive = false;
+
 	if(Arena->IsGodModeActive() || InvincibilityLeft > 0.0f)
 	{
-		Arena->PlaySound(Arena->GetShieldBonkSound(), 0.5f);
-		return true;
+		StillAlive = true;
 	}
-
-	if(Shield->IsVisible())
+	else if(Shield->IsVisible())
 	{
 		AdjustShieldsLeft(-ShieldBonkDamage);
-		Arena->PlaySound(Arena->GetShieldBonkSound(), 0.5f);
-		return true;
+		StillAlive = true;
 	}
 
-	return false;
+	if(StillAlive)
+	{
+		Arena->PlaySound(Arena->GetShieldBonkSound(), 0.5f);
+
+		if(InertiaOther != nullptr)
+		{
+			Inertia += *InertiaOther * MassOther;
+		}
+	}
+
+	return StillAlive;
 }
 
 

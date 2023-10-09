@@ -180,6 +180,85 @@ void UPlayViewBase::NativeOnInitialized()
 
 	IsInitialized = false;
 
+	// Test physics routines.
+	{
+		// Line segment vs. circle.
+		// Try lines we know should intersect.
+
+		double R = 100.0;
+		FVector2D CP(300, 300);
+
+		struct FLine { FVector2D P1, P2; };
+
+		const FLine Lines[] = 
+		{
+			// Horizontal lines wider than circle.
+			{ FVector2D(174, 230), FVector2D(430, 230) },
+			{ FVector2D(174, 300), FVector2D(430, 300) },
+			{ FVector2D(174, 374), FVector2D(430, 374) },
+
+			// Vertical lines wider than circle.
+			{ FVector2D(234, 180), FVector2D(234, 420) },
+			{ FVector2D(300, 180), FVector2D(300, 420) },
+			{ FVector2D(380, 180), FVector2D(380, 420) },
+
+			// Horizontal lines inside circle.
+			{ FVector2D(250, 245), FVector2D(360, 230) },
+			{ FVector2D(250, 300), FVector2D(360, 300) },
+			{ FVector2D(250, 350), FVector2D(360, 350) },
+
+			// Vertical lines inside circle.
+			{ FVector2D(234, 250), FVector2D(234, 360) },
+			{ FVector2D(300, 250), FVector2D(300, 360) },
+			{ FVector2D(350, 250), FVector2D(350, 360) },
+		};
+
+		auto PtInsideCircle = [&](const FVector2D& P)
+		{
+			return ((P - CP).Length() <= R);
+		};
+
+		auto InsideCircle = [&](const FLine& Line) 
+		{ 
+			// If either endpoint is inside the circle, then the line must intersect circle.
+			return (PtInsideCircle(Line.P1) || PtInsideCircle(Line.P2));
+		};
+
+		for(const auto& Line : Lines)
+		{
+			//if(!InsideCircle(Line))
+			{
+				bool Result = Daylon::DoesLineSegmentIntersectCircle(Line.P1, Line.P2, CP, R);
+				if(!Result)
+				{
+					UE_LOG(LogGame, Error, TEXT("Daylon::DoesLineSegmentIntersectCircle returned false negative for line %f, %f - %f, %f"),
+						Line.P1.X, Line.P1.Y, Line.P2.X, Line.P2.Y);
+				}
+			}
+		}
+
+		// Try random tiny lines inside or penetrating the circle.
+		for(int32 Idx = 0; Idx < 10000; Idx++)
+		{
+			FLine Line;
+			
+			Line.P1 = Daylon::RandVector2D() * R * Daylon::FRandRange(0.8f, 1.2f) + CP; // could be inside or outside
+			Line.P2 = Daylon::RandVector2D() * R * 0.9 + CP; // must be inside
+
+			//if(!InsideCircle(Line))
+			{
+				bool Result = Daylon::DoesLineSegmentIntersectCircle(Line.P1, Line.P2, CP, R);
+				if(!Result)
+				{
+					UE_LOG(LogGame, Error, TEXT("Daylon::DoesLineSegmentIntersectCircle returned false negative for line %f, %f - %f, %f"),
+						Line.P1.X, Line.P1.Y, Line.P2.X, Line.P2.Y);
+				}
+			}
+		}
+	}
+
+
+
 	if(RootCanvas == nullptr)
 	{
 		StopRunning(TEXT("Cannot get canvas"), ReasonIsFatal);
