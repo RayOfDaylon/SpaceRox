@@ -43,12 +43,12 @@ const float MinAsteroidSplitInertia        =  0.1f;   // Child rock could have a
 const float MaxAsteroidSplitInertia        =  3.0f;   // Ditto, max as much as this.
 
 // Asteroid masses and inertial impart are used to alter player ship inertia during non-fatal collisions.
-// Until we compute elastic collision (kinetic energy transfer) properly, it's best to leave AsteroidInertiaImpart at zero.
-// https://www.plasmaphysics.org.uk/programs/coll2d_cpp.htm
+// If you don't like the player ship to bounce around, leave AsteroidInertiaImpart at zero.
 const float BigAsteroidMass                =  1.0f;
-const float MediumAsteroidMass             =  0.5f;
-const float SmallAsteroidMass              =  0.3f;
-const float AsteroidInertiaImpart          =  0.0f;   // How much inertia to impart to shielded player ship when hit by asteroid.
+const float MediumAsteroidMass             =  0.3f;
+const float SmallAsteroidMass              =  0.1f;
+const float PlayerShipMass                 = SmallAsteroidMass;
+const float AsteroidInertiaImpart          =  0.25f;   // How much inertia to impart to shielded player ship when hit by asteroid.
 								           
 const int32 ValueBigAsteroid               =    20;
 const int32 ValueMediumAsteroid            =    50;

@@ -6,7 +6,7 @@
 #include "Runtime/GeometryCore/Public/Intersection/IntrTriangle2Triangle2.h"
 
 // Set to 1 to enable debugging
-#define DEBUG_MODULE                1
+#define DEBUG_MODULE                0
 
 #if(DEBUG_MODULE == 1)
 #pragma optimize("", off)

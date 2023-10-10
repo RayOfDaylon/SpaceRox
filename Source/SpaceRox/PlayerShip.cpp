@@ -192,7 +192,23 @@ void FPlayerShip::SpawnExplosion()
 }
 
 
-bool FPlayerShip::ProcessCollision(float MassOther, const FVector2D* InertiaOther)
+void collision2Ds
+(
+	double m1, 
+	double m2, 
+	double R,
+    double x1, 
+	double y1, 
+	double x2, 
+	double y2,
+    double& vx1, 
+	double& vy1, 
+	double& vx2, 
+	double& vy2
+);
+
+
+bool FPlayerShip::ProcessCollision(float MassOther, const FVector2D* PositionOther, const FVector2D* InertiaOther)
 {
 	// Return true if we didn't get destroyed.
 
@@ -214,7 +230,29 @@ bool FPlayerShip::ProcessCollision(float MassOther, const FVector2D* InertiaOthe
 
 		if(InertiaOther != nullptr)
 		{
-			Inertia += *InertiaOther * MassOther;
+			//Inertia += *InertiaOther * MassOther;
+
+			double vx1 = Inertia.X;
+			double vy1 = Inertia.Y; 
+			double vx2 = InertiaOther->X; 
+			double vy2 = InertiaOther->Y;
+
+
+			collision2Ds(
+				PlayerShipMass, 
+				MassOther, 
+				1.0, // restitution coefficient, 1 = perfectly elastic collision
+				GetPosition().X,
+				GetPosition().Y,
+				PositionOther->X,
+				PositionOther->Y,
+				vx1,
+				vy1,
+				vx2,
+				vy2);
+
+			Inertia.Set(vx1, vy1);
+			// InertiaOther->Set(vx2, vy2); The other object doesn't matter since it's been destroyed.
 		}
 	}
 

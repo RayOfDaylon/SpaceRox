@@ -478,7 +478,7 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	void ProcessPlayerShipSpawn     (float DeltaTime);
 
 	void CheckCollisions            ();
-	void ProcessPlayerShipCollision (float Mass = 0.0f, const FVector2D* Inertia = nullptr);
+	void ProcessPlayerShipCollision (float Mass = 0.0f, const FVector2D* PositionOther = nullptr, const FVector2D* InertiaOther = nullptr);
 
 	void UpdateTorpedos             (float DeltaTime);
 	void UpdatePowerups             (float DeltaTime);
