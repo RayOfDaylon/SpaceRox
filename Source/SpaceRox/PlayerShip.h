@@ -40,7 +40,7 @@ class FPlayerShip : public FPlayObject
 	void AdjustInvincibilityLeft (float Amount);
 	void ReleaseResources        ();
 	void InitializeDefenses      ();
-	bool ProcessCollision        (float MassOther = 0.0f, const FVector2D* PositionOther = nullptr, const FVector2D* InertiaOther = nullptr);
+	bool ProcessCollision        (float MassOther = 0.0f, const FVector2D* PositionOther = nullptr, FVector2D* InertiaOther = nullptr);
 	void SpawnExplosion          ();
 	void FireTorpedo             ();
 	void Perform                 (float DeltaTime);

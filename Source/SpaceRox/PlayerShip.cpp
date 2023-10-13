@@ -3,6 +3,7 @@
 #include "Torpedo.h"
 #include "Constants.h"
 #include "DaylonAudio.h"
+#include "DaylonGeometry.h"
 
 
 TSharedPtr<FPlayerShip> FPlayerShip::Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float RadiusFactor)
@@ -192,23 +193,7 @@ void FPlayerShip::SpawnExplosion()
 }
 
 
-void collision2Ds
-(
-	double m1, 
-	double m2, 
-	double R,
-    double x1, 
-	double y1, 
-	double x2, 
-	double y2,
-    double& vx1, 
-	double& vy1, 
-	double& vx2, 
-	double& vy2
-);
-
-
-bool FPlayerShip::ProcessCollision(float MassOther, const FVector2D* PositionOther, const FVector2D* InertiaOther)
+bool FPlayerShip::ProcessCollision(float MassOther, const FVector2D* PositionOther, FVector2D* InertiaOther)
 {
 	// Return true if we didn't get destroyed.
 
@@ -228,31 +213,26 @@ bool FPlayerShip::ProcessCollision(float MassOther, const FVector2D* PositionOth
 	{
 		Arena->PlaySound(Arena->GetShieldBonkSound(), 0.5f);
 
-		if(InertiaOther != nullptr)
+		if(MassOther != 0.0f)
 		{
-			//Inertia += *InertiaOther * MassOther;
+			check(PositionOther != nullptr);
+			check(InertiaOther != nullptr);
 
-			double vx1 = Inertia.X;
-			double vy1 = Inertia.Y; 
-			double vx2 = InertiaOther->X; 
-			double vy2 = InertiaOther->Y;
+			// Don't let the inertia of the other object be modified, it causes medium and large asteroids
+			// to break up into smaller rocks that move too fast.
+			// todo: that isn't a problem this function should be worried about, so we need 
+			// to move the responsibility elsewhere.
 
+			auto TmpInertiaOther = *InertiaOther;
 
-			collision2Ds(
+			Daylon::ComputeCollisionInertia(
 				PlayerShipMass, 
 				MassOther, 
 				1.0, // restitution coefficient, 1 = perfectly elastic collision
-				GetPosition().X,
-				GetPosition().Y,
-				PositionOther->X,
-				PositionOther->Y,
-				vx1,
-				vy1,
-				vx2,
-				vy2);
-
-			Inertia.Set(vx1, vy1);
-			// InertiaOther->Set(vx2, vy2); The other object doesn't matter since it's been destroyed.
+				GetPosition(),
+				*PositionOther,
+				Inertia,
+				TmpInertiaOther);
 		}
 	}
 

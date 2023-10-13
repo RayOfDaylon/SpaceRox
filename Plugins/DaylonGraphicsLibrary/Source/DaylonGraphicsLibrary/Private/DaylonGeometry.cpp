@@ -290,6 +290,85 @@ float Daylon::Normalize(float N, float Min, float Max)
 }
 
 
+void Daylon::ComputeCollisionInertia
+(
+	float            Mass1, 
+	float            Mass2, 
+	float            Restitution,
+	const FVector2D& P1,
+	const FVector2D& P2,
+	FVector2D&       Inertia1,
+	FVector2D&       Inertia2
+)
+{
+	// Based on collision code courtesy of Thomas Smid from https://www.plasmaphysics.org.uk/programs/coll2d_cpp.htm
+
+	auto vx1 = Inertia1.X;
+	auto vy1 = Inertia1.Y;
+	auto vx2 = Inertia2.X;
+	auto vy2 = Inertia2.Y;
+
+	const auto m1 = Mass1;
+	const auto m2 = Mass2;
+
+	const auto x1 = P1.X;
+	const auto y1 = P1.Y;
+	const auto x2 = P2.X;
+	const auto y2 = P2.Y;
+	
+    float  m21, dvx2, a, x21, y21, vx21, vy21, fy21, sign, vx_cm, vy_cm;
+
+    m21  = m2 / m1;
+    x21  = x2 - x1;
+    y21  = y2 - y1;
+    vx21 = vx2 - vx1;
+    vy21 = vy2 - vy1;
+
+    vx_cm = (m1*vx1+m2*vx2) / (m1+m2) ;
+    vy_cm = (m1*vy1+m2*vy2) / (m1+m2) ;   
+
+
+	//     *** return old velocities if balls are not approaching ***
+    if ( (vx21*x21 + vy21*y21) >= 0) 
+	{
+		return;
+	}
+
+
+	//     *** I have inserted the following statements to avoid a zero divide; 
+	//         (for single precision calculations, 
+	//          1.0E-12 should be replaced by a larger value). **************  
+  
+    fy21 = 1.0E-12 * fabs(y21);                            
+
+    if ( fabs(x21)<fy21 ) 
+	{  
+        if (x21<0) { sign=-1; } else { sign=1;}  
+        x21=fy21*sign; 
+    } 
+
+	//     ***  update velocities ***
+    a    = y21 / x21;
+    dvx2 = -2*(vx21 +a*vy21) / ((1+a*a)*(1+m21)) ;
+    vx2  = vx2+dvx2;
+    vy2  = vy2+a*dvx2;
+    vx1  = vx1-m21*dvx2;
+    vy1  = vy1-a*m21*dvx2;
+
+	//     ***  velocity correction for inelastic collisions ***
+    vx1 = (vx1 - vx_cm) * Restitution + vx_cm;
+    vy1 = (vy1 - vy_cm) * Restitution + vy_cm;
+    vx2 = (vx2 - vx_cm) * Restitution + vx_cm;
+    vy2 = (vy2 - vy_cm) * Restitution + vy_cm;
+
+	Inertia1.Set(vx1, vy1);
+	Inertia2.Set(vx2, vy2);
+}
+
+// -------------------------------------------------------------------------------------
+
+
+
 #if(DEBUG_MODULE == 1)
 #pragma optimize("", on)
 #endif

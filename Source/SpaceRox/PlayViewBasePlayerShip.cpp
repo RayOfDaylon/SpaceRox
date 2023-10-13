@@ -227,7 +227,7 @@ void UPlayViewBase::UpdatePlayerShipReadout(EPowerup PowerupKind)
 }
 
 
-void UPlayViewBase::ProcessPlayerShipCollision(float Mass, const FVector2D* PositionOther, const FVector2D* InertiaOther)
+void UPlayViewBase::ProcessPlayerShipCollision(float Mass, const FVector2D* PositionOther, FVector2D* InertiaOther)
 {
 	check(PlayerShip);
 
