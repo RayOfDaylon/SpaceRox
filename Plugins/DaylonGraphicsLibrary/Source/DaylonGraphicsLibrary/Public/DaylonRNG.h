@@ -247,6 +247,9 @@ namespace Daylon
 	DAYLONGRAPHICSLIBRARY_API int32  RandRange  (int32 Min, int32 Max);
 	DAYLONGRAPHICSLIBRARY_API bool   RandBool   ();
 
+	DAYLONGRAPHICSLIBRARY_API int32  RandRange  (MTRand& R, int32 Min, int32 Max);
+
+
 	inline float FRandRange(const FRange<float>& Range)
 	{
 		return (float)FRandRange(Range.Low(), Range.High());

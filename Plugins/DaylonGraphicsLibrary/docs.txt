@@ -2,7 +2,7 @@ Documentation for DaylonGraphicsLibrary plug-in for Unreal Engine
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox (inside Plugins folder)
-October 12, 2023
+January 22, 2024
 
 
 
@@ -124,6 +124,7 @@ FRand                         Returns a random real number inclusively between 0
 RandBool                      Returns a random true/false value.
 
 RandRange                     Returns a random integer inclusively between two integers.
+                              A version also exists that takes a specific RNG object.
 
 FRandRange                    Returns a random real number inclusively between two reals.
 

@@ -14,6 +14,23 @@ PlayViewBaseXXX.cpp files. Some functions were generic enough to
 be moved to the DaylonGraphicsLibrary plugin.
 
 
+Version 1.9.1
+-------------------------------------------------------------------------------------
+Made different powerups appear based on minimum XP points per type.
+Initially, no powerups appear, but after 5,000 pts, shield powerups 
+show up. At 15,000 pts, double-gun powerups can also appear. 
+At 25,000 pts, invincibility powerups can appear. The exact kind 
+is chosen randomly, but as each wave increases the number of asteroids, 
+the odds of getting a desired powerup increase as well.
+    The game is challenging/interesting until the amount of 
+invincibility powerups obtained is enough to guarantee victory 
+of any wave, so we may want to set its XP threshold higher.
+Also, having enough of that powerup makes shield powerups moot, 
+so maybe make invincibility scarcer as well.
+    A new class, FPowerupFactory, was added to manage the 
+allotment of powerups.
+
+
 Version 1.8.5.1
 -------------------------------------------------------------------------------------
 Fixed bug where a perfectly stationary player ship colliding with a miniboss

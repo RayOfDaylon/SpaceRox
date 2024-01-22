@@ -1,6 +1,9 @@
 Changelog for DaylonGraphicsLibrary UE plugin
 
-Last updated: October 12, 2023
+Last updated: January 22, 2024
+
+Added function 
+    int32 RandRange(MTRand& R, int32 Min, int32 Max)
 
 Moved elastic collision function from SpaceRox to plugin
 under the ComputeCollisionInertia function.

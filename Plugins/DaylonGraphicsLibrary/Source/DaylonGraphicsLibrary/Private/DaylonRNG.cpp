@@ -11,3 +11,4 @@ double Daylon::FRandRange (double Min, double Max) { return (Min + Rng.rand(Max 
 int32  Daylon::RandRange  (int32  Min, int32  Max) { return (Min + Rng.randInt(Max - Min)); }
 bool   Daylon::RandBool   () { return (Rng.rand() >= 0.5); }
 
+int32  Daylon::RandRange  (MTRand& R, int32 Min, int32 Max) { return (Min + R.randInt(Max - Min)); }

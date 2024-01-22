@@ -501,6 +501,8 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 
 	FEnemyShips                     EnemyShips;
 
+	FPowerupFactory                 PowerupFactory;
+
 	Daylon::THighScoreTable<10, 30> HighScores;
 	Daylon::FHighScore              MostRecentHighScore;
 	UTextBlock*                     MostRecentHighScoreTextBlock[2];

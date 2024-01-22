@@ -87,6 +87,10 @@ void UPlayViewBase::InitializeVariables()
 
 	GameState                     = EGameState::Startup;
 	SelectedMenuItem              = EMenuItem::StartPlaying;
+
+	PowerupFactory.SetMinXpFor(EPowerup::Shields,        5000);
+	PowerupFactory.SetMinXpFor(EPowerup::DoubleGuns,    15000);
+	PowerupFactory.SetMinXpFor(EPowerup::Invincibility, 25000);
 }
 
 
@@ -146,6 +150,7 @@ void UPlayViewBase::InitializeTitleGraphics()
 	};
 
 	int32 Index = 0;
+
 	for(auto& SrcUV : SrcUVs)
 	{
 		// Convert from px to UV position.
@@ -180,6 +185,7 @@ void UPlayViewBase::NativeOnInitialized()
 
 	IsInitialized = false;
 
+#if 0
 	// Test physics routines.
 	{
 		// Line segment vs. circle.
@@ -256,7 +262,7 @@ void UPlayViewBase::NativeOnInitialized()
 			}
 		}
 	}
-
+#endif
 
 
 	if(RootCanvas == nullptr)
@@ -567,9 +573,9 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering high score entry state"), (int32)PreviousState);
 			}
 
-			Asteroids.RemoveAll();
-			EnemyShips.RemoveAll();
-			RemovePowerups    ();
+			Asteroids.RemoveAll  ();
+			EnemyShips.RemoveAll ();
+			RemovePowerups       ();
 
 			Daylon::Show(PlayerScoreReadout);
 			Daylon::Hide(GameOverMessage);
@@ -587,8 +593,8 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering credits state"), (int32)PreviousState);
 			}
 
-			EnemyShips.RemoveAll();
-			RemovePowerups   ();
+			EnemyShips.RemoveAll ();
+			RemovePowerups       ();
 
 			Daylon::Show(CreditsContent);
 
@@ -602,9 +608,9 @@ void UPlayViewBase::TransitionToState(EGameState State)
 				UE_LOG(LogGame, Warning, TEXT("Invalid previous state %d when entering help state"), (int32)PreviousState);
 			}
 
-			Asteroids.RemoveAll();
-			EnemyShips.RemoveAll();
-			RemovePowerups    ();
+			Asteroids.RemoveAll  ();
+			EnemyShips.RemoveAll ();
+			RemovePowerups       ();
 
 			Daylon::Show(HelpContent);
 
@@ -835,7 +841,16 @@ void UPlayViewBase::ProcessWaveTransition(float DeltaTime)
 
 void UPlayViewBase::SpawnPowerup(TSharedPtr<FPowerup>& PowerupPtr, const FVector2D& P)
 {
-	auto PowerupKind = (EPowerup)Daylon::RandRange(1, 3);
+#if 1
+	const auto PowerupKind = PowerupFactory.Produce(PlayerScore);
+
+	if(PowerupKind == EPowerup::Nothing)
+	{
+		return;
+	}
+#else
+	const auto PowerupKind = (EPowerup)Daylon::RandRange(1, 3);
+#endif
 
 	UDaylonSpriteWidgetAtlas* Atlas = nullptr;
 
@@ -843,7 +858,6 @@ void UPlayViewBase::SpawnPowerup(TSharedPtr<FPowerup>& PowerupPtr, const FVector
 	{
 		case EPowerup::DoubleGuns:    Atlas = DoubleGunsPowerupAtlas;    break;
 		case EPowerup::Shields:       Atlas = ShieldPowerupAtlas;        break;
-		// todo: this powerup is special and should be scarcer, even available only after a certain score or wave reached.
 		case EPowerup::Invincibility: Atlas = InvincibilityPowerupAtlas; break;
 	}
 
@@ -962,6 +976,8 @@ void UPlayViewBase::StartWave()
 
 	
 	// Spawn extra powerups if requested.
+	// Note: none will appear if the player score is less than the minimum Xp set for a powerup.
+	// As player score increases, the type of powerups will become more varied.
 
 	int32 NumExtraPowerups = NumPowerupsOverride - Powerups.Num();
 
@@ -975,7 +991,10 @@ void UPlayViewBase::StartWave()
 
 		SpawnPowerup(PowerupPtr, Daylon::RandomPtWithinBox(Box));
 
-		Powerups.Add(PowerupPtr);
+		if(PowerupPtr)
+		{
+			Powerups.Add(PowerupPtr);
+		}
 	}
 }
 
