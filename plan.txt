@@ -2,7 +2,7 @@ PLAN file for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-October 9, 2023
+February 3, 2024
 
 
 Working on adding elastic collisions when asteroids collide 
@@ -44,6 +44,14 @@ Might be worth refactoring some widget binds and other function calls
 to use Daylon::TFastMessageMediator, to improve loose coupling. 
 The current TBindableValue usage can require the event recipient to 
 know about the event source.
+
+Should make shields a component that can be used by anything, 
+so once a player progresses to having lots of invincibility, 
+the enemies start going after shield powerups. If they get one, 
+shields appear around them. If they get another one, then they 
+get ringed by two shields. 
+   We could also have them go after any kind of powerup, 
+even gain double-guns and temporary invincibility.
 
 
 
