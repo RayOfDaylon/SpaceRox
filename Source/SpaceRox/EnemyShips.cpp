@@ -503,7 +503,7 @@ void FEnemyShips::Update(float DeltaTime)
 				// No target exists and none are available. Just move flat towards edge of sector.
 				if(Scavenger.Inertia.Y != 0)
 				{
-					Scavenger.Inertia = FVector2D(1, 0) * MaxScavengerSpeed;
+					Scavenger.Inertia = FVector2D(Scavenger.XDirection, 0) * MaxScavengerSpeed;
 					Scavenger.SetAngle(Daylon::Vector2DToAngle(Scavenger.Inertia));
 				}
 
@@ -531,8 +531,12 @@ void FEnemyShips::Update(float DeltaTime)
 
 			auto ScavengerPtr = FScavenger::Create(Arena->GetScavengerAtlas(), FVector2D(32));
 
-			ScavengerPtr->SetPosition(FVector2D(0, Daylon::FRandRange(ViewportSize.Y * 0.1, ViewportSize.Y * 0.9)));
-			ScavengerPtr->Inertia.Set(MaxScavengerSpeed, 0);
+			ScavengerPtr->XDirection = (Daylon::RandBool() ? 1 : -1);
+
+			float XStart = (ScavengerPtr->XDirection == 1 ? 0 : ViewportSize.X - 1);
+
+			ScavengerPtr->SetPosition(FVector2D(XStart, Daylon::FRandRange(ViewportSize.Y * 0.1, ViewportSize.Y * 0.9)));
+			ScavengerPtr->Inertia.Set(MaxScavengerSpeed * ScavengerPtr->XDirection, 0);
 			ScavengerPtr->SetAngle(Daylon::Vector2DToAngle(ScavengerPtr->Inertia));
 
 			Scavengers.Add(ScavengerPtr);

@@ -17,10 +17,12 @@ class FScavenger : public FPlayObject
 {
 	public:
 
-	TArray<TSharedPtr<FPowerup>> AcquiredPowerups;
+		TArray<TSharedPtr<FPowerup>> AcquiredPowerups;
 
-	TWeakPtr<FPowerup> CurrentTarget;
+		TWeakPtr<FPowerup> CurrentTarget;
+
+		int XDirection = 1; // -1 to travel from right to left
 
 
-	static TSharedPtr<FScavenger> Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S);
+		static TSharedPtr<FScavenger> Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S);
 };
