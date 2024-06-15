@@ -23,7 +23,9 @@ ready to go.
 
 Unreal Engine 5.1 or higher required.
 
-Keyboard and gamepad input supported at present.
+Keyboard and gamepad input supported at present. There's also an input controller asset
+that supports fightstick arcade controllers (see the docs for more info), and if you 
+have an arcade cabinet or your own arcade controller with USB output, it shouldn't be hard to support that.
 
 A 1920 x 1080 (HD) viewport is used. Monitors of different sizes and/or display scales will scale. Textures are deliberately oversized to avoid blurring when upscaled.
 
