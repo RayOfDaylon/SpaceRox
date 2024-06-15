@@ -2,13 +2,14 @@ Documentation for Stellar Mayhem game project
 
 Author(s): Ray Gardener (support@daylongraphics.com)
 Repository: https://github.com/RayOfDaylon/SpaceRox
-February 3, 2024
+June 14, 2024
 
 Chapters:
 
 Introduction
 Project Structure
 Setting Up
+Controller Setup
 How the Game is Played
 Keyboard Issues
 How the Game Works
@@ -113,6 +114,27 @@ commands. There are also other commands that show even more about what
 is taking time and where. Overall, the game is very undemanding of the GPU.
 Because the collision checker isn't yet perfect, faster frame rates will 
 produce more accurate collisions.
+
+
+Controller Setup
+-------------------------------------------------------------------------------------
+By default, the game takes input from the keyboard or a standard gamepad (like the 
+one used by the Xbox). The Help screen explains the details.
+
+But if you access the blueprint for the Main Controller asset and switch the 
+topmost Branch node's condition to False, the gamepad controls will be interpreted 
+in line with the popular arcade controller that uses a joystick + eight buttons 
+e.g. "arcade fightstick". See the file "arcade_controllers.png" for details.
+The input processor is in the asset IMC_Arcade1.
+
+If you prefer arcade controls and have an actual arcade cabinet or your 
+own arcade control panel, you have two options: physically do any necessary 
+rewiring to map your buttons to the one used by the IMC_Arcade1 asset, or 
+better still, copy that asset to a new one, name it whatever you want, 
+e.g. IMC_ArcadeJohnSmith, and modify the gamepad controls it uses to match 
+your buttons, and then mod the Main Controller asset to use your new IMC asset
+(you can of course mod the IMC_Arcade1 asset itself, but it's nice to leave it 
+unchanged as a fallback resource).
 
 
 How the Game is Played

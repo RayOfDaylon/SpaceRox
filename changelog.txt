@@ -14,6 +14,12 @@ PlayViewBaseXXX.cpp files. Some functions were generic enough to
 be moved to the DaylonGraphicsLibrary plugin.
 
 
+Version 1.9.3
+-------------------------------------------------------------------------------------
+Added support for arcade fightstick controller. See the topic "Controller Setup"
+in the documentation for details.
+
+
 Version 1.9.1
 -------------------------------------------------------------------------------------
 Made different powerups appear based on minimum XP points per type.
