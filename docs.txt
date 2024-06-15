@@ -48,7 +48,7 @@ Content
     Audio                      Sounds
     Fonts                      The Hyperspace "vector" font
     Textures                   Asteroid, ship, etc. textures 
-	Input                      Controller device configuration assets
+    Input                      Controller device configuration assets
     Main                       The main (and only) level map
     PlayView                   The main (and only) UUserWidget for the viewport
 
