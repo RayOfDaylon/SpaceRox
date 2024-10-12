@@ -92,9 +92,9 @@ class SPACEROX_API UPlayViewBase : public UUserWidget, public IArena
 	GENERATED_BODY()
 
 	// UUserWidget
-	virtual void NativeOnInitialized                () override;
-	virtual void NativeTick                         (const FGeometry& MyGeometry, float InDeltaTime) override;
-	virtual void OnAnimationFinished_Implementation (const UWidgetAnimation* Animation) override;
+	virtual void  NativeOnInitialized                 () override;
+	virtual void  NativeTick                          (const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual void  OnAnimationFinished_Implementation  (const UWidgetAnimation* Animation) override;
 
 
 	protected:

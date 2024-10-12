@@ -32,17 +32,17 @@ class FPlayerShip : public FPlayObject
 	TSharedPtr<Daylon::SpritePlayObject2D>  InvincibilityShield;
 
 
-	static TSharedPtr<FPlayerShip> Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float RadiusFactor);
+	static TSharedPtr<FPlayerShip>  Create  (const FDaylonSpriteAtlas& Atlas, const FVector2D& S, float RadiusFactor);
 
-	void Initialize              (IArena*);
-	void AdjustDoubleShotsLeft   (int32 Amount);
-	void AdjustShieldsLeft       (float Amount);
-	void AdjustInvincibilityLeft (float Amount);
-	void ReleaseResources        ();
-	void InitializeDefenses      ();
-	bool ProcessCollision        (float MassOther = 0.0f, const FVector2D* PositionOther = nullptr, FVector2D* InertiaOther = nullptr);
-	void SpawnExplosion          ();
-	void FireTorpedo             ();
-	void Perform                 (float DeltaTime);
+	void  Initialize               (IArena*);
+	void  AdjustDoubleShotsLeft    (int32 Amount);
+	void  AdjustShieldsLeft        (float Amount);
+	void  AdjustInvincibilityLeft  (float Amount);
+	void  ReleaseResources         ();
+	void  InitializeDefenses       ();
+	bool  ProcessCollision         (float MassOther = 0.0f, const FVector2D* PositionOther = nullptr, FVector2D* InertiaOther = nullptr);
+	void  SpawnExplosion           ();
+	void  FireTorpedo              ();
+	void  Perform                  (float DeltaTime);
 };
 

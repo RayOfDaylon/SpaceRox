@@ -28,9 +28,9 @@ class FPowerup : public FPlayObject
 
 		EPowerup Kind = EPowerup::Nothing;
 
-		static TSharedPtr<FPowerup> Create(const FDaylonSpriteAtlas& Atlas, const FVector2D& S);
+		static TSharedPtr<FPowerup>  Create  (const FDaylonSpriteAtlas& Atlas, const FVector2D& S);
 
-		virtual void Update(float DeltaTime) override { FPlayObject::Update(DeltaTime); }
+		virtual void  Update  (float DeltaTime) override { FPlayObject::Update(DeltaTime); }
 };
 
 

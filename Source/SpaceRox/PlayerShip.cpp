@@ -199,7 +199,7 @@ bool FPlayerShip::ProcessCollision(float MassOther, const FVector2D* PositionOth
 
 	bool StillAlive = false;
 
-	if(Arena->IsGodModeActive() || InvincibilityLeft > 0.0f)
+	if(Arena->IsGodModeActive() || InvincibilityLeft > 0.0f) // todo: reduce invincibility the same way shields are
 	{
 		StillAlive = true;
 	}

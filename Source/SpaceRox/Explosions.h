@@ -17,9 +17,9 @@ class FExplosion : public Daylon::PlayObject2D<SDaylonParticles>
 {
 	public:
 
-		static TSharedPtr<FExplosion> Create(FSlateBrush& Brush, const FVector2D& P, const FDaylonParticlesParams& Params, const FVector2D& Inertia = FVector2D(0));
+		static TSharedPtr<FExplosion>  Create  (FSlateBrush& Brush, const FVector2D& P, const FDaylonParticlesParams& Params, const FVector2D& Inertia = FVector2D(0));
 
-		virtual FVector2D GetActualSize() const override { return FVector2D(4); }
+		virtual FVector2D  GetActualSize  () const override { return FVector2D(4); }
 };
 
 
@@ -31,10 +31,10 @@ struct FExplosions
 	float                            InertialFactor = 1.0f;
 
 
-	void  SpawnOne  (const FVector2D& P, const FVector2D& Inertia = FVector2D(0));
-	void  SpawnOne  (const FVector2D& P, const FDaylonParticlesParams& Params, const FVector2D& Inertia = FVector2D(0));
-	void  Update    (const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
-	void  RemoveAll ();
+	void  SpawnOne   (const FVector2D& P, const FVector2D& Inertia = FVector2D(0));
+	void  SpawnOne   (const FVector2D& P, const FDaylonParticlesParams& Params, const FVector2D& Inertia = FVector2D(0));
+	void  Update     (const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
+	void  RemoveAll  ();
 };
 
 // ---------------------------------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ class FShieldExplosion : public Daylon::PlayObject2D<SDaylonLineParticles>
 		);
 
 
-		virtual FVector2D GetActualSize() const override { return FVector2D(4); }
+		virtual FVector2D  GetActualSize  () const override { return FVector2D(4); }
 };
 
 
@@ -69,6 +69,6 @@ struct FShieldExplosions
 		const FVector2D&                   Inertia = FVector2D(0)
 	);
 
-	void Update    (const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
-	void RemoveAll ();
+	void  Update     (const TFunction<FVector2D(const FVector2D&)>& WrapFunction, float DeltaTime);
+	void  RemoveAll  ();
 };

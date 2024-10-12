@@ -18,6 +18,6 @@ class FTorpedo : public FPlayObject
 
 	bool FiredByPlayer;
 
-	static TSharedPtr<FTorpedo> Create(const FDaylonSpriteAtlas& Atlas, float RadiusFactor);
+	static TSharedPtr<FTorpedo>  Create  (const FDaylonSpriteAtlas& Atlas, float RadiusFactor);
 };
 

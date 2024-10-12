@@ -23,13 +23,13 @@ class FAsteroid : public FPlayObject
 
 		TSharedPtr<FPowerup> Powerup;
 
-		bool HasPowerup() const;
+		bool                   HasPowerup  () const;
+		TSharedPtr<FAsteroid>  Split       ();
 
 
 		static TSharedPtr<FAsteroid> Spawn(IArena* InArena, const FDaylonSpriteAtlas& Atlas);
 	
 
-		TSharedPtr<FAsteroid> Split();
 
 #if(FEATURE_ASTEROID_FADE_IN == 1)
 		virtual void Update(float DeltaTime) override 

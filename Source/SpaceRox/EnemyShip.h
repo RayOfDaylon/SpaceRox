@@ -27,9 +27,8 @@ class FEnemyShip : public FPlayObject
 
 	FEnemyShip();
 
-	void Perform(float DeltaTime);
-
-	void Shoot();
+	void  Perform  (float DeltaTime);
+	void  Shoot    ();
 };
 
 
@@ -53,13 +52,13 @@ class FEnemyBoss : public Daylon::PlayObject2D<SOverlay>
 
 	static TSharedPtr<FEnemyBoss> Spawn(IArena* InArena, const FDaylonSpriteAtlas& Atlas, float S, int32 Value, int32 NumShields, float SpinSpeed = 100.0f);
 
-	void  Update                   (float DeltaTime);
-	int32 CheckCollision           (const FVector2D& P1, const FVector2D &P2, int32& ShieldSegmentIndex) const;
-	int32 CheckCollision           (const FVector2D& P1, const FVector2D &P2, float Radius, int32& ShieldSegmentIndex, FVector2D& HitPt) const;
-	float GetShieldSegmentHealth   (int32 ShieldNumber, int32 SegmentIndex) const;
-	void  SetShieldSegmentHealth   (int32 ShieldNumber, int32 SegmentIndex, float Health);
-	void  GetShieldSegmentGeometry (int32 ShieldNumber, int32 SegmentIndex, FVector2D& P1, FVector2D& P2) const;
-	float GetShieldThickness       () const;
-	void  Perform                  (float DeltaTime);
-	void  Shoot                    ();
+	void   Update                    (float DeltaTime);
+	int32  CheckCollision            (const FVector2D& P1, const FVector2D &P2, int32& ShieldSegmentIndex) const;
+	int32  CheckCollision            (const FVector2D& P1, const FVector2D &P2, float Radius, int32& ShieldSegmentIndex, FVector2D& HitPt) const;
+	float  GetShieldSegmentHealth    (int32 ShieldNumber, int32 SegmentIndex) const;
+	void   SetShieldSegmentHealth    (int32 ShieldNumber, int32 SegmentIndex, float Health);
+	void   GetShieldSegmentGeometry  (int32 ShieldNumber, int32 SegmentIndex, FVector2D& P1, FVector2D& P2) const;
+	float  GetShieldThickness        () const;
+	void   Perform                   (float DeltaTime);
+	void   Shoot                     ();
 };
